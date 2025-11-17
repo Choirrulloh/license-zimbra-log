@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const db = require('../database/db');
+const ActivityLogger = require('../utils/activityLogger');
 
 class AuthController {
   constructor() {
@@ -34,6 +35,26 @@ class AuthController {
         });
       }
 
+      // Check if user is active
+      if (!user.is_active) {
+        return res.render('login', {
+          error: 'Your account has been deactivated. Please contact administrator.'
+        });
+      }
+
+      // Update last_login
+      await db.run(
+        'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?',
+        [user.id]
+      );
+
+      // Log login activity
+      await ActivityLogger.logLogin(
+        user.id,
+        req.ip || req.connection?.remoteAddress,
+        req.headers?.['user-agent']
+      );
+
       // Set session
       req.session.userId = user.id;
       req.session.userEmail = user.email;
@@ -50,6 +71,14 @@ class AuthController {
   }
 
   async logout(req, res) {
+    const userId = req.session.userId;
+    const ipAddress = req.ip || req.connection?.remoteAddress;
+
+    // Log logout activity before destroying session
+    if (userId) {
+      await ActivityLogger.logLogout(userId, ipAddress);
+    }
+
     req.session.destroy((err) => {
       if (err) {
         console.error('Logout error:', err);
