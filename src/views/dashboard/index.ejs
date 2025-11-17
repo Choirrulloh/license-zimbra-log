@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard - SaaS License Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+  <%
+    const currentPage = 'dashboard';
+    const pageTitle = 'Dashboard';
+    const title = 'Dashboard';
+    const body = `
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <!-- Total Licenses -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-500 text-sm">Total Licenses</p>
+              <p class="text-3xl font-bold text-gray-800">${stats.totalLicenses}</p>
+            </div>
+            <div class="bg-blue-100 rounded-full p-3">
+              <i class="fas fa-certificate text-2xl text-blue-500"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Licenses -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-500 text-sm">Active Licenses</p>
+              <p class="text-3xl font-bold text-green-600">${stats.activeLicenses}</p>
+            </div>
+            <div class="bg-green-100 rounded-full p-3">
+              <i class="fas fa-check-circle text-2xl text-green-500"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Customers -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-500 text-sm">Total Customers</p>
+              <p class="text-3xl font-bold text-gray-800">${stats.totalCustomers}</p>
+            </div>
+            <div class="bg-purple-100 rounded-full p-3">
+              <i class="fas fa-users text-2xl text-purple-500"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Revenue -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-500 text-sm">Monthly Revenue</p>
+              <p class="text-3xl font-bold text-yellow-600">$${stats.monthlyRevenue.toFixed(2)}</p>
+            </div>
+            <div class="bg-yellow-100 rounded-full p-3">
+              <i class="fas fa-dollar-sign text-2xl text-yellow-500"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Revenue Chart -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h3 class="text-lg font-semibold mb-4">Revenue Trend (Last 12 Months)</h3>
+          <canvas id="revenueChart"></canvas>
+        </div>
+
+        <!-- License Status Chart -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h3 class="text-lg font-semibold mb-4">License Status</h3>
+          <div class="h-64 flex items-center justify-center">
+            <div class="text-center">
+              <div class="mb-4">
+                <div class="inline-block">
+                  <div class="text-6xl font-bold text-green-500">${stats.activeLicenses}</div>
+                  <div class="text-sm text-gray-500">Active</div>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-4 mt-6">
+                <div>
+                  <div class="text-2xl font-bold text-red-500">${stats.expiredLicenses}</div>
+                  <div class="text-xs text-gray-500">Expired</div>
+                </div>
+                <div>
+                  <div class="text-2xl font-bold text-gray-500">${stats.totalLicenses}</div>
+                  <div class="text-xs text-gray-500">Total</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Licenses & Expiring Licenses -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Licenses -->
+        <div class="bg-white rounded-lg shadow">
+          <div class="p-6 border-b">
+            <h3 class="text-lg font-semibold">Recent Licenses</h3>
+          </div>
+          <div class="p-6">
+            <div class="space-y-4">
+              ${recentLicenses.length > 0 ? recentLicenses.map(license => `
+                <div class="flex items-center justify-between border-b pb-3">
+                  <div class="flex-1">
+                    <p class="font-medium text-gray-800">${license.customer_name}</p>
+                    <p class="text-sm text-gray-500">${license.product_name} - ${license.license_type_name}</p>
+                    <p class="text-xs text-gray-400 font-mono">${license.license_key}</p>
+                  </div>
+                  <span class="px-3 py-1 rounded-full text-xs font-medium ${
+                    license.status === 'active' ? 'bg-green-100 text-green-800' :
+                    license.status === 'expired' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }">
+                    ${license.status}
+                  </span>
+                </div>
+              `).join('') : '<p class="text-gray-500 text-center">No recent licenses</p>'}
+            </div>
+            <div class="mt-4 text-center">
+              <a href="/licenses" class="text-blue-500 hover:text-blue-600 text-sm">
+                View All Licenses <i class="fas fa-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expiring Soon -->
+        <div class="bg-white rounded-lg shadow">
+          <div class="p-6 border-b">
+            <h3 class="text-lg font-semibold">
+              <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+              Expiring Soon (30 Days)
+            </h3>
+          </div>
+          <div class="p-6">
+            <div class="space-y-4">
+              ${expiringLicenses.length > 0 ? expiringLicenses.map(license => {
+                const daysLeft = moment(license.expiry_date).diff(moment(), 'days');
+                return `
+                  <div class="flex items-center justify-between border-b pb-3">
+                    <div class="flex-1">
+                      <p class="font-medium text-gray-800">${license.customer_name}</p>
+                      <p class="text-sm text-gray-500">${license.product_name}</p>
+                      <p class="text-xs text-gray-400">${moment(license.expiry_date).format('MMM D, YYYY')}</p>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-xs font-medium ${
+                      daysLeft <= 7 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+                    }">
+                      ${daysLeft} days
+                    </span>
+                  </div>
+                `;
+              }).join('') : '<p class="text-gray-500 text-center">No expiring licenses</p>'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        // Revenue Chart
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: ${JSON.stringify(revenueData.labels)},
+            datasets: [{
+              label: 'Revenue ($)',
+              data: ${JSON.stringify(revenueData.data)},
+              borderColor: 'rgb(59, 130, 246)',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function(value) {
+                    return '$' + value;
+                  }
+                }
+              }
+            }
+          }
+        });
+      </script>
+    `;
+  %>
+
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-800 text-white flex-shrink-0">
+      <div class="p-4">
+        <h1 class="text-2xl font-bold mb-8">
+          <i class="fas fa-key"></i> License Manager
+        </h1>
+
+        <nav class="space-y-2">
+          <a href="/dashboard" class="flex items-center space-x-3 p-3 rounded bg-gray-700">
+            <i class="fas fa-chart-line w-5"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="/products" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700">
+            <i class="fas fa-box w-5"></i>
+            <span>Products</span>
+          </a>
+          <a href="/customers" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700">
+            <i class="fas fa-users w-5"></i>
+            <span>Customers</span>
+          </a>
+          <a href="/licenses" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700">
+            <i class="fas fa-certificate w-5"></i>
+            <span>Licenses</span>
+          </a>
+          <a href="/reports" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700">
+            <i class="fas fa-file-alt w-5"></i>
+            <span>Reports</span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="absolute bottom-0 w-64 p-4 bg-gray-900">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate"><%= user.userName || 'Admin' %></p>
+            <p class="text-xs text-gray-400 truncate"><%= user.userEmail || '' %></p>
+          </div>
+          <a href="/logout" class="text-gray-400 hover:text-white">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Header -->
+      <header class="bg-white shadow-sm">
+        <div class="flex items-center justify-between p-4">
+          <h2 class="text-xl font-semibold text-gray-800"><%= pageTitle %></h2>
+          <span class="text-sm text-gray-600"><%= moment().format('dddd, MMMM D, YYYY') %></span>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="flex-1 overflow-y-auto p-6">
+        <%- body %>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

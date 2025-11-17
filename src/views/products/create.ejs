@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Create Product - SaaS License Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+  <% const currentPage = 'products'; const pageTitle = 'Create Product'; %>
+  <% const body = `
+    <div class="mb-6">
+      <a href="/products" class="text-blue-500 hover:text-blue-600">
+        <i class="fas fa-arrow-left"></i> Back to Products
+      </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
+      <h3 class="text-xl font-bold mb-6">Create New Product</h3>
+
+      ${error ? \`
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          \${error}
+        </div>
+      \` : ''}
+
+      <form method="POST" action="/products/create">
+        <div class="mb-4">
+          <label for="name" class="block text-gray-700 font-medium mb-2">Product Name *</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            placeholder="My Awesome Product"
+          >
+        </div>
+
+        <div class="mb-4">
+          <label for="description" class="block text-gray-700 font-medium mb-2">Description</label>
+          <textarea
+            id="description"
+            name="description"
+            rows="3"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            placeholder="Product description..."
+          ></textarea>
+        </div>
+
+        <div class="mb-6">
+          <label for="version" class="block text-gray-700 font-medium mb-2">Version</label>
+          <input
+            type="text"
+            id="version"
+            name="version"
+            value="1.0.0"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            placeholder="1.0.0"
+          >
+        </div>
+
+        <div class="flex space-x-3">
+          <button
+            type="submit"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg"
+          >
+            <i class="fas fa-save"></i> Create Product
+          </button>
+          <a
+            href="/products"
+            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg"
+          >
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  `; %>
+
+  <div class="flex h-screen overflow-hidden">
+    <aside class="w-64 bg-gray-800 text-white flex-shrink-0">
+      <div class="p-4">
+        <h1 class="text-2xl font-bold mb-8"><i class="fas fa-key"></i> License Manager</h1>
+        <nav class="space-y-2">
+          <a href="/dashboard" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-chart-line w-5"></i><span>Dashboard</span></a>
+          <a href="/products" class="flex items-center space-x-3 p-3 rounded bg-gray-700"><i class="fas fa-box w-5"></i><span>Products</span></a>
+          <a href="/customers" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-users w-5"></i><span>Customers</span></a>
+          <a href="/licenses" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-certificate w-5"></i><span>Licenses</span></a>
+          <a href="/reports" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-file-alt w-5"></i><span>Reports</span></a>
+        </nav>
+      </div>
+      <div class="absolute bottom-0 w-64 p-4 bg-gray-900">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center"><i class="fas fa-user"></i></div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate"><%= user.userName || 'Admin' %></p>
+            <p class="text-xs text-gray-400 truncate"><%= user.userEmail || '' %></p>
+          </div>
+          <a href="/logout" class="text-gray-400 hover:text-white"><i class="fas fa-sign-out-alt"></i></a>
+        </div>
+      </div>
+    </aside>
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <header class="bg-white shadow-sm">
+        <div class="flex items-center justify-between p-4">
+          <h2 class="text-xl font-semibold text-gray-800"><%= pageTitle %></h2>
+          <span class="text-sm text-gray-600"><%= moment().format('dddd, MMMM D, YYYY') %></span>
+        </div>
+      </header>
+      <main class="flex-1 overflow-y-auto p-6">
+        <%- body %>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
