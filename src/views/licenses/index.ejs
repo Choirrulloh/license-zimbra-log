@@ -1,65 +1,119 @@
 <!DOCTYPE html>
 <html>
-<head><title>Licenses</title><script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></head>
+<head>
+  <title>Licenses - License Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
 <body class="bg-gray-100">
-<% const currentPage='licenses'; const pageTitle='Licenses'; const body=`
-<div class="mb-6 flex justify-between items-center">
-  <div><h3 class="text-2xl font-bold text-gray-800">Licenses</h3></div>
-  <a href="/licenses/create" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"><i class="fas fa-plus"></i> Generate License</a>
-</div>
-<div class="bg-white rounded-lg shadow overflow-hidden">
-  <table class="min-w-full divide-y divide-gray-200">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">License Key</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-      </tr>
-    </thead>
-    <tbody class="bg-white divide-y divide-gray-200">
-      ${licenses.length>0?licenses.map(l=>\`
-      <tr class="hover:bg-gray-50">
-        <td class="px-6 py-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">\${l.license_key}</code></td>
-        <td class="px-6 py-4 text-sm">\${l.product_name}</td>
-        <td class="px-6 py-4 text-sm">\${l.customer_name}</td>
-        <td class="px-6 py-4 text-sm">\${l.license_type_name}</td>
-        <td class="px-6 py-4"><span class="px-2 py-1 rounded-full text-xs font-semibold \${l.status==='active'?'bg-green-100 text-green-800':'bg-red-100 text-red-800'}">\${l.status}</span></td>
-        <td class="px-6 py-4 text-sm">\${l.expiry_date?moment(l.expiry_date).format('MMM D, YYYY'):'Never'}</td>
-        <td class="px-6 py-4 text-sm space-x-2">
-          <a href="/licenses/\${l.id}" class="text-blue-600 hover:text-blue-900"><i class="fas fa-eye"></i></a>
-        </td>
-      </tr>
-      \`).join(''):\`<tr><td colspan="7" class="px-6 py-10 text-center text-gray-500">No licenses found</td></tr>\`}
-    </tbody>
-  </table>
-</div>
-`; %>
-<div class="flex h-screen overflow-hidden">
-  <aside class="w-64 bg-gray-800 text-white flex-shrink-0">
-    <div class="p-4"><h1 class="text-2xl font-bold mb-8"><i class="fas fa-key"></i> License Manager</h1><nav class="space-y-2">
-      <a href="/dashboard" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-chart-line w-5"></i><span>Dashboard</span></a>
-      <a href="/products" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-box w-5"></i><span>Products</span></a>
-      <a href="/customers" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-users w-5"></i><span>Customers</span></a>
-      <a href="/licenses" class="flex items-center space-x-3 p-3 rounded bg-gray-700"><i class="fas fa-certificate w-5"></i><span>Licenses</span></a>
-      <a href="/reports" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-file-alt w-5"></i><span>Reports</span></a>
-    </nav></div>
-    <div class="absolute bottom-0 w-64 p-4 bg-gray-900"><div class="flex items-center space-x-3">
-      <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center"><i class="fas fa-user"></i></div>
-      <div class="flex-1 min-w-0"><p class="text-sm font-medium truncate"><%=user.userName||'Admin'%></p><p class="text-xs text-gray-400 truncate"><%=user.userEmail||''%></p></div>
-      <a href="/logout" class="text-gray-400 hover:text-white"><i class="fas fa-sign-out-alt"></i></a>
-    </div></div>
-  </aside>
-  <div class="flex-1 flex flex-col overflow-hidden">
-    <header class="bg-white shadow-sm"><div class="flex items-center justify-between p-4">
-      <h2 class="text-xl font-semibold text-gray-800"><%=pageTitle%></h2>
-      <span class="text-sm text-gray-600"><%=moment().format('dddd, MMMM D, YYYY')%></span>
-    </div></header>
-    <main class="flex-1 overflow-y-auto p-6"><%- body %></main>
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-800 text-white flex-shrink-0">
+      <div class="p-4">
+        <h1 class="text-2xl font-bold mb-8"><i class="fas fa-key"></i> License Manager</h1>
+        <nav class="space-y-2">
+          <a href="/dashboard" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700">
+            <i class="fas fa-chart-line w-5"></i><span>Dashboard</span>
+          </a>
+          <a href="/products" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700">
+            <i class="fas fa-box w-5"></i><span>Products</span>
+          </a>
+          <a href="/customers" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700">
+            <i class="fas fa-users w-5"></i><span>Customers</span>
+          </a>
+          <a href="/licenses" class="flex items-center space-x-3 p-3 rounded bg-gray-700">
+            <i class="fas fa-certificate w-5"></i><span>Licenses</span>
+          </a>
+          <a href="/reports" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700">
+            <i class="fas fa-file-alt w-5"></i><span>Reports</span>
+          </a>
+        </nav>
+      </div>
+      <div class="absolute bottom-0 w-64 p-4 bg-gray-900">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate"><%= user.userName || 'Admin' %></p>
+            <p class="text-xs text-gray-400 truncate"><%= user.userEmail || '' %></p>
+          </div>
+          <a href="/logout" class="text-gray-400 hover:text-white">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <header class="bg-white shadow-sm">
+        <div class="flex items-center justify-between p-4">
+          <h2 class="text-xl font-semibold text-gray-800">Licenses</h2>
+          <span class="text-sm text-gray-600"><%= moment().format('dddd, MMMM D, YYYY') %></span>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-y-auto p-6">
+        <div class="mb-6 flex justify-between items-center">
+          <div>
+            <h3 class="text-2xl font-bold text-gray-800">Licenses</h3>
+          </div>
+          <a href="/licenses/create" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+            <i class="fas fa-plus"></i> Generate License
+          </a>
+        </div>
+
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">License Key</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <% if (licenses.length > 0) { %>
+                <% licenses.forEach(l => { %>
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                      <code class="text-xs bg-gray-100 px-2 py-1 rounded"><%= l.license_key %></code>
+                    </td>
+                    <td class="px-6 py-4 text-sm"><%= l.product_name %></td>
+                    <td class="px-6 py-4 text-sm"><%= l.customer_name %></td>
+                    <td class="px-6 py-4 text-sm"><%= l.license_type_name %></td>
+                    <td class="px-6 py-4">
+                      <span class="px-2 py-1 rounded-full text-xs font-semibold <%= l.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                        <%= l.status %>
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm">
+                      <%= l.expiry_date ? moment(l.expiry_date).format('MMM D, YYYY') : 'Never' %>
+                    </td>
+                    <td class="px-6 py-4 text-sm space-x-2">
+                      <a href="/licenses/<%= l.id %>" class="text-blue-600 hover:text-blue-900">
+                        <i class="fas fa-eye"></i>
+                      </a>
+                    </td>
+                  </tr>
+                <% }); %>
+              <% } else { %>
+                <tr>
+                  <td colspan="7" class="px-6 py-10 text-center text-gray-500">
+                    No licenses found
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
   </div>
-</div>
 </body>
 </html>
