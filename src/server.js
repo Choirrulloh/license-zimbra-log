@@ -49,7 +49,10 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Make helper functions available to all views
-app.locals.moment = require('moment');
+const moment = require('moment-timezone');
+// Set default timezone to Asia/Jakarta (WIB, UTC+7)
+moment.tz.setDefault('Asia/Jakarta');
+app.locals.moment = moment;
 const helpers = require('./utils/helpers');
 app.locals.helpers = helpers;
 

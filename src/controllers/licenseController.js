@@ -1,5 +1,5 @@
 const db = require('../database/db');
-const moment = require('moment');
+const moment = require('moment-timezone');
 const licenseGenerator = require('../utils/licenseGenerator');
 
 class LicenseController {

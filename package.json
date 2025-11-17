@@ -27,6 +27,7 @@
     "crypto-js": "^4.2.0",
     "uuid": "^9.0.1",
     "moment": "^2.29.4",
+    "moment-timezone": "^0.5.43",
     "chart.js": "^4.4.0",
     "json2csv": "^6.0.0-alpha.2",
     "pdfkit": "^0.13.0",

@@ -66,6 +66,9 @@
               <button onclick="renewLicense()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
                 <i class="fas fa-sync"></i> Renew
               </button>
+              <button onclick="deleteLicense()" class="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-lg text-sm">
+                <i class="fas fa-trash"></i> Delete
+              </button>
             </div>
           </div>
 
@@ -266,6 +269,26 @@
         }
       } catch (e) {
         alert('Error activating license');
+      }
+    }
+
+    async function deleteLicense() {
+      if (!confirm('Are you sure you want to DELETE this license permanently? This action cannot be undone and will remove all associated data including activations and history.')) return;
+      if (!confirm('FINAL WARNING: This will permanently delete license <%= license.license_key %>. Are you absolutely sure?')) return;
+
+      try {
+        const res = await fetch('/licenses/<%= license.id %>', {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('License deleted successfully!');
+          window.location.href = '/licenses';
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (e) {
+        alert('Error deleting license');
       }
     }
   </script>
