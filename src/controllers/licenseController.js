@@ -3,6 +3,18 @@ const moment = require('moment');
 const licenseGenerator = require('../utils/licenseGenerator');
 
 class LicenseController {
+  constructor() {
+    this.index = this.index.bind(this);
+    this.show = this.show.bind(this);
+    this.create = this.create.bind(this);
+    this.renew = this.renew.bind(this);
+    this.revoke = this.revoke.bind(this);
+    this.suspend = this.suspend.bind(this);
+    this.activate = this.activate.bind(this);
+    this.delete = this.delete.bind(this);
+    this.getLicenseTypes = this.getLicenseTypes.bind(this);
+  }
+
   async index(req, res) {
     try {
       const { status, product_id, customer_id } = req.query;

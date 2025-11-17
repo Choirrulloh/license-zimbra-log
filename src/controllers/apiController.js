@@ -2,6 +2,12 @@ const db = require('../database/db');
 const licenseGenerator = require('../utils/licenseGenerator');
 
 class ApiController {
+  constructor() {
+    this.validateLicense = this.validateLicense.bind(this);
+    this.deactivateLicense = this.deactivateLicense.bind(this);
+    this.getLicenseInfo = this.getLicenseInfo.bind(this);
+  }
+
   /**
    * Validate license key
    * POST /api/validate

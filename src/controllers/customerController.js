@@ -2,6 +2,15 @@ const db = require('../database/db');
 const moment = require('moment');
 
 class CustomerController {
+  constructor() {
+    this.index = this.index.bind(this);
+    this.show = this.show.bind(this);
+    this.create = this.create.bind(this);
+    this.edit = this.edit.bind(this);
+    this.update = this.update.bind(this);
+    this.delete = this.delete.bind(this);
+  }
+
   async index(req, res) {
     try {
       const customers = await db.all(

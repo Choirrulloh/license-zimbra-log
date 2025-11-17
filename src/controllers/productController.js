@@ -2,6 +2,18 @@ const db = require('../database/db');
 const moment = require('moment');
 
 class ProductController {
+  constructor() {
+    this.index = this.index.bind(this);
+    this.show = this.show.bind(this);
+    this.create = this.create.bind(this);
+    this.edit = this.edit.bind(this);
+    this.update = this.update.bind(this);
+    this.delete = this.delete.bind(this);
+    this.createLicenseType = this.createLicenseType.bind(this);
+    this.updateLicenseType = this.updateLicenseType.bind(this);
+    this.deleteLicenseType = this.deleteLicenseType.bind(this);
+  }
+
   async index(req, res) {
     try {
       const products = await db.all(

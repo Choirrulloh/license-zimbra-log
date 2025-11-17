@@ -2,6 +2,12 @@ const bcrypt = require('bcryptjs');
 const db = require('../database/db');
 
 class AuthController {
+  constructor() {
+    this.login = this.login.bind(this);
+    this.logout = this.logout.bind(this);
+    this.showLogin = this.showLogin.bind(this);
+  }
+
   async login(req, res) {
     try {
       const { email, password } = req.body;

@@ -2,6 +2,14 @@ const db = require('../database/db');
 const moment = require('moment');
 
 class DashboardController {
+  constructor() {
+    this.index = this.index.bind(this);
+    this.getStatistics = this.getStatistics.bind(this);
+    this.getRecentLicenses = this.getRecentLicenses.bind(this);
+    this.getExpiringLicenses = this.getExpiringLicenses.bind(this);
+    this.getRevenueData = this.getRevenueData.bind(this);
+  }
+
   async index(req, res) {
     try {
       // Get statistics

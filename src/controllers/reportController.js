@@ -6,6 +6,14 @@ const fs = require('fs');
 const path = require('path');
 
 class ReportController {
+  constructor() {
+    this.index = this.index.bind(this);
+    this.exportLicensesCSV = this.exportLicensesCSV.bind(this);
+    this.exportCustomersCSV = this.exportCustomersCSV.bind(this);
+    this.exportRevenueCSV = this.exportRevenueCSV.bind(this);
+    this.generateLicenseReport = this.generateLicenseReport.bind(this);
+  }
+
   async index(req, res) {
     try {
       res.render('reports/index', {
