@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin, requireRole, requireSelfOrAdmin } = require('../middleware/auth');
 
 // Controllers
 const authController = require('../controllers/authController');
@@ -29,52 +29,52 @@ router.get('/logout', authController.logout);
 // Protected routes
 router.get('/dashboard', requireAuth, dashboardController.index);
 
-// Products
+// Products (Admin only for create/edit/delete)
 router.get('/products', requireAuth, productController.index);
-router.get('/products/create', requireAuth, productController.create);
-router.post('/products/create', requireAuth, productController.create);
+router.get('/products/create', requireAdmin, productController.create);
+router.post('/products/create', requireAdmin, productController.create);
 router.get('/products/:id', requireAuth, productController.show);
-router.get('/products/:id/edit', requireAuth, productController.edit);
-router.post('/products/:id/edit', requireAuth, productController.update);
-router.delete('/products/:id', requireAuth, productController.delete);
+router.get('/products/:id/edit', requireAdmin, productController.edit);
+router.post('/products/:id/edit', requireAdmin, productController.update);
+router.delete('/products/:id', requireAdmin, productController.delete);
 
-// License Types
-router.post('/license-types', requireAuth, productController.createLicenseType);
-router.put('/license-types/:id', requireAuth, productController.updateLicenseType);
-router.delete('/license-types/:id', requireAuth, productController.deleteLicenseType);
+// License Types (Admin only)
+router.post('/license-types', requireAdmin, productController.createLicenseType);
+router.put('/license-types/:id', requireAdmin, productController.updateLicenseType);
+router.delete('/license-types/:id', requireAdmin, productController.deleteLicenseType);
 
-// Customers
+// Customers (Admin only for create/edit/delete)
 router.get('/customers', requireAuth, customerController.index);
-router.get('/customers/create', requireAuth, customerController.create);
-router.post('/customers/create', requireAuth, customerController.create);
+router.get('/customers/create', requireAdmin, customerController.create);
+router.post('/customers/create', requireAdmin, customerController.create);
 router.get('/customers/:id', requireAuth, customerController.show);
-router.get('/customers/:id/edit', requireAuth, customerController.edit);
-router.post('/customers/:id/edit', requireAuth, customerController.update);
-router.delete('/customers/:id', requireAuth, customerController.delete);
+router.get('/customers/:id/edit', requireAdmin, customerController.edit);
+router.post('/customers/:id/edit', requireAdmin, customerController.update);
+router.delete('/customers/:id', requireAdmin, customerController.delete);
 
-// Users
-router.get('/users', requireAuth, userController.index);
-router.get('/users/create', requireAuth, userController.create);
-router.post('/users/create', requireAuth, userController.create);
-router.get('/users/:id', requireAuth, userController.show);
-router.get('/users/:id/edit', requireAuth, userController.edit);
-router.post('/users/:id/edit', requireAuth, userController.update);
-router.delete('/users/:id', requireAuth, userController.delete);
-router.post('/users/:id/change-password', requireAuth, userController.changePassword);
+// Users (Admin only for management, users can edit their own profile)
+router.get('/users', requireAdmin, userController.index);
+router.get('/users/create', requireAdmin, userController.create);
+router.post('/users/create', requireAdmin, userController.create);
+router.get('/users/:id', requireSelfOrAdmin('id'), userController.show);
+router.get('/users/:id/edit', requireSelfOrAdmin('id'), userController.edit);
+router.post('/users/:id/edit', requireSelfOrAdmin('id'), userController.update);
+router.delete('/users/:id', requireAdmin, userController.delete);
+router.post('/users/:id/change-password', requireSelfOrAdmin('id'), userController.changePassword);
 
 // Features
 router.get('/features', requireAuth, featuresController.index);
 
-// Licenses
+// Licenses (Admin only for create/modify/delete)
 router.get('/licenses', requireAuth, licenseController.index);
-router.get('/licenses/create', requireAuth, licenseController.create);
-router.post('/licenses/create', requireAuth, licenseController.create);
+router.get('/licenses/create', requireAdmin, licenseController.create);
+router.post('/licenses/create', requireAdmin, licenseController.create);
 router.get('/licenses/:id', requireAuth, licenseController.show);
-router.post('/licenses/:id/renew', requireAuth, licenseController.renew);
-router.post('/licenses/:id/revoke', requireAuth, licenseController.revoke);
-router.post('/licenses/:id/suspend', requireAuth, licenseController.suspend);
-router.post('/licenses/:id/activate', requireAuth, licenseController.activate);
-router.delete('/licenses/:id', requireAuth, licenseController.delete);
+router.post('/licenses/:id/renew', requireAdmin, licenseController.renew);
+router.post('/licenses/:id/revoke', requireAdmin, licenseController.revoke);
+router.post('/licenses/:id/suspend', requireAdmin, licenseController.suspend);
+router.post('/licenses/:id/activate', requireAdmin, licenseController.activate);
+router.delete('/licenses/:id', requireAdmin, licenseController.delete);
 
 // API for getting license types
 router.get('/api/products/:product_id/license-types', requireAuth, licenseController.getLicenseTypes);

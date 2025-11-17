@@ -1,5 +1,6 @@
 const db = require('../database/db');
 const moment = require('moment');
+const ActivityLogger = require('../utils/activityLogger');
 
 class ProductController {
   constructor() {
@@ -95,9 +96,18 @@ class ProductController {
         });
       }
 
-      await db.run(
+      const result = await db.run(
         'INSERT INTO products (name, description, version) VALUES (?, ?, ?)',
         [name, description || null, version || '1.0.0']
+      );
+
+      // Log activity
+      await ActivityLogger.logCreate(
+        req.session.userId,
+        'product',
+        result.lastID,
+        name,
+        req
       );
 
       res.redirect('/products');
@@ -150,6 +160,16 @@ class ProductController {
         [name, description, version, is_active === 'on' ? 1 : 0, id]
       );
 
+      // Log activity
+      await ActivityLogger.logUpdate(
+        req.session.userId,
+        'product',
+        id,
+        name,
+        { name, description, version, is_active },
+        req
+      );
+
       res.redirect('/products');
     } catch (error) {
       console.error('Error updating product:', error);
@@ -160,6 +180,9 @@ class ProductController {
   async delete(req, res) {
     try {
       const { id } = req.params;
+
+      // Get product name before deleting
+      const product = await db.get('SELECT name FROM products WHERE id = ?', [id]);
 
       // Check if product has licenses
       const licensesCount = await db.get(
@@ -175,6 +198,15 @@ class ProductController {
       }
 
       await db.run('DELETE FROM products WHERE id = ?', [id]);
+
+      // Log activity
+      await ActivityLogger.logDelete(
+        req.session.userId,
+        'product',
+        id,
+        product.name,
+        req
+      );
 
       res.json({ success: true });
     } catch (error) {
@@ -198,10 +230,19 @@ class ProductController {
         });
       }
 
-      await db.run(
+      const result = await db.run(
         `INSERT INTO license_types (product_id, name, type, duration_days, max_activations, price, features)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [product_id, name, type, duration_days, max_activations || 1, price || 0, features || null]
+      );
+
+      // Log activity
+      await ActivityLogger.logCreate(
+        req.session.userId,
+        'license_type',
+        result.lastID,
+        name,
+        req
       );
 
       res.json({ success: true });
@@ -226,6 +267,16 @@ class ProductController {
         [name, type, duration_days, max_activations, price, features, is_active ? 1 : 0, id]
       );
 
+      // Log activity
+      await ActivityLogger.logUpdate(
+        req.session.userId,
+        'license_type',
+        id,
+        name,
+        { name, type, duration_days, max_activations, price },
+        req
+      );
+
       res.json({ success: true });
     } catch (error) {
       console.error('Error updating license type:', error);
@@ -240,7 +291,19 @@ class ProductController {
     try {
       const { id } = req.params;
 
+      // Get license type name before deleting
+      const licenseType = await db.get('SELECT name FROM license_types WHERE id = ?', [id]);
+
       await db.run('DELETE FROM license_types WHERE id = ?', [id]);
+
+      // Log activity
+      await ActivityLogger.logDelete(
+        req.session.userId,
+        'license_type',
+        id,
+        licenseType.name,
+        req
+      );
 
       res.json({ success: true });
     } catch (error) {
