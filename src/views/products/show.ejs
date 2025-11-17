@@ -95,19 +95,39 @@
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Max Activations</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Features</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <% if (licenseTypes.length > 0) { %>
-                  <% licenseTypes.forEach(lt => { %>
+                  <% licenseTypes.forEach(lt => {
+                    let features = [];
+                    try {
+                      features = lt.features ? JSON.parse(lt.features) : [];
+                    } catch (e) {
+                      features = [];
+                    }
+                  %>
                     <tr>
                       <td class="px-6 py-4 text-sm font-medium"><%= lt.name %></td>
                       <td class="px-6 py-4 text-sm"><%= lt.type %></td>
                       <td class="px-6 py-4 text-sm"><%= lt.duration_days %> days</td>
                       <td class="px-6 py-4 text-sm"><%= lt.max_activations %></td>
                       <td class="px-6 py-4 text-sm font-medium">Rp <%= new Intl.NumberFormat('id-ID').format(lt.price) %></td>
+                      <td class="px-6 py-4 text-sm">
+                        <% if (features.length === 0) { %>
+                          <span class="text-gray-400 italic">No features</span>
+                        <% } else if (features.length <= 2) { %>
+                          <% features.forEach((f, i) => { %>
+                            <div class="text-xs"><i class="fas fa-check text-green-500"></i> <%= f %></div>
+                          <% }); %>
+                        <% } else { %>
+                          <div class="text-xs"><i class="fas fa-check text-green-500"></i> <%= features[0] %></div>
+                          <div class="text-xs text-gray-500">+<%= features.length - 1 %> more</div>
+                        <% } %>
+                      </td>
                       <td class="px-6 py-4">
                         <span class="px-2 py-1 rounded-full text-xs font-semibold <%= lt.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
                           <%= lt.is_active ? 'Active' : 'Inactive' %>
@@ -125,7 +145,7 @@
                   <% }); %>
                 <% } else { %>
                   <tr>
-                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">No license types defined</td>
+                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">No license types defined</td>
                   </tr>
                 <% } %>
               </tbody>
@@ -215,6 +235,11 @@
           <input type="text" id="create_price_display" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
           <input type="hidden" name="price" id="create_price" value="0">
         </div>
+        <div class="mb-3">
+          <label class="block text-gray-700 text-sm font-medium mb-1">Features</label>
+          <textarea id="create_features" name="features" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Enter features, one per line&#10;e.g.:&#10;Advanced Reporting&#10;API Access&#10;Priority Support"></textarea>
+          <p class="text-xs text-gray-500 mt-1">Enter one feature per line</p>
+        </div>
         <div class="flex space-x-2">
           <button type="submit" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
             <i class="fas fa-save"></i> Create
@@ -263,6 +288,11 @@
           <label class="block text-gray-700 text-sm font-medium mb-1">Price (Rp) *</label>
           <input type="text" id="edit_price_display" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
           <input type="hidden" id="edit_price" name="price">
+        </div>
+        <div class="mb-3">
+          <label class="block text-gray-700 text-sm font-medium mb-1">Features</label>
+          <textarea id="edit_features" name="features" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Enter features, one per line&#10;e.g.:&#10;Advanced Reporting&#10;API Access&#10;Priority Support"></textarea>
+          <p class="text-xs text-gray-500 mt-1">Enter one feature per line</p>
         </div>
         <div class="mb-3">
           <label class="flex items-center">
@@ -341,6 +371,19 @@
       document.getElementById('edit_price').value = lt.price;
       document.getElementById('edit_price_display').value = formatNumber(lt.price);
       document.getElementById('edit_is_active').checked = lt.is_active;
+
+      // Handle features - convert JSON array to multiline text
+      let featuresText = '';
+      if (lt.features) {
+        try {
+          const featuresArray = typeof lt.features === 'string' ? JSON.parse(lt.features) : lt.features;
+          featuresText = Array.isArray(featuresArray) ? featuresArray.join('\n') : '';
+        } catch (e) {
+          featuresText = '';
+        }
+      }
+      document.getElementById('edit_features').value = featuresText;
+
       document.getElementById('editLicenseTypeModal').classList.remove('hidden');
     }
 
@@ -349,6 +392,16 @@
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData);
       data.product_id = <%= product.id %>;
+
+      // Convert features from multiline text to JSON array
+      if (data.features) {
+        const featuresArray = data.features.split('\n')
+          .map(f => f.trim())
+          .filter(f => f.length > 0);
+        data.features = JSON.stringify(featuresArray);
+      } else {
+        data.features = JSON.stringify([]);
+      }
 
       try {
         const res = await fetch('/license-types', {
@@ -375,6 +428,16 @@
       const id = data.id;
       delete data.id;
       data.is_active = data.is_active === 'on' ? 1 : 0;
+
+      // Convert features from multiline text to JSON array
+      if (data.features) {
+        const featuresArray = data.features.split('\n')
+          .map(f => f.trim())
+          .filter(f => f.length > 0);
+        data.features = JSON.stringify(featuresArray);
+      } else {
+        data.features = JSON.stringify([]);
+      }
 
       try {
         const res = await fetch(`/license-types/${id}`, {
@@ -411,6 +474,51 @@
       } catch (err) {
         showToast('Error deleting license type', 'error');
       }
+    }
+
+    // Toast notification function
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container') || createToastContainer();
+      const toast = document.createElement('div');
+
+      const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        warning: 'bg-yellow-500',
+        info: 'bg-blue-500'
+      };
+
+      const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-times-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+      };
+
+      toast.className = `${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 min-w-[300px] transform transition-all duration-300`;
+      toast.innerHTML = `
+        <i class="fas ${icons[type]} text-xl"></i>
+        <span class="flex-1">${message}</span>
+        <button onclick="this.parentElement.remove()" class="text-white hover:text-gray-200">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+
+    function createToastContainer() {
+      const container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'fixed top-4 right-4 z-50 space-y-2';
+      document.body.appendChild(container);
+      return container;
     }
   </script>
 </body>

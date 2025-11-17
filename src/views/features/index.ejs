@@ -108,10 +108,10 @@
                         </div>
 
                         <div class="pt-3 border-t border-gray-100">
-                          <a href="/products/<%= product.id %>#license-type-<%= lt.id %>"
-                             class="text-sm text-blue-600 hover:text-blue-700">
+                          <button onclick="window.location.href='/products/<%= product.id %>'"
+                                  class="text-sm text-blue-600 hover:text-blue-700">
                             <i class="fas fa-edit"></i> Edit Features
-                          </a>
+                          </button>
                         </div>
                       </div>
                     <% }); %>
