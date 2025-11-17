@@ -11,6 +11,7 @@ const licenseController = require('../controllers/licenseController');
 const apiController = require('../controllers/apiController');
 const reportController = require('../controllers/reportController');
 const docsController = require('../controllers/docsController');
+const userController = require('../controllers/userController');
 
 // Public routes
 router.get('/', (req, res) => {
@@ -49,6 +50,16 @@ router.get('/customers/:id', requireAuth, customerController.show);
 router.get('/customers/:id/edit', requireAuth, customerController.edit);
 router.post('/customers/:id/edit', requireAuth, customerController.update);
 router.delete('/customers/:id', requireAuth, customerController.delete);
+
+// Users
+router.get('/users', requireAuth, userController.index);
+router.get('/users/create', requireAuth, userController.create);
+router.post('/users/create', requireAuth, userController.create);
+router.get('/users/:id', requireAuth, userController.show);
+router.get('/users/:id/edit', requireAuth, userController.edit);
+router.post('/users/:id/edit', requireAuth, userController.update);
+router.delete('/users/:id', requireAuth, userController.delete);
+router.post('/users/:id/change-password', requireAuth, userController.changePassword);
 
 // Licenses
 router.get('/licenses', requireAuth, licenseController.index);
