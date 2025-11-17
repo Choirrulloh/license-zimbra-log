@@ -111,7 +111,7 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-gray-500 text-sm">Monthly Revenue</p>
-                <p class="text-3xl font-bold text-yellow-600">Rp <%= stats.monthlyRevenue.toLocaleString('id-ID') %></p>
+                <p class="text-3xl font-bold text-yellow-600">Rp <%= new Intl.NumberFormat('id-ID').format(stats.monthlyRevenue) %></p>
               </div>
               <div class="bg-yellow-100 rounded-full p-3">
                 <i class="fas fa-money-bill-wave text-2xl text-yellow-500"></i>
@@ -251,7 +251,7 @@
           tooltip: {
             callbacks: {
               label: function(context) {
-                return 'Rp ' + context.parsed.y.toLocaleString('id-ID');
+                return 'Rp ' + new Intl.NumberFormat('id-ID').format(context.parsed.y);
               }
             }
           }
@@ -261,7 +261,7 @@
             beginAtZero: true,
             ticks: {
               callback: function(value) {
-                return 'Rp ' + value.toLocaleString('id-ID');
+                return 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
               }
             }
           }

@@ -72,7 +72,7 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-gray-500 text-sm">Total Spent</p>
-                <p class="text-2xl font-bold text-yellow-600">Rp <%= stats.total_spent.toLocaleString('id-ID') %></p>
+                <p class="text-2xl font-bold text-yellow-600">Rp <%= new Intl.NumberFormat('id-ID').format(stats.total_spent) %></p>
               </div>
               <div class="bg-yellow-100 rounded-full p-3">
                 <i class="fas fa-money-bill-wave text-2xl text-yellow-500"></i>
@@ -176,7 +176,7 @@
                       <td class="px-6 py-4 text-sm"><%= moment(t.transaction_date).format('MMM D, YYYY') %></td>
                       <td class="px-6 py-4 text-sm"><%= t.product_name %></td>
                       <td class="px-6 py-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded"><%= t.license_key %></code></td>
-                      <td class="px-6 py-4 text-sm font-medium">Rp <%= t.amount.toLocaleString('id-ID') %></td>
+                      <td class="px-6 py-4 text-sm font-medium">Rp <%= new Intl.NumberFormat('id-ID').format(t.amount) %></td>
                       <td class="px-6 py-4">
                         <span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
                           <%= t.status %>
