@@ -10,6 +10,7 @@ const customerController = require('../controllers/customerController');
 const licenseController = require('../controllers/licenseController');
 const apiController = require('../controllers/apiController');
 const reportController = require('../controllers/reportController');
+const docsController = require('../controllers/docsController');
 
 // Public routes
 router.get('/', (req, res) => {
@@ -69,6 +70,9 @@ router.get('/reports/licenses/csv', requireAuth, reportController.exportLicenses
 router.get('/reports/customers/csv', requireAuth, reportController.exportCustomersCSV);
 router.get('/reports/revenue/csv', requireAuth, reportController.exportRevenueCSV);
 router.get('/reports/license/:id/pdf', requireAuth, reportController.generateLicenseReport);
+
+// Docs
+router.get('/docs', requireAuth, docsController.index);
 
 // Public API for license validation
 router.post('/api/validate', apiController.validateLicense);

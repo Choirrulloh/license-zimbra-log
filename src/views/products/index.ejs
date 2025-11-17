@@ -104,12 +104,13 @@
               const response = await fetch(`/products/${id}`, { method: 'DELETE' });
               const data = await response.json();
               if (data.success) {
-                location.reload();
+                showToast('Product deleted successfully!', 'success');
+                setTimeout(() => location.reload(), 1000);
               } else {
-                alert(data.message || 'Error deleting product');
+                showToast(data.message || 'Error deleting product', 'error');
               }
             } catch (error) {
-              alert('Error deleting product');
+              showToast('Error deleting product', 'error');
             }
           }
         </script>

@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Documentation - SaaS License Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+  <style>
+    .tab-content {display: none;}
+    .tab-content.active {display: block;}
+    .tab-button.active {background-color: #3b82f6; color: white;}
+  </style>
+</head>
+<body class="bg-gray-100">
+  <%- include('../layout', {body: `
+    <div class="max-w-7xl mx-auto">
+      <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h1 class="text-3xl font-bold mb-2">API Documentation</h1>
+        <p class="text-gray-600">Learn how to integrate license validation into your application</p>
+      </div>
+
+      <!-- API Endpoints Overview -->
+      <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-2xl font-semibold mb-4">API Endpoints</h2>
+        <div class="space-y-4">
+          <div class="border-l-4 border-blue-500 pl-4">
+            <h3 class="font-semibold text-lg">POST /api/validate</h3>
+            <p class="text-gray-600">Validate and activate a license key</p>
+            <code class="text-sm bg-gray-100 px-2 py-1 rounded">${serverUrl}/api/validate</code>
+          </div>
+          <div class="border-l-4 border-yellow-500 pl-4">
+            <h3 class="font-semibold text-lg">POST /api/deactivate</h3>
+            <p class="text-gray-600">Deactivate a license on current hardware</p>
+            <code class="text-sm bg-gray-100 px-2 py-1 rounded">${serverUrl}/api/deactivate</code>
+          </div>
+          <div class="border-l-4 border-green-500 pl-4">
+            <h3 class="font-semibold text-lg">GET /api/license/:key</h3>
+            <p class="text-gray-600">Get license information without activation</p>
+            <code class="text-sm bg-gray-100 px-2 py-1 rounded">${serverUrl}/api/license/YOUR-LICENSE-KEY</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Language Tabs -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-2xl font-semibold mb-4">Integration Examples</h2>
+
+        <!-- Tab Buttons -->
+        <div class="flex flex-wrap gap-2 mb-6 border-b pb-2">
+          <button onclick="showTab('curl')" class="tab-button active px-4 py-2 rounded-lg font-medium transition-colors">
+            <i class="fas fa-terminal"></i> cURL
+          </button>
+          <button onclick="showTab('bash')" class="tab-button px-4 py-2 rounded-lg font-medium transition-colors hover:bg-gray-100">
+            <i class="fas fa-code"></i> Bash
+          </button>
+          <button onclick="showTab('php')" class="tab-button px-4 py-2 rounded-lg font-medium transition-colors hover:bg-gray-100">
+            <i class="fab fa-php"></i> PHP
+          </button>
+          <button onclick="showTab('go')" class="tab-button px-4 py-2 rounded-lg font-medium transition-colors hover:bg-gray-100">
+            <i class="fas fa-terminal"></i> Go
+          </button>
+          <button onclick="showTab('nodejs')" class="tab-button px-4 py-2 rounded-lg font-medium transition-colors hover:bg-gray-100">
+            <i class="fab fa-node-js"></i> Node.js
+          </button>
+          <button onclick="showTab('python')" class="tab-button px-4 py-2 rounded-lg font-medium transition-colors hover:bg-gray-100">
+            <i class="fab fa-python"></i> Python
+          </button>
+        </div>
+
+        <!-- cURL Tab -->
+        <div id="curl-tab" class="tab-content active">
+          <h3 class="text-xl font-semibold mb-3">cURL Examples</h3>
+
+          <div class="mb-4">
+            <h4 class="font-semibold mb-2">Validate License</h4>
+            <pre><code class="language-bash">curl -X POST ${serverUrl}/api/validate \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "license_key": "YOUR-LICENSE-KEY-HERE",
+    "hardware_id": "unique-hardware-id",
+    "hostname": "client-hostname",
+    "ip_address": "192.168.1.100"
+  }'</code></pre>
+          </div>
+
+          <div class="mb-4">
+            <h4 class="font-semibold mb-2">Get License Info</h4>
+            <pre><code class="language-bash">curl ${serverUrl}/api/license/YOUR-LICENSE-KEY-HERE</code></pre>
+          </div>
+
+          <div class="mb-4">
+            <h4 class="font-semibold mb-2">Deactivate License</h4>
+            <pre><code class="language-bash">curl -X POST ${serverUrl}/api/deactivate \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "license_key": "YOUR-LICENSE-KEY-HERE",
+    "hardware_id": "unique-hardware-id"
+  }'</code></pre>
+          </div>
+        </div>
+
+        <!-- Bash Tab -->
+        <div id="bash-tab" class="tab-content">
+          <h3 class="text-xl font-semibold mb-3">Bash Script Example</h3>
+          <pre><code class="language-bash">#!/bin/bash
+
+LICENSE_KEY="YOUR-LICENSE-KEY-HERE"
+API_URL="${serverUrl}/api"
+HARDWARE_ID=$(hostname)-$(uname -m)
+
+# Validate license
+validate_license() {
+  response=$(curl -s -X POST "$API_URL/validate" \\
+    -H "Content-Type: application/json" \\
+    -d "{
+      \\"license_key\\": \\"$LICENSE_KEY\\",
+      \\"hardware_id\\": \\"$HARDWARE_ID\\",
+      \\"hostname\\": \\"$(hostname)\\",
+      \\"ip_address\\": \\"$(hostname -I | awk '{print $1}')\\""
+    }")
+
+  echo "$response"
+
+  # Check if valid
+  if echo "$response" | grep -q '\\"valid\\":true'; then
+    echo "License is valid!"
+    return 0
+  else
+    echo "License is invalid!"
+    return 1
+  fi
+}
+
+# Get license info
+get_license_info() {
+  curl -s "$API_URL/license/$LICENSE_KEY"
+}
+
+# Deactivate license
+deactivate_license() {
+  curl -s -X POST "$API_URL/deactivate" \\
+    -H "Content-Type: application/json" \\
+    -d "{
+      \\"license_key\\": \\"$LICENSE_KEY\\",
+      \\"hardware_id\\": \\"$HARDWARE_ID\\"
+    }"
+}
+
+# Run validation
+validate_license</code></pre>
+        </div>
+
+        <!-- PHP Tab -->
+        <div id="php-tab" class="tab-content">
+          <h3 class="text-xl font-semibold mb-3">PHP Integration</h3>
+          <pre><code class="language-php"><?php
+
+class LicenseValidator {
+    private $apiUrl;
+    private $licenseKey;
+    private $hardwareId;
+
+    public function __construct($licenseKey) {
+        $this->apiUrl = '${serverUrl}/api';
+        $this->licenseKey = $licenseKey;
+        $this->hardwareId = $this->getHardwareId();
+    }
+
+    private function getHardwareId() {
+        $info = [
+            php_uname('s'), // OS
+            php_uname('n'), // Hostname
+            php_uname('m')  // Machine type
+        ];
+        return hash('sha256', implode('-', $info));
+    }
+
+    public function validate() {
+        $data = [
+            'license_key' => $this->licenseKey,
+            'hardware_id' => $this->hardwareId,
+            'hostname' => gethostname(),
+            'ip_address' => $_SERVER['SERVER_ADDR'] ?? 'unknown'
+        ];
+
+        $ch = curl_init($this->apiUrl . '/validate');
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        return json_decode($response, true);
+    }
+
+    public function getLicenseInfo() {
+        $ch = curl_init($this->apiUrl . '/license/' . $this->licenseKey);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        return json_decode($response, true);
+    }
+
+    public function deactivate() {
+        $data = [
+            'license_key' => $this->licenseKey,
+            'hardware_id' => $this->hardwareId
+        ];
+
+        $ch = curl_init($this->apiUrl . '/deactivate');
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        return json_decode($response, true);
+    }
+}
+
+// Usage
+$validator = new LicenseValidator('YOUR-LICENSE-KEY-HERE');
+$result = $validator->validate();
+
+if ($result['valid']) {
+    echo "License is valid!\\n";
+    echo "Expires: " . $result['license']['expiry_date'] . "\\n";
+} else {
+    echo "License validation failed: " . $result['message'] . "\\n";
+}
+?></code></pre>
+        </div>
+
+        <!-- Go Tab -->
+        <div id="go-tab" class="tab-content">
+          <h3 class="text-xl font-semibold mb-3">Go Integration</h3>
+          <pre><code class="language-go">package main
+
+import (
+    "bytes"
+    "crypto/sha256"
+    "encoding/json"
+    "fmt"
+    "io"
+    "net/http"
+    "os"
+    "runtime"
+)
+
+type LicenseValidator struct {
+    APIUrl     string
+    LicenseKey string
+    HardwareID string
+}
+
+type ValidateRequest struct {
+    LicenseKey string \`json:"license_key"\`
+    HardwareID string \`json:"hardware_id"\`
+    Hostname   string \`json:"hostname"\`
+    IPAddress  string \`json:"ip_address"\`
+}
+
+type ValidateResponse struct {
+    Valid   bool                   \`json:"valid"\`
+    Message string                 \`json:"message"\`
+    License map[string]interface{} \`json:"license"\`
+}
+
+func NewLicenseValidator(licenseKey string) *LicenseValidator {
+    return &LicenseValidator{
+        APIUrl:     "${serverUrl}/api",
+        LicenseKey: licenseKey,
+        HardwareID: getHardwareID(),
+    }
+}
+
+func getHardwareID() string {
+    hostname, _ := os.Hostname()
+    info := fmt.Sprintf("%s-%s-%s", runtime.GOOS, hostname, runtime.GOARCH)
+    hash := sha256.Sum256([]byte(info))
+    return fmt.Sprintf("%x", hash)
+}
+
+func (lv *LicenseValidator) Validate() (*ValidateResponse, error) {
+    hostname, _ := os.Hostname()
+
+    req := ValidateRequest{
+        LicenseKey: lv.LicenseKey,
+        HardwareID: lv.HardwareID,
+        Hostname:   hostname,
+        IPAddress:  "unknown",
+    }
+
+    jsonData, err := json.Marshal(req)
+    if err != nil {
+        return nil, err
+    }
+
+    resp, err := http.Post(
+        lv.APIUrl+"/validate",
+        "application/json",
+        bytes.NewBuffer(jsonData),
+    )
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        return nil, err
+    }
+
+    var result ValidateResponse
+    err = json.Unmarshal(body, &result)
+    return &result, err
+}
+
+func (lv *LicenseValidator) GetLicenseInfo() (map[string]interface{}, error) {
+    resp, err := http.Get(lv.APIUrl + "/license/" + lv.LicenseKey)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+
+    var result map[string]interface{}
+    err = json.NewDecoder(resp.Body).Decode(&result)
+    return result, err
+}
+
+func main() {
+    validator := NewLicenseValidator("YOUR-LICENSE-KEY-HERE")
+
+    result, err := validator.Validate()
+    if err != nil {
+        fmt.Printf("Error: %v\\n", err)
+        return
+    }
+
+    if result.Valid {
+        fmt.Println("License is valid!")
+        fmt.Printf("Expires: %v\\n", result.License["expiry_date"])
+    } else {
+        fmt.Printf("License validation failed: %s\\n", result.Message)
+    }
+}</code></pre>
+        </div>
+
+        <!-- Node.js Tab -->
+        <div id="nodejs-tab" class="tab-content">
+          <h3 class="text-xl font-semibold mb-3">Node.js Integration</h3>
+          <pre><code class="language-javascript">const crypto = require('crypto');
+const os = require('os');
+const https = require('https');
+const http = require('http');
+
+class LicenseValidator {
+  constructor(licenseKey) {
+    this.apiUrl = '${serverUrl}/api';
+    this.licenseKey = licenseKey;
+    this.hardwareId = this.getHardwareId();
+  }
+
+  getHardwareId() {
+    const info = [
+      os.platform(),
+      os.hostname(),
+      os.arch(),
+      os.cpus()[0].model
+    ].join('-');
+
+    return crypto.createHash('sha256').update(info).digest('hex');
+  }
+
+  async validate() {
+    const data = {
+      license_key: this.licenseKey,
+      hardware_id: this.hardwareId,
+      hostname: os.hostname(),
+      ip_address: 'unknown'
+    };
+
+    try {
+      const response = await this.request('POST', '/validate', data);
+      return response;
+    } catch (error) {
+      throw new Error(\`Validation failed: \${error.message}\`);
+    }
+  }
+
+  async getLicenseInfo() {
+    try {
+      const response = await this.request('GET', \`/license/\${this.licenseKey}\`);
+      return response;
+    } catch (error) {
+      throw new Error(\`Failed to get license info: \${error.message}\`);
+    }
+  }
+
+  async deactivate() {
+    const data = {
+      license_key: this.licenseKey,
+      hardware_id: this.hardwareId
+    };
+
+    try {
+      const response = await this.request('POST', '/deactivate', data);
+      return response;
+    } catch (error) {
+      throw new Error(\`Deactivation failed: \${error.message}\`);
+    }
+  }
+
+  request(method, path, data = null) {
+    return new Promise((resolve, reject) => {
+      const url = new URL(this.apiUrl + path);
+      const httpModule = url.protocol === 'https:' ? https : http;
+
+      const options = {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      };
+
+      const req = httpModule.request(url, options, (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(body));
+          } catch (e) {
+            reject(new Error('Invalid JSON response'));
+          }
+        });
+      });
+
+      req.on('error', reject);
+
+      if (data) {
+        req.write(JSON.stringify(data));
+      }
+
+      req.end();
+    });
+  }
+}
+
+// Usage
+async function main() {
+  const validator = new LicenseValidator('YOUR-LICENSE-KEY-HERE');
+
+  try {
+    const result = await validator.validate();
+
+    if (result.valid) {
+      console.log('License is valid!');
+      console.log('Expires:', result.license.expiry_date);
+    } else {
+      console.log('License validation failed:', result.message);
+    }
+  } catch (error) {
+    console.error('Error:', error.message);
+  }
+}
+
+main();</code></pre>
+        </div>
+
+        <!-- Python Tab -->
+        <div id="python-tab" class="tab-content">
+          <h3 class="text-xl font-semibold mb-3">Python Integration</h3>
+          <pre><code class="language-python">import hashlib
+import platform
+import socket
+import requests
+from typing import Dict, Any
+
+class LicenseValidator:
+    def __init__(self, license_key: str):
+        self.api_url = '${serverUrl}/api'
+        self.license_key = license_key
+        self.hardware_id = self._get_hardware_id()
+
+    def _get_hardware_id(self) -> str:
+        """Generate unique hardware ID"""
+        info = [
+            platform.system(),
+            socket.gethostname(),
+            platform.machine(),
+            platform.processor()
+        ]
+        hardware_string = '-'.join(info)
+        return hashlib.sha256(hardware_string.encode()).hexdigest()
+
+    def validate(self) -> Dict[str, Any]:
+        """Validate and activate license"""
+        data = {
+            'license_key': self.license_key,
+            'hardware_id': self.hardware_id,
+            'hostname': socket.gethostname(),
+            'ip_address': socket.gethostbyname(socket.gethostname())
+        }
+
+        try:
+            response = requests.post(
+                f'{self.api_url}/validate',
+                json=data,
+                headers={'Content-Type': 'application/json'}
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {'valid': False, 'message': str(e)}
+
+    def get_license_info(self) -> Dict[str, Any]:
+        """Get license information without activation"""
+        try:
+            response = requests.get(f'{self.api_url}/license/{self.license_key}')
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {'error': str(e)}
+
+    def deactivate(self) -> Dict[str, Any]:
+        """Deactivate license on current hardware"""
+        data = {
+            'license_key': self.license_key,
+            'hardware_id': self.hardware_id
+        }
+
+        try:
+            response = requests.post(
+                f'{self.api_url}/deactivate',
+                json=data,
+                headers={'Content-Type': 'application/json'}
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {'success': False, 'message': str(e)}
+
+# Usage
+if __name__ == '__main__':
+    validator = LicenseValidator('YOUR-LICENSE-KEY-HERE')
+
+    # Validate license
+    result = validator.validate()
+
+    if result.get('valid'):
+        print('License is valid!')
+        print(f'Product: {result["license"]["product_name"]}')
+        print(f'Expires: {result["license"]["expiry_date"]}')
+    else:
+        print(f'License validation failed: {result.get("message")}')
+
+    # Get license info
+    info = validator.get_license_info()
+    print(f'\\nLicense Info: {info}')
+</code></pre>
+        </div>
+
+        <!-- Response Examples -->
+        <div class="mt-8 bg-gray-50 p-6 rounded-lg">
+          <h3 class="text-xl font-semibold mb-4">API Response Examples</h3>
+
+          <div class="mb-4">
+            <h4 class="font-semibold mb-2">Success Response:</h4>
+            <pre><code class="language-json">{
+  "valid": true,
+  "message": "License validated successfully",
+  "license": {
+    "id": 1,
+    "license_key": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+    "product_name": "Product A",
+    "product_version": "1.0.0",
+    "license_type": "pro",
+    "status": "active",
+    "issue_date": "2024-01-01T00:00:00.000Z",
+    "expiry_date": "2025-01-01T00:00:00.000Z",
+    "max_activations": 3,
+    "current_activations": 1,
+    "customer_name": "John Doe",
+    "customer_email": "john@example.com"
+  }
+}</code></pre>
+          </div>
+
+          <div class="mb-4">
+            <h4 class="font-semibold mb-2">Error Response:</h4>
+            <pre><code class="language-json">{
+  "valid": false,
+  "message": "License key not found"
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Syntax highlighting
+      document.addEventListener('DOMContentLoaded', (event) => {
+        document.querySelectorAll('pre code').forEach((block) => {
+          hljs.highlightElement(block);
+        });
+      });
+
+      // Tab switching
+      function showTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+          tab.classList.remove('active');
+        });
+
+        // Remove active from all buttons
+        document.querySelectorAll('.tab-button').forEach(btn => {
+          btn.classList.remove('active');
+        });
+
+        // Show selected tab
+        document.getElementById(tabName + '-tab').classList.add('active');
+        event.target.classList.add('active');
+      }
+    </script>
+  `}) %>
+</body>
+</html>

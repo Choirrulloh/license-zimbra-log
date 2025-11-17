@@ -209,7 +209,8 @@
         </div>
         <div class="mb-3">
           <label class="block text-gray-700 text-sm font-medium mb-1">Price (Rp) *</label>
-          <input type="number" name="price" required min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+          <input type="text" id="create_price_display" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+          <input type="hidden" name="price" id="create_price" value="0">
         </div>
         <div class="flex space-x-2">
           <button type="submit" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
@@ -257,7 +258,8 @@
         </div>
         <div class="mb-3">
           <label class="block text-gray-700 text-sm font-medium mb-1">Price (Rp) *</label>
-          <input type="number" id="edit_price" name="price" required min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+          <input type="text" id="edit_price_display" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+          <input type="hidden" id="edit_price" name="price">
         </div>
         <div class="mb-3">
           <label class="flex items-center">
@@ -278,7 +280,42 @@
   </div>
 
   <script>
+    // Format number with thousands separator
+    function formatNumber(num) {
+      return new Intl.NumberFormat('id-ID').format(num);
+    }
+
+    // Remove formatting and get raw number
+    function parseFormattedNumber(str) {
+      return parseInt(str.replace(/\./g, '')) || 0;
+    }
+
+    // Setup price input formatting
+    document.addEventListener('DOMContentLoaded', function() {
+      // Create modal price input
+      const createPriceDisplay = document.getElementById('create_price_display');
+      const createPriceHidden = document.getElementById('create_price');
+
+      createPriceDisplay.addEventListener('input', function(e) {
+        const rawValue = parseFormattedNumber(e.target.value);
+        createPriceHidden.value = rawValue;
+        e.target.value = formatNumber(rawValue);
+      });
+
+      // Edit modal price input
+      const editPriceDisplay = document.getElementById('edit_price_display');
+      const editPriceHidden = document.getElementById('edit_price');
+
+      editPriceDisplay.addEventListener('input', function(e) {
+        const rawValue = parseFormattedNumber(e.target.value);
+        editPriceHidden.value = rawValue;
+        e.target.value = formatNumber(rawValue);
+      });
+    });
+
     function showCreateLicenseTypeModal() {
+      document.getElementById('create_price_display').value = '0';
+      document.getElementById('create_price').value = '0';
       document.getElementById('createLicenseTypeModal').classList.remove('hidden');
     }
 
@@ -299,6 +336,7 @@
       document.getElementById('edit_duration_days').value = lt.duration_days;
       document.getElementById('edit_max_activations').value = lt.max_activations;
       document.getElementById('edit_price').value = lt.price;
+      document.getElementById('edit_price_display').value = formatNumber(lt.price);
       document.getElementById('edit_is_active').checked = lt.is_active;
       document.getElementById('editLicenseTypeModal').classList.remove('hidden');
     }
@@ -317,13 +355,13 @@
         });
         const result = await res.json();
         if (result.success) {
-          alert('License type created successfully!');
-          location.reload();
+          showToast('License type created successfully!', 'success');
+          setTimeout(() => location.reload(), 1000);
         } else {
-          alert('Error: ' + result.message);
+          showToast('Error: ' + result.message, 'error');
         }
       } catch (err) {
-        alert('Error creating license type');
+        showToast('Error creating license type', 'error');
       }
     }
 
@@ -343,13 +381,13 @@
         });
         const result = await res.json();
         if (result.success) {
-          alert('License type updated successfully!');
-          location.reload();
+          showToast('License type updated successfully!', 'success');
+          setTimeout(() => location.reload(), 1000);
         } else {
-          alert('Error: ' + result.message);
+          showToast('Error: ' + result.message, 'error');
         }
       } catch (err) {
-        alert('Error updating license type');
+        showToast('Error updating license type', 'error');
       }
     }
 
@@ -362,13 +400,13 @@
         });
         const result = await res.json();
         if (result.success) {
-          alert('License type deleted successfully!');
-          location.reload();
+          showToast('License type deleted successfully!', 'success');
+          setTimeout(() => location.reload(), 1000);
         } else {
-          alert('Error: ' + result.message);
+          showToast('Error: ' + result.message, 'error');
         }
       } catch (err) {
-        alert('Error deleting license type');
+        showToast('Error deleting license type', 'error');
       }
     }
   </script>

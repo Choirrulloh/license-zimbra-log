@@ -197,13 +197,13 @@
         });
         const data = await res.json();
         if (data.success) {
-          alert('License renewed successfully!');
-          location.reload();
+          showToast('License renewed successfully!', 'success');
+          setTimeout(() => location.reload(), 1000);
         } else {
-          alert('Error: ' + data.message);
+          showToast('Error: ' + data.message, 'error');
         }
       } catch (e) {
-        alert('Error renewing license');
+        showToast('Error renewing license', 'error');
       }
     }
 
@@ -219,13 +219,13 @@
         });
         const data = await res.json();
         if (data.success) {
-          alert('License suspended successfully!');
-          location.reload();
+          showToast('License suspended successfully!', 'success');
+          setTimeout(() => location.reload(), 1000);
         } else {
-          alert('Error: ' + data.message);
+          showToast('Error: ' + data.message, 'error');
         }
       } catch (e) {
-        alert('Error suspending license');
+        showToast('Error suspending license', 'error');
       }
     }
 
@@ -242,13 +242,13 @@
         });
         const data = await res.json();
         if (data.success) {
-          alert('License revoked successfully!');
-          location.reload();
+          showToast('License revoked successfully!', 'success');
+          setTimeout(() => location.reload(), 1000);
         } else {
-          alert('Error: ' + data.message);
+          showToast('Error: ' + data.message, 'error');
         }
       } catch (e) {
-        alert('Error revoking license');
+        showToast('Error revoking license', 'error');
       }
     }
 
@@ -262,13 +262,13 @@
         });
         const data = await res.json();
         if (data.success) {
-          alert('License activated successfully!');
-          location.reload();
+          showToast('License activated successfully!', 'success');
+          setTimeout(() => location.reload(), 1000);
         } else {
-          alert('Error: ' + data.message);
+          showToast('Error: ' + data.message, 'error');
         }
       } catch (e) {
-        alert('Error activating license');
+        showToast('Error activating license', 'error');
       }
     }
 
@@ -282,13 +282,13 @@
         });
         const data = await res.json();
         if (data.success) {
-          alert('License deleted successfully!');
-          window.location.href = '/licenses';
+          showToast('License deleted successfully!', 'success');
+          setTimeout(() => window.location.href = '/licenses', 1000);
         } else {
-          alert('Error: ' + data.message);
+          showToast('Error: ' + data.message, 'error');
         }
       } catch (e) {
-        alert('Error deleting license');
+        showToast('Error deleting license', 'error');
       }
     }
   </script>
