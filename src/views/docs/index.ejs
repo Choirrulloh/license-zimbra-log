@@ -653,10 +653,25 @@ if __name__ == '__main__':
           </div>
 
           <div class="mb-4">
-            <h4 class="font-semibold mb-2">Error Response:</h4>
+            <h4 class="font-semibold mb-2">POST /api/validate - Error Response:</h4>
             <pre><code class="language-json">{
   "valid": false,
-  "message": "License key not found"
+  "error": "Invalid license key"
+}</code></pre>
+          </div>
+
+          <div class="mb-4">
+            <h4 class="font-semibold mb-2">POST /api/deactivate - Success Response:</h4>
+            <pre><code class="language-json">{
+  "success": true
+}</code></pre>
+          </div>
+
+          <div class="mb-4">
+            <h4 class="font-semibold mb-2">POST /api/deactivate - Error Response:</h4>
+            <pre><code class="language-json">{
+  "success": false,
+  "error": "Activation not found"
 }</code></pre>
           </div>
         </div>

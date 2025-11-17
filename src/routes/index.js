@@ -12,6 +12,7 @@ const apiController = require('../controllers/apiController');
 const reportController = require('../controllers/reportController');
 const docsController = require('../controllers/docsController');
 const userController = require('../controllers/userController');
+const featuresController = require('../controllers/featuresController');
 
 // Public routes
 router.get('/', (req, res) => {
@@ -60,6 +61,9 @@ router.get('/users/:id/edit', requireAuth, userController.edit);
 router.post('/users/:id/edit', requireAuth, userController.update);
 router.delete('/users/:id', requireAuth, userController.delete);
 router.post('/users/:id/change-password', requireAuth, userController.changePassword);
+
+// Features
+router.get('/features', requireAuth, featuresController.index);
 
 // Licenses
 router.get('/licenses', requireAuth, licenseController.index);
