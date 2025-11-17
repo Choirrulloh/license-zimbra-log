@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>License Details - License Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+  <div class="flex h-screen overflow-hidden">
+    <aside class="w-64 bg-gray-800 text-white flex-shrink-0">
+      <div class="p-4">
+        <h1 class="text-2xl font-bold mb-8"><i class="fas fa-key"></i> License Manager</h1>
+        <nav class="space-y-2">
+          <a href="/dashboard" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-chart-line w-5"></i><span>Dashboard</span></a>
+          <a href="/products" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-box w-5"></i><span>Products</span></a>
+          <a href="/customers" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-users w-5"></i><span>Customers</span></a>
+          <a href="/licenses" class="flex items-center space-x-3 p-3 rounded bg-gray-700"><i class="fas fa-certificate w-5"></i><span>Licenses</span></a>
+          <a href="/reports" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-file-alt w-5"></i><span>Reports</span></a>
+        </nav>
+      </div>
+      <div class="absolute bottom-0 w-64 p-4 bg-gray-900">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center"><i class="fas fa-user"></i></div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate"><%= user.userName || 'Admin' %></p>
+            <p class="text-xs text-gray-400 truncate"><%= user.userEmail || '' %></p>
+          </div>
+          <a href="/logout" class="text-gray-400 hover:text-white"><i class="fas fa-sign-out-alt"></i></a>
+        </div>
+      </div>
+    </aside>
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <header class="bg-white shadow-sm">
+        <div class="flex items-center justify-between p-4">
+          <h2 class="text-xl font-semibold text-gray-800">License Details</h2>
+          <span class="text-sm text-gray-600"><%= moment().format('dddd, MMMM D, YYYY') %></span>
+        </div>
+      </header>
+      <main class="flex-1 overflow-y-auto p-6">
+        <div class="mb-6">
+          <a href="/licenses" class="text-blue-500 hover:text-blue-600"><i class="fas fa-arrow-left"></i> Back</a>
+        </div>
+
+        <!-- License Info -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+          <div class="flex justify-between items-start mb-6">
+            <div>
+              <h3 class="text-2xl font-bold mb-2"><%= license.license_key %></h3>
+              <span class="px-3 py-1 rounded-full text-sm font-semibold <%= license.status === 'active' ? 'bg-green-100 text-green-800' : license.status === 'expired' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' %>">
+                <%= license.status.toUpperCase() %>
+              </span>
+            </div>
+            <div class="space-x-2">
+              <% if (license.status === 'active') { %>
+                <button onclick="suspendLicense()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm">
+                  <i class="fas fa-pause"></i> Suspend
+                </button>
+                <button onclick="revokeLicense()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm">
+                  <i class="fas fa-ban"></i> Revoke
+                </button>
+              <% } else if (license.status === 'suspended' || license.status === 'expired') { %>
+                <button onclick="activateLicense()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm">
+                  <i class="fas fa-check"></i> Activate
+                </button>
+              <% } %>
+              <button onclick="renewLicense()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
+                <i class="fas fa-sync"></i> Renew
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <p class="text-sm text-gray-500">Product</p>
+              <p class="font-medium"><%= license.product_name %> v<%= license.product_version %></p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">License Type</p>
+              <p class="font-medium"><%= license.license_type_name %></p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Customer</p>
+              <p class="font-medium"><%= license.customer_name %></p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Issue Date</p>
+              <p class="font-medium"><%= moment(license.issue_date).format('MMM D, YYYY HH:mm') %></p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Expiry Date</p>
+              <p class="font-medium <%= license.expiry_date && moment(license.expiry_date).isBefore(moment()) ? 'text-red-600' : '' %>">
+                <%= license.expiry_date ? moment(license.expiry_date).format('MMM D, YYYY HH:mm') : 'Never' %>
+              </p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Activations</p>
+              <p class="font-medium"><%= license.current_activations %> / <%= license.max_activations %></p>
+            </div>
+          </div>
+
+          <% if (license.notes) { %>
+            <div class="mt-4 pt-4 border-t">
+              <p class="text-sm text-gray-500">Notes</p>
+              <p class="font-medium"><%= license.notes %></p>
+            </div>
+          <% } %>
+
+          <div class="mt-4 pt-4 border-t">
+            <p class="text-sm text-gray-500 mb-2">Offline Validation Code</p>
+            <code class="bg-gray-100 px-4 py-2 rounded font-mono text-lg"><%= offlineCode %></code>
+          </div>
+        </div>
+
+        <!-- Hardware Activations -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+          <h3 class="text-lg font-semibold mb-4">Hardware Activations (<%= activations.length %>/<%= license.max_activations %>)</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hardware ID</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hostname</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP Address</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Activated At</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Check</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <% if (activations.length > 0) { %>
+                  <% activations.forEach(a => { %>
+                    <tr>
+                      <td class="px-6 py-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded"><%= a.hardware_id.substring(0, 16) %>...</code></td>
+                      <td class="px-6 py-4 text-sm"><%= a.hostname || '-' %></td>
+                      <td class="px-6 py-4 text-sm"><%= a.ip_address || '-' %></td>
+                      <td class="px-6 py-4 text-sm"><%= moment(a.activated_at).format('MMM D, YYYY HH:mm') %></td>
+                      <td class="px-6 py-4 text-sm"><%= moment(a.last_check).format('MMM D, YYYY HH:mm') %></td>
+                      <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold <%= a.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' %>">
+                          <%= a.is_active ? 'Active' : 'Inactive' %>
+                        </span>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No hardware activations yet</td></tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h3 class="text-lg font-semibold mb-4">License History</h3>
+          <div class="space-y-4">
+            <% if (history.length > 0) { %>
+              <% history.forEach(h => { %>
+                <div class="flex items-start space-x-4 pb-4 border-b last:border-b-0">
+                  <div class="flex-shrink-0 mt-1">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                      <i class="fas fa-history text-blue-500 text-sm"></i>
+                    </div>
+                  </div>
+                  <div class="flex-1">
+                    <p class="font-medium text-gray-900"><%= h.action.replace(/_/g, ' ').toUpperCase() %></p>
+                    <p class="text-sm text-gray-600"><%= h.description || '-' %></p>
+                    <p class="text-xs text-gray-400 mt-1">
+                      <%= moment(h.created_at).format('MMM D, YYYY HH:mm') %>
+                      <% if (h.user_name) { %>by <%= h.user_name %><% } %>
+                    </p>
+                  </div>
+                </div>
+              <% }); %>
+            <% } else { %>
+              <p class="text-gray-500 text-center py-4">No history available</p>
+            <% } %>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    async function renewLicense() {
+      const days = prompt('Enter number of days to renew:', '365');
+      if (!days) return;
+
+      try {
+        const res = await fetch('/licenses/<%= license.id %>/renew', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ duration_days: days })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('License renewed successfully!');
+          location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (e) {
+        alert('Error renewing license');
+      }
+    }
+
+    async function suspendLicense() {
+      const reason = prompt('Enter reason for suspension:');
+      if (!reason) return;
+
+      try {
+        const res = await fetch('/licenses/<%= license.id %>/suspend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('License suspended successfully!');
+          location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (e) {
+        alert('Error suspending license');
+      }
+    }
+
+    async function revokeLicense() {
+      const reason = prompt('Enter reason for revocation:');
+      if (!reason) return;
+      if (!confirm('Are you sure you want to revoke this license? This action cannot be undone.')) return;
+
+      try {
+        const res = await fetch('/licenses/<%= license.id %>/revoke', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('License revoked successfully!');
+          location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (e) {
+        alert('Error revoking license');
+      }
+    }
+
+    async function activateLicense() {
+      if (!confirm('Are you sure you want to activate this license?')) return;
+
+      try {
+        const res = await fetch('/licenses/<%= license.id %>/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('License activated successfully!');
+          location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (e) {
+        alert('Error activating license');
+      }
+    }
+  </script>
+</body>
+</html>
