@@ -32,7 +32,7 @@ async function seed() {
 
     console.log('✓ Sample products created');
 
-    // Create license types for Product A
+    // Create license types for Product A (prices in IDR/Rupiah)
     await db.run(
       `INSERT INTO license_types (product_id, name, type, duration_days, max_activations, price, features)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -42,22 +42,22 @@ async function seed() {
     await db.run(
       `INSERT INTO license_types (product_id, name, type, duration_days, max_activations, price, features)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [product1.id, 'Basic', 'basic', 365, 1, 99.00, JSON.stringify(['All basic features', 'Email support', '5 users'])]
+      [product1.id, 'Basic', 'basic', 365, 1, 1500000, JSON.stringify(['All basic features', 'Email support', '5 users'])]
     );
 
     await db.run(
       `INSERT INTO license_types (product_id, name, type, duration_days, max_activations, price, features)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [product1.id, 'Pro', 'pro', 365, 3, 299.00, JSON.stringify(['All features', 'Priority support', '25 users', 'API access'])]
+      [product1.id, 'Pro', 'pro', 365, 3, 4500000, JSON.stringify(['All features', 'Priority support', '25 users', 'API access'])]
     );
 
     await db.run(
       `INSERT INTO license_types (product_id, name, type, duration_days, max_activations, price, features)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [product1.id, 'Enterprise', 'enterprise', 365, 10, 999.00, JSON.stringify(['Unlimited features', '24/7 support', 'Unlimited users', 'Custom integration'])]
+      [product1.id, 'Enterprise', 'enterprise', 365, 10, 15000000, JSON.stringify(['Unlimited features', '24/7 support', 'Unlimited users', 'Custom integration'])]
     );
 
-    // Create license types for Product B
+    // Create license types for Product B (prices in IDR/Rupiah)
     await db.run(
       `INSERT INTO license_types (product_id, name, type, duration_days, max_activations, price, features)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -67,7 +67,7 @@ async function seed() {
     await db.run(
       `INSERT INTO license_types (product_id, name, type, duration_days, max_activations, price, features)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [product2.id, 'Standard', 'basic', 365, 2, 149.00, JSON.stringify(['100GB storage', 'File sharing', 'Mobile app'])]
+      [product2.id, 'Standard', 'basic', 365, 2, 2250000, JSON.stringify(['100GB storage', 'File sharing', 'Mobile app'])]
     );
 
     console.log('✓ License types created');

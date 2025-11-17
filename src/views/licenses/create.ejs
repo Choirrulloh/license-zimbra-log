@@ -97,7 +97,8 @@
             types.forEach(t => {
               const opt = document.createElement('option');
               opt.value = t.id;
-              opt.textContent = `${t.name} - ${t.duration_days} days - $${t.price}`;
+              const price = new Intl.NumberFormat('id-ID').format(t.price);
+              opt.textContent = `${t.name} - ${t.duration_days} days - Rp ${price}`;
               select.appendChild(opt);
             });
           }

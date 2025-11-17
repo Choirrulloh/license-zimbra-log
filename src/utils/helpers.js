@@ -62,12 +62,14 @@ function getLicenseStatus(expiryDate, currentStatus = 'active') {
 }
 
 /**
- * Format currency
+ * Format currency (IDR/Rupiah)
  */
-function formatCurrency(amount, currency = 'USD') {
-  return new Intl.NumberFormat('en-US', {
+function formatCurrency(amount, currency = 'IDR') {
+  return new Intl.NumberFormat('id-ID', {
     style: 'currency',
-    currency: currency
+    currency: currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   }).format(amount);
 }
 
