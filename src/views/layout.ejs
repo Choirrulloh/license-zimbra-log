@@ -56,6 +56,11 @@
             <span>Licenses</span>
           </a>
 
+          <a href="/users" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'users' ? 'bg-gray-700' : '' %>">
+            <i class="fas fa-user-shield w-5"></i>
+            <span>Users</span>
+          </a>
+
           <a href="/reports" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'reports' ? 'bg-gray-700' : '' %>">
             <i class="fas fa-file-alt w-5"></i>
             <span>Reports</span>
