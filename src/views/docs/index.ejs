@@ -233,9 +233,12 @@ $result = $validator->validate();
 
 if ($result['valid']) {
     echo "License is valid!\\n";
+    echo "Product: " . $result['license']['product']['name'] . " v" . $result['license']['product']['version'] . "\\n";
+    echo "Customer: " . $result['license']['customer']['name'] . " (" . $result['license']['customer']['company'] . ")\\n";
+    echo "Email: " . $result['license']['customer']['email'] . "\\n";
     echo "Expires: " . $result['license']['expiry_date'] . "\\n";
 } else {
-    echo "License validation failed: " . $result['message'] . "\\n";
+    echo "License validation failed: " . $result['error'] . "\\n";
 }
 ?></code></pre>
         </div>
@@ -348,7 +351,15 @@ func main() {
 
     if result.Valid {
         fmt.Println("License is valid!")
-        fmt.Printf("Expires: %v\\n", result.License["expiry_date"])
+        license := result.License
+        if product, ok := license["product"].(map[string]interface{}); ok {
+            fmt.Printf("Product: %s v%s\\n", product["name"], product["version"])
+        }
+        if customer, ok := license["customer"].(map[string]interface{}); ok {
+            fmt.Printf("Customer: %s (%s)\\n", customer["name"], customer["company"])
+            fmt.Printf("Email: %s\\n", customer["email"])
+        }
+        fmt.Printf("Expires: %v\\n", license["expiry_date"])
     } else {
         fmt.Printf("License validation failed: %s\\n", result.Message)
     }
@@ -464,9 +475,12 @@ async function main() {
 
     if (result.valid) {
       console.log('License is valid!');
+      console.log('Product:', result.license.product.name, 'v' + result.license.product.version);
+      console.log('Customer:', result.license.customer.name, '(' + result.license.customer.company + ')');
+      console.log('Email:', result.license.customer.email);
       console.log('Expires:', result.license.expiry_date);
     } else {
-      console.log('License validation failed:', result.message);
+      console.log('License validation failed:', result.error);
     }
   } catch (error) {
     console.error('Error:', error.message);
@@ -558,14 +572,23 @@ if __name__ == '__main__':
 
     if result.get('valid'):
         print('License is valid!')
-        print(f'Product: {result["license"]["product_name"]}')
-        print(f'Expires: {result["license"]["expiry_date"]}')
+        license = result['license']
+        print(f'Product: {license["product"]["name"]} v{license["product"]["version"]}')
+        print(f'Customer: {license["customer"]["name"]} ({license["customer"]["company"]})')
+        print(f'Email: {license["customer"]["email"]}')
+        print(f'Type: {license["type"]}')
+        print(f'Expires: {license["expiry_date"]}')
+        print(f'Activations: {license["activations"]["current"]}/{license["activations"]["max"]}')
     else:
-        print(f'License validation failed: {result.get("message")}')
+        print(f'License validation failed: {result.get("error")}')
 
     # Get license info
     info = validator.get_license_info()
-    print(f'\\nLicense Info: {info}')
+    if 'error' not in info:
+        print(f'\\nLicense Info:')
+        print(f'  Product: {info["product"]["name"]}')
+        print(f'  Customer: {info["customer"]["name"]} - {info["customer"]["company"]}')
+        print(f'  Status: {info["status"]}')
 </code></pre>
         </div>
 
@@ -574,23 +597,57 @@ if __name__ == '__main__':
           <h3 class="text-xl font-semibold mb-4">API Response Examples</h3>
 
           <div class="mb-4">
-            <h4 class="font-semibold mb-2">Success Response:</h4>
+            <h4 class="font-semibold mb-2">POST /api/validate - Success Response:</h4>
             <pre><code class="language-json">{
   "valid": true,
-  "message": "License validated successfully",
   "license": {
-    "id": 1,
-    "license_key": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
-    "product_name": "Product A",
-    "product_version": "1.0.0",
-    "license_type": "pro",
+    "key": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+    "product": {
+      "id": 1,
+      "name": "Product A",
+      "version": "1.0.0"
+    },
+    "customer": {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "company": "Example Corp",
+      "phone": "+62-812-3456-7890"
+    },
+    "type": "Professional",
     "status": "active",
     "issue_date": "2024-01-01T00:00:00.000Z",
     "expiry_date": "2025-01-01T00:00:00.000Z",
-    "max_activations": 3,
-    "current_activations": 1,
-    "customer_name": "John Doe",
-    "customer_email": "john@example.com"
+    "features": ["feature1", "feature2", "feature3"],
+    "activations": {
+      "current": 1,
+      "max": 3
+    }
+  }
+}</code></pre>
+          </div>
+
+          <div class="mb-4">
+            <h4 class="font-semibold mb-2">GET /api/license/:key - Success Response:</h4>
+            <pre><code class="language-json">{
+  "license_key": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+  "product": {
+    "name": "Product A",
+    "version": "1.0.0"
+  },
+  "customer": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "company": "Example Corp",
+    "phone": "+62-812-3456-7890"
+  },
+  "type": "Professional",
+  "status": "active",
+  "issue_date": "2024-01-01T00:00:00.000Z",
+  "expiry_date": "2025-01-01T00:00:00.000Z",
+  "features": ["feature1", "feature2", "feature3"],
+  "activations": {
+    "current": 1,
+    "max": 3
   }
 }</code></pre>
           </div>

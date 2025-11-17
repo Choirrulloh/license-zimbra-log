@@ -23,13 +23,16 @@ class ApiController {
         });
       }
 
-      // Get license from database
+      // Get license from database with customer info
       const license = await db.get(
         `SELECT l.*, p.name as product_name, p.version as product_version,
-                lt.name as license_type_name, lt.features
+                lt.name as license_type_name, lt.features,
+                c.name as customer_name, c.email as customer_email,
+                c.company as customer_company, c.phone as customer_phone
          FROM licenses l
          JOIN products p ON l.product_id = p.id
          JOIN license_types lt ON l.license_type_id = lt.id
+         JOIN customers c ON l.customer_id = c.id
          WHERE l.license_key = ?`,
         [license_key]
       );
@@ -138,6 +141,12 @@ class ApiController {
             name: license.product_name,
             version: license.product_version
           },
+          customer: {
+            name: license.customer_name,
+            email: license.customer_email,
+            company: license.customer_company,
+            phone: license.customer_phone
+          },
           type: license.license_type_name,
           status: license.status,
           issue_date: license.issue_date,
@@ -230,10 +239,14 @@ class ApiController {
       const { key } = req.params;
 
       const license = await db.get(
-        `SELECT l.*, p.name as product_name, lt.name as license_type_name
+        `SELECT l.*, p.name as product_name, p.version as product_version,
+                lt.name as license_type_name, lt.features,
+                c.name as customer_name, c.email as customer_email,
+                c.company as customer_company, c.phone as customer_phone
          FROM licenses l
          JOIN products p ON l.product_id = p.id
          JOIN license_types lt ON l.license_type_id = lt.id
+         JOIN customers c ON l.customer_id = c.id
          WHERE l.license_key = ?`,
         [key]
       );
@@ -244,12 +257,35 @@ class ApiController {
         });
       }
 
+      // Parse features
+      let features = [];
+      try {
+        features = license.features ? JSON.parse(license.features) : [];
+      } catch (e) {
+        features = [];
+      }
+
       res.json({
         license_key: license.license_key,
-        product: license.product_name,
+        product: {
+          name: license.product_name,
+          version: license.product_version
+        },
+        customer: {
+          name: license.customer_name,
+          email: license.customer_email,
+          company: license.customer_company,
+          phone: license.customer_phone
+        },
         type: license.license_type_name,
         status: license.status,
-        expiry_date: license.expiry_date
+        issue_date: license.issue_date,
+        expiry_date: license.expiry_date,
+        features: features,
+        activations: {
+          current: license.current_activations,
+          max: license.max_activations
+        }
       });
     } catch (error) {
       console.error('Error fetching license info:', error);
