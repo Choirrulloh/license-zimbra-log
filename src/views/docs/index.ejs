@@ -82,7 +82,7 @@
     "license_key": "YOUR-LICENSE-KEY-HERE",
     "hardware_id": "unique-hardware-id",
     "hostname": "client-hostname",
-    "ip_address": "192.168.1.100"
+    "ip_address": "YOUR-CLIENT-IP"
   }'</code></pre>
           </div>
 
@@ -119,7 +119,7 @@ validate_license() {
       \\"license_key\\": \\"$LICENSE_KEY\\",
       \\"hardware_id\\": \\"$HARDWARE_ID\\",
       \\"hostname\\": \\"$(hostname)\\",
-      \\"ip_address\\": \\"$(hostname -I | awk '{print $1}')\\""
+      \\"ip_address\\": \\"$(hostname -I | awk '{print $1}' || echo 'unknown')\\""
     }")
 
   echo "$response"
@@ -183,7 +183,7 @@ class LicenseValidator {
             'license_key' => $this->licenseKey,
             'hardware_id' => $this->hardwareId,
             'hostname' => gethostname(),
-            'ip_address' => $_SERVER['SERVER_ADDR'] ?? 'unknown'
+            'ip_address' => $_SERVER['REMOTE_ADDR'] ?? $_SERVER['SERVER_ADDR'] ?? 'unknown'
         ];
 
         $ch = curl_init($this->apiUrl . '/validate');
