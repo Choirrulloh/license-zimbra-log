@@ -13,6 +13,7 @@ const reportController = require('../controllers/reportController');
 const docsController = require('../controllers/docsController');
 const userController = require('../controllers/userController');
 const featuresController = require('../controllers/featuresController');
+const settingsController = require('../controllers/settingsController');
 
 // Public routes
 router.get('/', (req, res) => {
@@ -88,6 +89,10 @@ router.get('/reports/license/:id/pdf', requireAuth, reportController.generateLic
 
 // Docs
 router.get('/docs', requireAuth, docsController.index);
+
+// Settings (Admin only)
+router.get('/settings', requireAdmin, settingsController.index);
+router.post('/settings', requireAdmin, settingsController.updateSettings);
 
 // Public API for license validation
 router.post('/api/validate', apiController.validateLicense);
