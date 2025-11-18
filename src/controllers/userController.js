@@ -150,15 +150,26 @@ class UserController {
         req
       );
 
-      // Send welcome email
+      // Send welcome email using default template settings
       try {
         const emailService = require('../services/emailService');
-        await emailService.sendWelcomeEmail(
-          { name, email },
-          password, // Plain password (before hashing)
-          'en' // Language: 'en' or 'id'
+        const { getDefaultTemplateSettings } = require('../utils/templateSettings');
+        const templateSettings = await getDefaultTemplateSettings();
+
+        await emailService.sendEmail(
+          'welcome_email',
+          email,
+          name,
+          {
+            'user.name': name,
+            'user.email': email,
+            'user.password': password,
+            'login.url': `${process.env.APP_URL || 'http://localhost:3000'}/login`
+          },
+          templateSettings.language,
+          templateSettings.design
         );
-        console.log(`✓ Welcome email sent to ${email}`);
+        console.log(`✓ Welcome email sent to ${email} (${templateSettings.language}, design ${templateSettings.design})`);
       } catch (emailError) {
         console.error('Failed to send welcome email:', emailError.message);
         // Don't block user creation if email fails
