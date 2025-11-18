@@ -1,0 +1,89 @@
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all">
+    <div class="p-6">
+      <div class="flex items-start space-x-4">
+        <div id="confirmIcon" class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center">
+          <i class="fas fa-exclamation-triangle text-2xl"></i>
+        </div>
+        <div class="flex-1">
+          <h3 id="confirmTitle" class="text-lg font-semibold text-gray-900 mb-2">Confirm Action</h3>
+          <p id="confirmMessage" class="text-sm text-gray-600"></p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-gray-50 px-6 py-4 flex space-x-3 rounded-b-lg">
+      <button id="confirmCancelBtn" onclick="closeConfirmModal(false)" class="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors">
+        Cancel
+      </button>
+      <button id="confirmOkBtn" onclick="closeConfirmModal(true)" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">
+        Confirm
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Global variable to store confirm callback
+  let confirmCallback = null;
+
+  // Show confirmation modal
+  function showConfirm(message, title = 'Confirm Action', options = {}) {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('confirmModal');
+      const titleEl = document.getElementById('confirmTitle');
+      const messageEl = document.getElementById('confirmMessage');
+      const iconEl = document.getElementById('confirmIcon');
+      const okBtn = document.getElementById('confirmOkBtn');
+
+      // Set content
+      titleEl.textContent = title;
+      messageEl.textContent = message;
+
+      // Set icon and button color based on type
+      const type = options.type || 'warning';
+      if (type === 'danger' || type === 'delete') {
+        iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center';
+        iconEl.querySelector('i').className = 'fas fa-exclamation-triangle text-2xl text-red-600';
+        okBtn.className = 'flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors';
+        okBtn.textContent = options.confirmText || 'Delete';
+      } else if (type === 'warning') {
+        iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center';
+        iconEl.querySelector('i').className = 'fas fa-exclamation-triangle text-2xl text-yellow-600';
+        okBtn.className = 'flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors';
+        okBtn.textContent = options.confirmText || 'Confirm';
+      } else if (type === 'info') {
+        iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center';
+        iconEl.querySelector('i').className = 'fas fa-info-circle text-2xl text-blue-600';
+        okBtn.className = 'flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors';
+        okBtn.textContent = options.confirmText || 'OK';
+      }
+
+      // Show modal
+      modal.classList.remove('hidden');
+
+      // Store callback
+      confirmCallback = resolve;
+    });
+  }
+
+  // Close confirmation modal
+  function closeConfirmModal(result) {
+    const modal = document.getElementById('confirmModal');
+    modal.classList.add('hidden');
+    if (confirmCallback) {
+      confirmCallback(result);
+      confirmCallback = null;
+    }
+  }
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('confirmModal');
+      if (!modal.classList.contains('hidden')) {
+        closeConfirmModal(false);
+      }
+    }
+  });
+</script>
