@@ -12,13 +12,14 @@ class EmailTemplateController {
     this.delete = this.delete.bind(this);
     this.preview = this.preview.bind(this);
     this.logs = this.logs.bind(this);
+    this.setAsDefault = this.setAsDefault.bind(this);
   }
 
   // List all email templates
   async index(req, res) {
     try {
       const templates = await db.all(
-        `SELECT id, name, type, language, design_variation, subject, is_active, created_at, updated_at
+        `SELECT id, name, type, language, design_variation, subject, is_active, is_default, created_at, updated_at
          FROM email_templates
          ORDER BY type, name, language, design_variation`
       );
@@ -352,6 +353,67 @@ class EmailTemplateController {
     } catch (error) {
       console.error('Error fetching email logs:', error);
       res.status(500).send('Error loading email logs');
+    }
+  }
+
+  // Set template as default
+  async setAsDefault(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Get the template
+      const template = await db.get(
+        'SELECT id, name, type FROM email_templates WHERE id = ?',
+        [id]
+      );
+
+      if (!template) {
+        return res.status(404).json({
+          success: false,
+          message: 'Template not found'
+        });
+      }
+
+      // Begin transaction
+      await db.run('BEGIN TRANSACTION');
+
+      try {
+        // Set all templates of the same type to is_default = 0
+        await db.run(
+          'UPDATE email_templates SET is_default = 0 WHERE name = ?',
+          [template.name]
+        );
+
+        // Set the selected template to is_default = 1
+        await db.run(
+          'UPDATE email_templates SET is_default = 1 WHERE id = ?',
+          [id]
+        );
+
+        await db.run('COMMIT');
+
+        // Log activity
+        await ActivityLogger.log(
+          req.session.userId,
+          'email_template_default_set',
+          `Set ${template.name} (${template.type}) as default template`,
+          req
+        );
+
+        res.json({
+          success: true,
+          message: 'Default template set successfully'
+        });
+      } catch (error) {
+        await db.run('ROLLBACK');
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error setting default template:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error setting default template'
+      });
     }
   }
 }

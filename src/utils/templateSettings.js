@@ -1,17 +1,32 @@
 const db = require('../database/db');
 
 /**
- * Get default email template settings from database
+ * Get default email template for a specific template type
+ * @param {string} templateName - The template name (e.g., 'welcome_email', 'license_created')
  * @returns {Promise<{language: string, design: number}>}
  */
-async function getDefaultTemplateSettings() {
+async function getDefaultTemplateSettings(templateName) {
   try {
-    const languageSetting = await db.get("SELECT value FROM settings WHERE key = 'default_email_language'");
-    const designSetting = await db.get("SELECT value FROM settings WHERE key = 'default_email_design'");
+    // Query the default template for this template name
+    const defaultTemplate = await db.get(
+      `SELECT language, design_variation
+       FROM email_templates
+       WHERE name = ? AND is_default = 1
+       LIMIT 1`,
+      [templateName]
+    );
 
+    if (defaultTemplate) {
+      return {
+        language: defaultTemplate.language,
+        design: defaultTemplate.design_variation
+      };
+    }
+
+    // Fallback to English Design 1 if no default set
     return {
-      language: languageSetting?.value || 'en',
-      design: parseInt(designSetting?.value || '1')
+      language: 'en',
+      design: 1
     };
   } catch (error) {
     console.error('Error getting default template settings:', error);

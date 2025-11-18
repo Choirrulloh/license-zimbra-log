@@ -154,7 +154,7 @@ class UserController {
       try {
         const emailService = require('../services/emailService');
         const { getDefaultTemplateSettings } = require('../utils/templateSettings');
-        const templateSettings = await getDefaultTemplateSettings();
+        const templateSettings = await getDefaultTemplateSettings('welcome_email');
 
         await emailService.sendEmail(
           'welcome_email',

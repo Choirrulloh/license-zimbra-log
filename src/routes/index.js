@@ -124,6 +124,7 @@ router.get('/settings/email-templates/:id', requireAdmin, emailTemplateControlle
 router.get('/settings/email-templates/:id/edit', requireAdmin, emailTemplateController.edit);
 router.post('/settings/email-templates/:id/edit', requireAdmin, emailTemplateController.update);
 router.post('/settings/email-templates/:id/preview', requireAdmin, emailTemplateController.preview);
+router.post('/settings/email-templates/:id/set-default', requireAdmin, emailTemplateController.setAsDefault);
 router.delete('/settings/email-templates/:id', requireAdmin, emailTemplateController.delete);
 
 // Public API for license validation

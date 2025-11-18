@@ -35,8 +35,6 @@ class SettingsController {
         smtp_secure: 'false',
         smtp_user: '',
         smtp_password: '',
-        default_email_language: 'en',
-        default_email_design: '1',
 
         // Notification Settings
         notify_license_expiring: 'true',

@@ -191,7 +191,7 @@ class LicenseController {
         const { getDefaultTemplateSettings } = require('../utils/templateSettings');
         const customer = await db.get('SELECT * FROM customers WHERE id = ?', [customer_id]);
         const product = await db.get('SELECT * FROM products WHERE id = ?', [product_id]);
-        const templateSettings = await getDefaultTemplateSettings();
+        const templateSettings = await getDefaultTemplateSettings('license_created');
 
         if (customer && customer.email) {
           await emailService.sendEmail(

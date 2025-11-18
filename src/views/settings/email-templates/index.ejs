@@ -69,17 +69,22 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <% if (templates.length > 0) { %>
             <% templates.forEach(template => { %>
-              <div class="template-card bg-white rounded-lg shadow hover:shadow-lg transition-shadow" data-type="<%= template.type %>">
+              <div class="template-card bg-white rounded-lg shadow hover:shadow-lg transition-shadow <%= template.is_default ? 'ring-2 ring-yellow-400' : '' %>" data-type="<%= template.type %>">
                 <div class="p-6">
                   <div class="flex items-start justify-between mb-4">
                     <div class="flex-1">
-                      <div class="flex items-center space-x-2 mb-1">
+                      <div class="flex items-center space-x-2 mb-1 flex-wrap">
                         <span class="px-2 py-1 rounded text-xs font-semibold <%= template.language === 'en' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' %>">
                           <%= template.language.toUpperCase() %>
                         </span>
                         <span class="px-2 py-1 rounded text-xs font-semibold bg-purple-100 text-purple-800">
                           v<%= template.design_variation %>
                         </span>
+                        <% if (template.is_default) { %>
+                          <span class="px-2 py-1 rounded text-xs font-semibold bg-yellow-100 text-yellow-800">
+                            <i class="fas fa-star"></i> DEFAULT
+                          </span>
+                        <% } %>
                         <% if (template.is_active) { %>
                           <span class="px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-800">
                             <i class="fas fa-check-circle"></i> Active
@@ -106,11 +111,21 @@
                     <p class="text-sm text-gray-600 truncate"><%= template.subject %></p>
                   </div>
 
-                  <div class="flex items-center justify-between text-xs text-gray-500">
+                  <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
                     <span><i class="fas fa-clock"></i> <%= moment(template.updated_at).fromNow() %></span>
                   </div>
 
-                  <div class="mt-4 flex space-x-2">
+                  <% if (!template.is_default) { %>
+                    <button onclick="setAsDefault(<%= template.id %>, '<%= template.name %>')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded text-sm mb-2">
+                      <i class="fas fa-star"></i> Set as Default
+                    </button>
+                  <% } else { %>
+                    <div class="w-full bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded text-sm mb-2 text-center">
+                      <i class="fas fa-star"></i> Current Default Template
+                    </div>
+                  <% } %>
+
+                  <div class="flex space-x-2">
                     <a href="/settings/email-templates/<%= template.id %>" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm text-center">
                       <i class="fas fa-eye"></i> View
                     </a>
@@ -173,6 +188,25 @@
       toast.innerHTML = `<i class="fas ${icons[type]} text-xl"></i><span class="flex-1">${message}</span><button onclick="this.parentElement.remove()" class="text-white hover:text-gray-200"><i class="fas fa-times"></i></button>`;
       container.appendChild(toast);
       setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100%)'; setTimeout(() => toast.remove(), 300); }, 5000);
+    }
+
+    async function setAsDefault(id, name) {
+      if (!confirm(`Set this template as the default for all "${name.replace(/_/g, ' ')}" emails?`)) return;
+      try {
+        const res = await fetch(`/settings/email-templates/${id}/set-default`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Default template updated successfully!', 'success');
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast(data.message || 'Error setting default template', 'error');
+        }
+      } catch (e) {
+        showToast('Error setting default template', 'error');
+      }
     }
 
     async function deleteTemplate(id) {
