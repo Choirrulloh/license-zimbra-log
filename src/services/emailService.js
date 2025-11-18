@@ -58,6 +58,13 @@ class EmailService {
   // Send email using template
   async sendEmail(templateName, recipientEmail, recipientName, data, language = 'en', designVariation = 1) {
     try {
+      // Get settings from database
+      const settingsRows = await db.all('SELECT * FROM settings');
+      const settings = {};
+      settingsRows.forEach(row => {
+        settings[row.key] = row.value;
+      });
+
       // Get template from database
       const template = await db.get(
         `SELECT * FROM email_templates
@@ -73,8 +80,8 @@ class EmailService {
       const emailData = {
         'user.name': recipientName,
         'user.email': recipientEmail,
-        'company.name': process.env.APP_NAME || 'License Manager',
-        'company.url': process.env.APP_URL || 'http://localhost:3000',
+        'company.name': settings.app_name || 'License Manager',
+        'company.url': settings.app_url || 'http://localhost:3000',
         'year': new Date().getFullYear(),
         ...data
       };
@@ -92,7 +99,7 @@ class EmailService {
       if (this.transporter) {
         try {
           const mailOptions = {
-            from: `"${process.env.SMTP_FROM_NAME || 'License Manager'}" <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER}>`,
+            from: `"${settings.email_from_name || 'License Manager'}" <${settings.email_from_address || settings.smtp_user || process.env.SMTP_USER}>`,
             to: recipientEmail,
             subject: subject,
             html: bodyHtml,
