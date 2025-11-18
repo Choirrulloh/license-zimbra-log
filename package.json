@@ -27,6 +27,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "archiver": "^7.0.1",
     "bcryptjs": "^2.4.3",
     "chart.js": "^4.4.0",
     "connect-sqlite3": "^0.9.13",
@@ -38,13 +39,16 @@
     "express-session": "^1.17.3",
     "express-validator": "^7.0.1",
     "helmet": "^7.1.0",
+    "javascript-obfuscator": "^4.1.1",
     "json2csv": "^6.0.0-alpha.2",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.43",
     "morgan": "^1.10.0",
+    "multer": "^2.0.2",
     "nodemailer": "^7.0.10",
     "pdfkit": "^0.13.0",
     "sqlite3": "^5.1.6",
+    "unzipper": "^0.12.3",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

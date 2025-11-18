@@ -1,6 +1,26 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
 const { requireAuth, requireAdmin, requireRole, requireSelfOrAdmin } = require('../middleware/auth');
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/temp/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB
+  }
+});
 
 // Controllers
 const authController = require('../controllers/authController');
@@ -17,6 +37,7 @@ const settingsController = require('../controllers/settingsController');
 const roleController = require('../controllers/roleController');
 const permissionController = require('../controllers/permissionController');
 const emailTemplateController = require('../controllers/emailTemplateController');
+const codeProtectionController = require('../controllers/codeProtectionController');
 
 // Public routes
 router.get('/', (req, res) => {
@@ -127,6 +148,14 @@ router.post('/settings/email-templates/:id/edit', requireAdmin, emailTemplateCon
 router.post('/settings/email-templates/:id/preview', requireAdmin, emailTemplateController.preview);
 router.post('/settings/email-templates/:id/set-default', requireAdmin, emailTemplateController.setAsDefault);
 router.delete('/settings/email-templates/:id', requireAdmin, emailTemplateController.delete);
+
+// Code Protection Service (All authenticated users)
+router.get('/code-protection', requireAuth, codeProtectionController.index);
+router.get('/code-protection/history', requireAuth, codeProtectionController.history);
+router.post('/code-protection/upload', requireAuth, upload.single('file'), codeProtectionController.upload);
+router.post('/code-protection/obfuscate', requireAuth, codeProtectionController.obfuscate);
+router.get('/code-protection/download/:id', requireAuth, codeProtectionController.download);
+router.get('/code-protection/quota', requireAuth, codeProtectionController.getQuota);
 
 // Public API for license validation
 router.post('/api/validate', apiController.validateLicense);
