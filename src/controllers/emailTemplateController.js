@@ -17,6 +17,11 @@ class EmailTemplateController {
   // List all email templates
   async index(req, res) {
     try {
+      // Disable cache for this page
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
       const templates = await db.all(
         `SELECT id, name, type, language, design_variation, subject, is_active, created_at, updated_at
          FROM email_templates
