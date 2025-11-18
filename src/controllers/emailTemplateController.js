@@ -17,39 +17,11 @@ class EmailTemplateController {
   // List all email templates
   async index(req, res) {
     try {
-      // Disable cache for this page
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-
-      console.log('=== EMAIL TEMPLATES DEBUG START ===');
-
-      // Check if table exists
-      const tables = await db.all("SELECT name FROM sqlite_master WHERE type='table' AND name='email_templates'");
-      console.log('Table exists:', tables.length > 0);
-
-      // Get count
-      const countResult = await db.all('SELECT COUNT(*) as count FROM email_templates');
-      console.log('Count query result:', countResult[0].count);
-
-      // If empty, auto-seed
-      if (countResult[0].count === 0) {
-        console.log('⚠️ Database empty! Auto-seeding templates...');
-        const seedEmailTemplates = require('../database/seedEmailTemplates');
-        await seedEmailTemplates();
-        console.log('✓ Auto-seed completed');
-      }
-
       const templates = await db.all(
         `SELECT id, name, type, language, design_variation, subject, is_active, created_at, updated_at
          FROM email_templates
          ORDER BY type, name, language, design_variation`
       );
-
-      console.log('Templates fetched:', templates.length);
-      console.log('Is array:', Array.isArray(templates));
-      console.log('First template:', templates.length > 0 ? templates[0].name : 'NONE');
-      console.log('=== EMAIL TEMPLATES DEBUG END ===');
 
       res.render('settings/email-templates/index', {
         user: req.session,
