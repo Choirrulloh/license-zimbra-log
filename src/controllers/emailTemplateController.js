@@ -83,10 +83,16 @@ class EmailTemplateController {
   // Create email template form / submit
   async create(req, res) {
     if (req.method === 'GET') {
+      // Get distinct template names for dropdown
+      const existingTemplates = await db.all(
+        'SELECT DISTINCT name, type FROM email_templates ORDER BY name'
+      );
+
       return res.render('settings/email-templates/create', {
         user: req.session,
         currentPage: 'settings',
         pageTitle: 'Create Email Template',
+        existingTemplates,
         error: null
       });
     }
