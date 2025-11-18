@@ -23,6 +23,12 @@ class EmailTemplateController {
          ORDER BY type, name, language, design_variation`
       );
 
+      console.log('=== EMAIL TEMPLATES DEBUG ===');
+      console.log('Templates fetched:', templates.length);
+      console.log('Is array:', Array.isArray(templates));
+      console.log('First template:', templates.length > 0 ? templates[0].name : 'NONE');
+      console.log('============================');
+
       res.render('settings/email-templates/index', {
         user: req.session,
         currentPage: 'settings',
