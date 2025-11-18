@@ -187,9 +187,12 @@
     }
 
     async function deletePermission(id, name) {
-      if (!confirm(`Are you sure you want to delete the permission "${name}"?\n\nThis will remove it from all roles. This action cannot be undone.`)) {
-        return;
-      }
+      const confirmed = await showConfirm(
+        `Are you sure you want to delete the permission "${name}"? This will remove it from all roles. This action cannot be undone.`,
+        'Confirm Deletion',
+        { type: 'delete', confirmText: 'Delete' }
+      );
+      if (!confirmed) return;
 
       try {
         const response = await fetch(`/permissions/${id}`, {

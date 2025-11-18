@@ -237,7 +237,13 @@
     async function revokeLicense() {
       const reason = prompt('Enter reason for revocation:');
       if (!reason) return;
-      if (!confirm('Are you sure you want to revoke this license? This action cannot be undone.')) return;
+
+      const confirmed = await showConfirm(
+        'Are you sure you want to revoke this license? This action cannot be undone.',
+        'Confirm Revocation',
+        { type: 'danger', confirmText: 'Revoke' }
+      );
+      if (!confirmed) return;
 
       try {
         const res = await fetch('/licenses/<%= license.id %>/revoke', {
@@ -258,7 +264,12 @@
     }
 
     async function activateLicense() {
-      if (!confirm('Are you sure you want to activate this license?')) return;
+      const confirmed = await showConfirm(
+        'Are you sure you want to activate this license?',
+        'Confirm Activation',
+        { type: 'info', confirmText: 'Activate' }
+      );
+      if (!confirmed) return;
 
       try {
         const res = await fetch('/licenses/<%= license.id %>/activate', {
@@ -278,8 +289,19 @@
     }
 
     async function deleteLicense() {
-      if (!confirm('Are you sure you want to DELETE this license permanently? This action cannot be undone and will remove all associated data including activations and history.')) return;
-      if (!confirm('FINAL WARNING: This will permanently delete license <%= license.license_key %>. Are you absolutely sure?')) return;
+      const confirmed1 = await showConfirm(
+        'Are you sure you want to DELETE this license permanently? This action cannot be undone and will remove all associated data including activations and history.',
+        'Confirm Deletion',
+        { type: 'delete', confirmText: 'Continue' }
+      );
+      if (!confirmed1) return;
+
+      const confirmed2 = await showConfirm(
+        'FINAL WARNING: This will permanently delete license <%= license.license_key %>. Are you absolutely sure?',
+        'Final Confirmation',
+        { type: 'delete', confirmText: 'Delete Permanently' }
+      );
+      if (!confirmed2) return;
 
       try {
         const res = await fetch('/licenses/<%= license.id %>', {

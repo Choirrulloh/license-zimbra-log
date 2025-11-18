@@ -460,7 +460,12 @@
     }
 
     async function deleteLicenseType(id) {
-      if (!confirm('Are you sure you want to delete this license type?')) return;
+      const confirmed = await showConfirm(
+        'Are you sure you want to delete this license type? This action cannot be undone.',
+        'Confirm Deletion',
+        { type: 'delete', confirmText: 'Delete' }
+      );
+      if (!confirmed) return;
 
       try {
         const res = await fetch(`/license-types/${id}`, {

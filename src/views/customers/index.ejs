@@ -95,7 +95,13 @@
         </div>
         <script>
           async function deleteCustomer(id) {
-            if (!confirm('Are you sure?')) return;
+            const confirmed = await showConfirm(
+              'Are you sure you want to delete this customer? This action cannot be undone.',
+              'Confirm Deletion',
+              { type: 'delete', confirmText: 'Delete' }
+            );
+            if (!confirmed) return;
+
             try {
               const res = await fetch(`/customers/${id}`, { method: 'DELETE' });
               const data = await res.json();

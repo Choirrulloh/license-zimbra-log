@@ -196,10 +196,10 @@
           iframe.srcdoc = data.body_html;
           document.getElementById('previewModal').classList.remove('hidden');
         } else {
-          alert('Error loading preview: ' + (data.message || 'Unknown error'));
+          showToast('Error loading preview: ' + (data.message || 'Unknown error'), 'error');
         }
       } catch (error) {
-        alert('Error loading preview: ' + error.message);
+        showToast('Error loading preview: ' + error.message, 'error');
       }
     }
 
