@@ -150,6 +150,20 @@ class UserController {
         req
       );
 
+      // Send welcome email
+      try {
+        const emailService = require('../services/emailService');
+        await emailService.sendWelcomeEmail(
+          { name, email },
+          password, // Plain password (before hashing)
+          'en' // Language: 'en' or 'id'
+        );
+        console.log(`✓ Welcome email sent to ${email}`);
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError.message);
+        // Don't block user creation if email fails
+      }
+
       res.redirect('/users');
     } catch (error) {
       console.error('Error creating user:', error);

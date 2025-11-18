@@ -185,6 +185,30 @@ class LicenseController {
         );
       }
 
+      // Send license created email
+      try {
+        const emailService = require('../services/emailService');
+        const customer = await db.get('SELECT * FROM customers WHERE id = ?', [customer_id]);
+        const product = await db.get('SELECT * FROM products WHERE id = ?', [product_id]);
+
+        if (customer && customer.email) {
+          await emailService.sendLicenseCreatedEmail(
+            customer,
+            {
+              license_key: licenseKey,
+              product_name: product.name,
+              expiry_date: expiryDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+              license_type: licenseType.name
+            },
+            'en' // Language: 'en' or 'id'
+          );
+          console.log(`✓ License created email sent to ${customer.email}`);
+        }
+      } catch (emailError) {
+        console.error('Failed to send license email:', emailError.message);
+        // Don't block license creation if email fails
+      }
+
       res.redirect(`/licenses/${result.id}`);
     } catch (error) {
       console.error('Error creating license:', error);
