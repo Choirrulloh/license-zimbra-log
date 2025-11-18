@@ -1,0 +1,127 @@
+<aside class="w-64 bg-gray-800 text-white flex-shrink-0">
+  <div class="p-4">
+    <h1 class="text-2xl font-bold mb-8">
+      <i class="fas fa-key"></i> License Manager
+    </h1>
+
+    <nav class="space-y-1">
+      <!-- Dashboard -->
+      <a href="/dashboard" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'dashboard' ? 'bg-gray-700' : '' %>">
+        <i class="fas fa-chart-line w-5"></i>
+        <span>Dashboard</span>
+      </a>
+
+      <!-- Management Group -->
+      <div class="menu-group <%= typeof currentPage !== 'undefined' && ['products', 'customers', 'licenses'].includes(currentPage) ? 'open' : '' %>">
+        <div class="menu-header flex items-center justify-between p-3 rounded hover:bg-gray-700 cursor-pointer" onclick="toggleMenu(this.parentElement)">
+          <div class="flex items-center space-x-3">
+            <i class="fas fa-folder w-5"></i>
+            <span>Management</span>
+          </div>
+          <i class="fas fa-chevron-down chevron text-sm"></i>
+        </div>
+        <div class="submenu pl-4 space-y-1">
+          <a href="/products" class="flex items-center space-x-3 p-2 pl-8 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'products' ? 'bg-gray-700' : '' %>">
+            <i class="fas fa-box w-4 text-sm"></i>
+            <span class="text-sm">Products</span>
+          </a>
+          <a href="/customers" class="flex items-center space-x-3 p-2 pl-8 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'customers' ? 'bg-gray-700' : '' %>">
+            <i class="fas fa-users w-4 text-sm"></i>
+            <span class="text-sm">Customers</span>
+          </a>
+          <a href="/licenses" class="flex items-center space-x-3 p-2 pl-8 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'licenses' ? 'bg-gray-700' : '' %>">
+            <i class="fas fa-certificate w-4 text-sm"></i>
+            <span class="text-sm">Licenses</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <a href="/features" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'features' ? 'bg-gray-700' : '' %>">
+        <i class="fas fa-puzzle-piece w-5"></i>
+        <span>Features</span>
+      </a>
+
+      <!-- Access Control Group -->
+      <div class="menu-group <%= typeof currentPage !== 'undefined' && ['users', 'roles', 'permissions'].includes(currentPage) ? 'open' : '' %>">
+        <div class="menu-header flex items-center justify-between p-3 rounded hover:bg-gray-700 cursor-pointer" onclick="toggleMenu(this.parentElement)">
+          <div class="flex items-center space-x-3">
+            <i class="fas fa-shield-alt w-5"></i>
+            <span>Access Control</span>
+          </div>
+          <i class="fas fa-chevron-down chevron text-sm"></i>
+        </div>
+        <div class="submenu pl-4 space-y-1">
+          <a href="/users" class="flex items-center space-x-3 p-2 pl-8 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'users' ? 'bg-gray-700' : '' %>">
+            <i class="fas fa-user w-4 text-sm"></i>
+            <span class="text-sm">Users</span>
+          </a>
+          <a href="/roles" class="flex items-center space-x-3 p-2 pl-8 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && ['roles', 'permissions'].includes(currentPage) ? 'bg-gray-700' : '' %>">
+            <i class="fas fa-user-tag w-4 text-sm"></i>
+            <span class="text-sm">Roles & Permissions</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Reports -->
+      <a href="/reports" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'reports' ? 'bg-gray-700' : '' %>">
+        <i class="fas fa-file-alt w-5"></i>
+        <span>Reports</span>
+      </a>
+
+      <!-- API Docs -->
+      <a href="/docs" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'docs' ? 'bg-gray-700' : '' %>">
+        <i class="fas fa-book w-5"></i>
+        <span>API Docs</span>
+      </a>
+
+      <!-- Settings -->
+      <a href="/settings" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'settings' ? 'bg-gray-700' : '' %>">
+        <i class="fas fa-cog w-5"></i>
+        <span>Settings</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="absolute bottom-0 w-64 p-4 bg-gray-900">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
+        <i class="fas fa-user"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium truncate"><%= user.userName || 'Admin' %></p>
+        <p class="text-xs text-gray-400 truncate"><%= user.userEmail || '' %></p>
+      </div>
+      <a href="/logout" class="text-gray-400 hover:text-white">
+        <i class="fas fa-sign-out-alt"></i>
+      </a>
+    </div>
+  </div>
+</aside>
+
+<style>
+  .menu-group > .submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+  }
+
+  .menu-group.open > .submenu {
+    max-height: 500px;
+  }
+
+  .menu-group > .menu-header .chevron {
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .menu-group.open > .menu-header .chevron {
+    transform: rotate(180deg);
+  }
+</style>
+
+<script>
+  // Toggle collapsible menu groups
+  function toggleMenu(menuGroup) {
+    menuGroup.classList.toggle('open');
+  }
+</script>
