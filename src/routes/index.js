@@ -14,6 +14,8 @@ const docsController = require('../controllers/docsController');
 const userController = require('../controllers/userController');
 const featuresController = require('../controllers/featuresController');
 const settingsController = require('../controllers/settingsController');
+const roleController = require('../controllers/roleController');
+const permissionController = require('../controllers/permissionController');
 
 // Public routes
 router.get('/', (req, res) => {
@@ -89,6 +91,24 @@ router.get('/reports/license/:id/pdf', requireAuth, reportController.generateLic
 
 // Docs
 router.get('/docs', requireAuth, docsController.index);
+
+// Roles (Admin only)
+router.get('/roles', requireAdmin, roleController.index);
+router.get('/roles/create', requireAdmin, roleController.create);
+router.post('/roles/create', requireAdmin, roleController.create);
+router.get('/roles/:id', requireAdmin, roleController.show);
+router.get('/roles/:id/edit', requireAdmin, roleController.edit);
+router.post('/roles/:id/edit', requireAdmin, roleController.update);
+router.delete('/roles/:id', requireAdmin, roleController.delete);
+
+// Permissions (Admin only)
+router.get('/permissions', requireAdmin, permissionController.index);
+router.get('/permissions/create', requireAdmin, permissionController.create);
+router.post('/permissions/create', requireAdmin, permissionController.create);
+router.get('/permissions/:id', requireAdmin, permissionController.show);
+router.get('/permissions/:id/edit', requireAdmin, permissionController.edit);
+router.post('/permissions/:id/edit', requireAdmin, permissionController.update);
+router.delete('/permissions/:id', requireAdmin, permissionController.delete);
 
 // Settings (Admin only)
 router.get('/settings', requireAdmin, settingsController.index);

@@ -110,6 +110,155 @@ async function seed() {
 
     console.log('✓ Sample customers created/verified');
 
+    // Create default roles
+    const roles = [
+      ['admin', 'Administrator', 'Full system access with all permissions'],
+      ['manager', 'Manager', 'Can manage licenses, customers, and view reports'],
+      ['viewer', 'Viewer', 'Read-only access to view data'],
+      ['support', 'Support', 'Can view and manage customer licenses']
+    ];
+
+    const roleIds = {};
+    for (const [name, displayName, description] of roles) {
+      const existing = await db.get('SELECT id FROM roles WHERE name = ?', [name]);
+      if (existing) {
+        roleIds[name] = existing.id;
+      } else {
+        const result = await db.run(
+          'INSERT INTO roles (name, display_name, description) VALUES (?, ?, ?)',
+          [name, displayName, description]
+        );
+        roleIds[name] = result.id;
+      }
+    }
+    console.log('✓ Default roles created/verified');
+
+    // Create permissions (resource, action, description)
+    const permissions = [
+      // Dashboard
+      ['dashboard.view', 'dashboard', 'view', 'View dashboard statistics'],
+
+      // Products
+      ['products.view', 'products', 'view', 'View products list'],
+      ['products.create', 'products', 'create', 'Create new products'],
+      ['products.edit', 'products', 'edit', 'Edit existing products'],
+      ['products.delete', 'products', 'delete', 'Delete products'],
+
+      // Customers
+      ['customers.view', 'customers', 'view', 'View customers list'],
+      ['customers.create', 'customers', 'create', 'Create new customers'],
+      ['customers.edit', 'customers', 'edit', 'Edit customer information'],
+      ['customers.delete', 'customers', 'delete', 'Delete customers'],
+
+      // Licenses
+      ['licenses.view', 'licenses', 'view', 'View licenses list'],
+      ['licenses.create', 'licenses', 'create', 'Generate new licenses'],
+      ['licenses.edit', 'licenses', 'edit', 'Edit license information'],
+      ['licenses.delete', 'licenses', 'delete', 'Delete licenses'],
+      ['licenses.renew', 'licenses', 'renew', 'Renew licenses'],
+      ['licenses.revoke', 'licenses', 'revoke', 'Revoke licenses'],
+      ['licenses.suspend', 'licenses', 'suspend', 'Suspend licenses'],
+
+      // Users
+      ['users.view', 'users', 'view', 'View users list'],
+      ['users.create', 'users', 'create', 'Create new users'],
+      ['users.edit', 'users', 'edit', 'Edit user information'],
+      ['users.delete', 'users', 'delete', 'Delete users'],
+
+      // Roles
+      ['roles.view', 'roles', 'view', 'View roles list'],
+      ['roles.create', 'roles', 'create', 'Create new roles'],
+      ['roles.edit', 'roles', 'edit', 'Edit role information'],
+      ['roles.delete', 'roles', 'delete', 'Delete roles'],
+
+      // Permissions
+      ['permissions.view', 'permissions', 'view', 'View permissions list'],
+      ['permissions.assign', 'permissions', 'assign', 'Assign permissions to roles'],
+
+      // Reports
+      ['reports.view', 'reports', 'view', 'View reports'],
+      ['reports.export', 'reports', 'export', 'Export reports to CSV/PDF'],
+
+      // Settings
+      ['settings.view', 'settings', 'view', 'View system settings'],
+      ['settings.edit', 'settings', 'edit', 'Edit system settings'],
+
+      // Features
+      ['features.view', 'features', 'view', 'View features list']
+    ];
+
+    const permissionIds = {};
+    for (const [name, resource, action, description] of permissions) {
+      const existing = await db.get('SELECT id FROM permissions WHERE name = ?', [name]);
+      if (existing) {
+        permissionIds[name] = existing.id;
+      } else {
+        const result = await db.run(
+          'INSERT INTO permissions (name, resource, action, description) VALUES (?, ?, ?, ?)',
+          [name, resource, action, description]
+        );
+        permissionIds[name] = result.id;
+      }
+    }
+    console.log('✓ Default permissions created/verified');
+
+    // Assign permissions to roles
+    const rolePermissions = {
+      'admin': Object.keys(permissionIds), // Admin gets all permissions
+      'manager': [
+        'dashboard.view',
+        'products.view', 'products.edit',
+        'customers.view', 'customers.create', 'customers.edit',
+        'licenses.view', 'licenses.create', 'licenses.edit', 'licenses.renew', 'licenses.suspend',
+        'reports.view', 'reports.export',
+        'features.view'
+      ],
+      'viewer': [
+        'dashboard.view',
+        'products.view',
+        'customers.view',
+        'licenses.view',
+        'reports.view',
+        'features.view'
+      ],
+      'support': [
+        'dashboard.view',
+        'customers.view', 'customers.edit',
+        'licenses.view', 'licenses.create', 'licenses.renew',
+        'features.view'
+      ]
+    };
+
+    for (const [roleName, permissionNames] of Object.entries(rolePermissions)) {
+      const roleId = roleIds[roleName];
+      for (const permName of permissionNames) {
+        const permId = permissionIds[permName];
+        if (roleId && permId) {
+          const existing = await db.get(
+            'SELECT * FROM role_permissions WHERE role_id = ? AND permission_id = ?',
+            [roleId, permId]
+          );
+          if (!existing) {
+            await db.run(
+              'INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
+              [roleId, permId]
+            );
+          }
+        }
+      }
+    }
+    console.log('✓ Role permissions assigned');
+
+    // Update existing admin user to use role_id
+    const adminRole = await db.get('SELECT id FROM roles WHERE name = ?', ['admin']);
+    if (adminRole) {
+      await db.run(
+        'UPDATE users SET role_id = ? WHERE role = ?',
+        [adminRole.id, 'admin']
+      );
+      console.log('✓ Updated admin user with role_id');
+    }
+
     console.log('\n✅ Database seeding completed successfully!');
     console.log('\nDefault admin credentials:');
     console.log('Email:', process.env.ADMIN_EMAIL || 'admin@example.com');

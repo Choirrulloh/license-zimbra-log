@@ -66,6 +66,11 @@
             <span>Users</span>
           </a>
 
+          <a href="/roles" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'roles' ? 'bg-gray-700' : '' %>">
+            <i class="fas fa-user-tag w-5"></i>
+            <span>Roles & Permissions</span>
+          </a>
+
           <a href="/reports" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'reports' ? 'bg-gray-700' : '' %>">
             <i class="fas fa-file-alt w-5"></i>
             <span>Reports</span>
