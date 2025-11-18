@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <%- include('../layout', { body: '' }) %>
+</head>
+<body>
+  <div class="container mx-auto max-w-4xl">
+    <!-- Header -->
+    <div class="mb-6">
+      <a href="/permissions" class="text-blue-600 hover:text-blue-800 mb-2 inline-block">
+        <i class="fas fa-arrow-left mr-2"></i>Back to Permissions
+      </a>
+      <div class="flex justify-between items-start">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800"><%= permission.name %></h1>
+          <p class="text-gray-600 mt-1"><%= permission.description || 'No description provided' %></p>
+        </div>
+        <div class="space-x-2">
+          <a href="/permissions/<%= permission.id %>/edit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            <i class="fas fa-edit mr-2"></i>Edit
+          </a>
+          <button onclick="deletePermission(<%= permission.id %>, '<%= permission.name %>')"
+                  class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+            <i class="fas fa-trash mr-2"></i>Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Permission Info -->
+      <div class="lg:col-span-1">
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">Permission Details</h3>
+
+          <dl class="space-y-3">
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Name</dt>
+              <dd class="mt-1">
+                <code class="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded"><%= permission.name %></code>
+              </dd>
+            </div>
+
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Resource</dt>
+              <dd class="mt-1">
+                <span class="inline-flex items-center px-3 py-1 rounded bg-purple-100 text-purple-800 text-sm font-medium capitalize">
+                  <i class="fas fa-<%= permission.resource === 'dashboard' ? 'chart-line' : permission.resource === 'products' ? 'box' : permission.resource === 'customers' ? 'users' : permission.resource === 'licenses' ? 'certificate' : permission.resource === 'users' ? 'user-shield' : permission.resource === 'roles' ? 'user-tag' : permission.resource === 'permissions' ? 'key' : permission.resource === 'reports' ? 'file-alt' : permission.resource === 'settings' ? 'cog' : 'puzzle-piece' %> mr-2"></i>
+                  <%= permission.resource %>
+                </span>
+              </dd>
+            </div>
+
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Action</dt>
+              <dd class="mt-1">
+                <span class="inline-flex items-center px-3 py-1 rounded bg-green-100 text-green-800 text-sm font-medium">
+                  <%= permission.action %>
+                </span>
+              </dd>
+            </div>
+
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Created</dt>
+              <dd class="mt-1 text-sm text-gray-900">
+                <%= moment(permission.created_at).format('MMMM D, YYYY') %>
+              </dd>
+            </div>
+
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Last Updated</dt>
+              <dd class="mt-1 text-sm text-gray-900">
+                <%= moment(permission.updated_at).fromNow() %>
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Roles with this permission -->
+      <div class="lg:col-span-2">
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            Roles with this Permission (<%= roles.length %>)
+          </h3>
+
+          <% if (roles.length === 0) { %>
+            <div class="text-center py-12">
+              <i class="fas fa-user-tag text-5xl text-gray-300 mb-4"></i>
+              <p class="text-gray-500">This permission is not assigned to any roles yet.</p>
+              <a href="/roles" class="inline-block mt-4 text-blue-600 hover:text-blue-800">
+                <i class="fas fa-arrow-right mr-2"></i>Manage Roles
+              </a>
+            </div>
+          <% } else { %>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <% roles.forEach(role => { %>
+                <a href="/roles/<%= role.id %>"
+                   class="block p-4 border rounded-lg hover:bg-gray-50 hover:border-blue-500 transition">
+                  <div class="flex justify-between items-start mb-2">
+                    <h4 class="font-semibold text-gray-900"><%= role.display_name %></h4>
+                    <% if (role.is_active) { %>
+                      <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Active</span>
+                    <% } else { %>
+                      <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Inactive</span>
+                    <% } %>
+                  </div>
+                  <p class="text-sm text-gray-600 line-clamp-2"><%= role.description || 'No description' %></p>
+                  <div class="mt-2">
+                    <code class="text-xs text-gray-500"><%= role.name %></code>
+                  </div>
+                </a>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function deletePermission(id, name) {
+      if (!confirm(`Are you sure you want to delete the permission "${name}"?\n\nThis will remove it from all roles. This action cannot be undone.`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/permissions/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showToast(`Permission "${name}" deleted successfully`, 'success');
+          setTimeout(() => window.location.href = '/permissions', 1000);
+        } else {
+          showToast(data.error || 'Failed to delete permission', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to delete permission', 'error');
+      }
+    }
+  </script>
+</body>
+</html>
