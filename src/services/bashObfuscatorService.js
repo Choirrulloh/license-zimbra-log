@@ -1,6 +1,8 @@
 const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
+const archiver = require('archiver');
+const unzipper = require('unzipper');
 
 /**
  * Service for Bash script obfuscation and license injection
@@ -275,6 +277,158 @@ echo ""
     const hashSum = crypto.createHash('sha256');
     hashSum.update(fileBuffer);
     return hashSum.digest('hex');
+  }
+
+  /**
+   * Find all .sh files recursively in directory
+   */
+  async findShellFiles(dir) {
+    const files = [];
+    const items = await fs.readdir(dir, { withFileTypes: true });
+
+    for (const item of items) {
+      const fullPath = path.join(dir, item.name);
+      if (item.isDirectory()) {
+        files.push(...await this.findShellFiles(fullPath));
+      } else if (item.isFile() && item.name.endsWith('.sh')) {
+        files.push(fullPath);
+      }
+    }
+
+    return files;
+  }
+
+  /**
+   * Obfuscate multiple bash files from ZIP
+   * @param {string} inputZipPath - Path to input ZIP file
+   * @param {string} outputZipPath - Path to output ZIP file
+   * @param {string} level - Obfuscation level (low/medium/high)
+   * @param {object} customOptions - Custom options
+   * @param {string} mainScript - Name of main script (for license injection)
+   * @param {object} licenseConfig - License configuration (only applied to mainScript)
+   */
+  async obfuscateZip(inputZipPath, outputZipPath, level = 'medium', customOptions = {}, mainScript = null, licenseConfig = null) {
+    const tempDir = path.join(path.dirname(inputZipPath), `temp_bash_${Date.now()}`);
+    const outputDir = path.join(path.dirname(inputZipPath), `obf_bash_${Date.now()}`);
+
+    try {
+      // Create temp directories
+      await fs.mkdir(tempDir, { recursive: true });
+      await fs.mkdir(outputDir, { recursive: true });
+
+      // Extract ZIP
+      await fs.createReadStream(inputZipPath)
+        .pipe(unzipper.Extract({ path: tempDir }))
+        .promise();
+
+      // Find all .sh files
+      const shFiles = await this.findShellFiles(tempDir);
+
+      if (shFiles.length === 0) {
+        throw new Error('No shell script files found in ZIP');
+      }
+
+      // Obfuscate each file
+      const results = [];
+      for (const file of shFiles) {
+        const relativePath = path.relative(tempDir, file);
+        const outputPath = path.join(outputDir, relativePath);
+
+        // Create output directory
+        await fs.mkdir(path.dirname(outputPath), { recursive: true });
+
+        // Check if this is the main script that needs license injection
+        const isMainScript = mainScript && relativePath === mainScript;
+        const currentLicenseConfig = isMainScript ? licenseConfig : null;
+
+        // Obfuscate (with license injection only for main script)
+        const result = await this.obfuscateBashFile(file, outputPath, level, currentLicenseConfig);
+        results.push({
+          file: relativePath,
+          isMainScript,
+          licenseInjected: isMainScript && licenseConfig !== null,
+          ...result
+        });
+      }
+
+      // Copy non-.sh files to output directory (preserve directory structure)
+      await this.copyNonShellFiles(tempDir, outputDir);
+
+      // Create output ZIP
+      await this.createZip(outputDir, outputZipPath);
+
+      // Get stats
+      const originalSize = (await fs.stat(inputZipPath)).size;
+      const obfuscatedSize = (await fs.stat(outputZipPath)).size;
+
+      // Cleanup
+      await this.removeDirectory(tempDir);
+      await this.removeDirectory(outputDir);
+
+      return {
+        success: true,
+        filesProcessed: shFiles.length,
+        mainScript: mainScript,
+        licenseInjected: mainScript && licenseConfig !== null,
+        originalSize,
+        obfuscatedSize,
+        reduction: ((originalSize - obfuscatedSize) / originalSize * 100).toFixed(2),
+        details: results
+      };
+    } catch (error) {
+      // Cleanup on error
+      await this.removeDirectory(tempDir).catch(() => {});
+      await this.removeDirectory(outputDir).catch(() => {});
+      throw error;
+    }
+  }
+
+  /**
+   * Copy non-.sh files from source to destination (preserving structure)
+   */
+  async copyNonShellFiles(sourceDir, destDir) {
+    const items = await fs.readdir(sourceDir, { withFileTypes: true });
+
+    for (const item of items) {
+      const sourcePath = path.join(sourceDir, item.name);
+      const destPath = path.join(destDir, item.name);
+
+      if (item.isDirectory()) {
+        await fs.mkdir(destPath, { recursive: true });
+        await this.copyNonShellFiles(sourcePath, destPath);
+      } else if (item.isFile() && !item.name.endsWith('.sh')) {
+        // Copy non-.sh files as-is
+        await fs.copyFile(sourcePath, destPath);
+      }
+    }
+  }
+
+  /**
+   * Create ZIP archive from directory
+   */
+  async createZip(sourceDir, outputPath) {
+    return new Promise((resolve, reject) => {
+      const output = require('fs').createWriteStream(outputPath);
+      const archive = archiver('zip', { zlib: { level: 9 } });
+
+      output.on('close', () => resolve());
+      archive.on('error', (err) => reject(err));
+
+      archive.pipe(output);
+      archive.directory(sourceDir, false);
+      archive.finalize();
+    });
+  }
+
+  /**
+   * Remove directory recursively
+   */
+  async removeDirectory(dir) {
+    try {
+      await fs.rm(dir, { recursive: true, force: true });
+    } catch (error) {
+      // Ignore errors
+    }
   }
 }
 

@@ -164,6 +164,21 @@
                 The script will require a valid license key when executed
               </p>
 
+              <!-- Main Script Selection (for ZIP with multiple .sh files) -->
+              <div id="mainScriptSection" class="hidden mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  <i class="fas fa-file-code text-yellow-600 mr-1"></i>
+                  Select Main Script (Entry Point):
+                </label>
+                <select id="bashMainScript" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                  <option value="">-- Select Main Script --</option>
+                </select>
+                <p class="text-xs text-gray-600 mt-1">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  License validation will only be injected into the main script. Other scripts will be obfuscated only.
+                </p>
+              </div>
+
               <div class="mb-3">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Select Product:</label>
                 <select id="bashProductId" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
@@ -386,6 +401,7 @@
   <script>
     let selectedLevel = 'medium';
     let uploadedFile = null;
+    let uploadedFileData = null; // Store upload response data
     let currentObfuscationId = null;
 
     // Drag & Drop
@@ -417,7 +433,7 @@
       }
     });
 
-    function handleFileSelect(file) {
+    async function handleFileSelect(file) {
       // Validate file
       const allowedExts = ['.js', '.sh', '.zip'];
       const fileName = file.name.toLowerCase();
@@ -436,49 +452,127 @@
       // Store file
       uploadedFile = file;
 
-      // Check if bash script
-      const isBashScript = fileName.endsWith('.sh');
+      // Show uploading indicator
+      showToast('Analyzing file...', 'info');
 
-      // Show/hide bash protection section
-      if (isBashScript) {
-        document.getElementById('bashProtectionSection').classList.remove('hidden');
-      } else {
-        document.getElementById('bashProtectionSection').classList.add('hidden');
-        document.getElementById('bashInjectLicense').checked = false;
-        document.getElementById('bashInjectionOptions').classList.add('hidden');
-      }
+      try {
+        // Upload file to get metadata (including shell scripts in ZIP)
+        const formData = new FormData();
+        formData.append('file', file);
 
-      // Show in UI
-      document.getElementById('uploadedFiles').classList.remove('hidden');
-      const fileIcon = isBashScript ? 'fa-terminal' : 'fa-file-code';
-      const iconColor = isBashScript ? 'text-green-500' : 'text-blue-500';
+        const uploadRes = await fetch('/code-protection/upload', {
+          method: 'POST',
+          body: formData
+        });
 
-      document.getElementById('filesList').innerHTML = `
-        <div class="flex items-center justify-between bg-white p-3 rounded border">
-          <div class="flex items-center space-x-3">
-            <i class="fas ${fileIcon} ${iconColor} text-xl"></i>
-            <div>
-              <p class="text-sm font-medium text-gray-800">${file.name}</p>
-              <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(0)} KB</p>
+        const uploadData = await uploadRes.json();
+
+        if (!uploadData.success) {
+          throw new Error(uploadData.message);
+        }
+
+        // Store upload data
+        uploadedFileData = uploadData.file;
+
+        // Check if bash script
+        const isBashScript = fileName.endsWith('.sh');
+        const isZip = fileName.endsWith('.zip');
+
+        // Check if ZIP contains shell scripts
+        const hasShellScripts = uploadData.file.shellScripts && uploadData.file.shellScripts.length > 0;
+
+        // Show/hide bash protection section
+        if (isBashScript || (isZip && hasShellScripts)) {
+          document.getElementById('bashProtectionSection').classList.remove('hidden');
+
+          // Show main script selector for ZIP with multiple .sh files
+          if (hasShellScripts && uploadData.file.shellScripts.length > 1) {
+            const mainScriptSection = document.getElementById('mainScriptSection');
+            const mainScriptSelect = document.getElementById('bashMainScript');
+
+            // Clear and populate dropdown
+            mainScriptSelect.innerHTML = '<option value="">-- Select Main Script --</option>';
+            uploadData.file.shellScripts.forEach(script => {
+              const option = document.createElement('option');
+              option.value = script.path;
+              option.textContent = script.path;
+              mainScriptSelect.appendChild(option);
+            });
+
+            mainScriptSection.classList.remove('hidden');
+          } else if (hasShellScripts && uploadData.file.shellScripts.length === 1) {
+            // Only one .sh file, auto-select it
+            document.getElementById('bashMainScript').value = uploadData.file.shellScripts[0].path;
+            document.getElementById('mainScriptSection').classList.add('hidden');
+          } else {
+            document.getElementById('mainScriptSection').classList.add('hidden');
+          }
+        } else {
+          document.getElementById('bashProtectionSection').classList.add('hidden');
+          document.getElementById('bashInjectLicense').checked = false;
+          document.getElementById('bashInjectionOptions').classList.add('hidden');
+          document.getElementById('mainScriptSection').classList.add('hidden');
+        }
+
+        // Show in UI
+        document.getElementById('uploadedFiles').classList.remove('hidden');
+        let fileIcon = 'fa-file-code';
+        let iconColor = 'text-blue-500';
+
+        if (isBashScript) {
+          fileIcon = 'fa-terminal';
+          iconColor = 'text-green-500';
+        } else if (isZip) {
+          fileIcon = 'fa-file-archive';
+          iconColor = 'text-purple-500';
+        }
+
+        let shellScriptsInfo = '';
+        if (hasShellScripts) {
+          shellScriptsInfo = `<p class="text-xs text-green-600 mt-1">
+            <i class="fas fa-terminal mr-1"></i>
+            Found ${uploadData.file.shellScripts.length} shell script(s)
+          </p>`;
+        }
+
+        document.getElementById('filesList').innerHTML = `
+          <div class="flex items-center justify-between bg-white p-3 rounded border">
+            <div class="flex items-center space-x-3">
+              <i class="fas ${fileIcon} ${iconColor} text-xl"></i>
+              <div>
+                <p class="text-sm font-medium text-gray-800">${file.name}</p>
+                <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(0)} KB</p>
+                ${shellScriptsInfo}
+              </div>
             </div>
+            <button onclick="clearFiles()" class="text-red-500 hover:text-red-700">
+              <i class="fas fa-times"></i>
+            </button>
           </div>
-          <button onclick="clearFiles()" class="text-red-500 hover:text-red-700">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-      `;
+        `;
 
-      // Enable obfuscate button
-      const btn = document.getElementById('obfuscateBtn');
-      btn.disabled = false;
-      btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-      btn.classList.add('bg-blue-600', 'hover:bg-blue-700', 'cursor-pointer');
+        // Enable obfuscate button
+        const btn = document.getElementById('obfuscateBtn');
+        btn.disabled = false;
+        btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+        btn.classList.add('bg-blue-600', 'hover:bg-blue-700', 'cursor-pointer');
+
+        showToast('File ready for obfuscation', 'success');
+
+      } catch (error) {
+        showToast('Upload failed: ' + error.message, 'error');
+        uploadedFile = null;
+        uploadedFileData = null;
+      }
     }
 
     function clearFiles() {
       uploadedFile = null;
+      uploadedFileData = null;
       document.getElementById('uploadedFiles').classList.add('hidden');
       document.getElementById('fileInput').value = '';
+      document.getElementById('bashProtectionSection').classList.add('hidden');
+      document.getElementById('mainScriptSection').classList.add('hidden');
 
       const btn = document.getElementById('obfuscateBtn');
       btn.disabled = true;
@@ -522,36 +616,17 @@
     }
 
     async function startObfuscation() {
-      if (!uploadedFile) {
+      if (!uploadedFile || !uploadedFileData) {
         showToast('Please upload a file first', 'warning');
         return;
       }
 
       // Show processing modal
       document.getElementById('processingModal').classList.remove('hidden');
-      document.getElementById('progressBar').style.width = '25%';
-      document.getElementById('progressText').textContent = 'Uploading file...';
+      document.getElementById('progressBar').style.width = '50%';
+      document.getElementById('progressText').textContent = 'Obfuscating code...';
 
       try {
-        // Upload file
-        const formData = new FormData();
-        formData.append('file', uploadedFile);
-
-        const uploadRes = await fetch('/code-protection/upload', {
-          method: 'POST',
-          body: formData
-        });
-
-        const uploadData = await uploadRes.json();
-
-        if (!uploadData.success) {
-          throw new Error(uploadData.message);
-        }
-
-        // Update progress
-        document.getElementById('progressBar').style.width = '50%';
-        document.getElementById('progressText').textContent = 'Obfuscating code...';
-
         // Get options
         const options = {
           compact: document.getElementById('optCompact').checked,
@@ -564,7 +639,11 @@
 
         // Get bash injection options if applicable
         let bashInjection = null;
-        if (uploadedFile.name.toLowerCase().endsWith('.sh') &&
+        const fileName = uploadedFile.name.toLowerCase();
+        const isSingleBashScript = fileName.endsWith('.sh');
+        const isZipWithShellScripts = uploadedFileData.shellScripts && uploadedFileData.shellScripts.length > 0;
+
+        if ((isSingleBashScript || isZipWithShellScripts) &&
             document.getElementById('bashInjectLicense').checked) {
 
           const productId = document.getElementById('bashProductId').value;
@@ -572,9 +651,22 @@
             throw new Error('Please select a product for license injection');
           }
 
+          // For ZIP with multiple shell scripts, require main script selection
+          let mainScript = null;
+          if (isZipWithShellScripts && uploadedFileData.shellScripts.length > 1) {
+            mainScript = document.getElementById('bashMainScript').value;
+            if (!mainScript) {
+              throw new Error('Please select the main script for license injection');
+            }
+          } else if (isZipWithShellScripts && uploadedFileData.shellScripts.length === 1) {
+            // Auto-select single shell script
+            mainScript = uploadedFileData.shellScripts[0].path;
+          }
+
           bashInjection = {
             injectLicense: true,
             productId: parseInt(productId),
+            mainScript: mainScript, // For multi-script ZIP
             welcomeMessage: document.getElementById('bashWelcomeMsg').value,
             supportContact: document.getElementById('bashSupportContact').value,
             checkExpiry: document.getElementById('bashCheckExpiry').checked,
@@ -589,7 +681,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            fileId: uploadData.file.id,
+            fileId: uploadedFileData.id,
             originalName: uploadedFile.name,
             level: selectedLevel,
             options,

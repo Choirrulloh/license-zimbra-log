@@ -205,6 +205,16 @@ class CodeProtectionController {
       // Calculate hash
       const fileHash = await obfuscatorService.calculateFileHash(file.path);
 
+      // Detect shell scripts in ZIP for multi-script support
+      let shellScripts = [];
+      if (fileExt === '.zip') {
+        try {
+          shellScripts = await this.detectShellScriptsInZip(file.path);
+        } catch (error) {
+          console.warn('Error detecting shell scripts in ZIP:', error.message);
+        }
+      }
+
       res.json({
         success: true,
         file: {
@@ -212,7 +222,8 @@ class CodeProtectionController {
           originalName: file.originalname,
           size: file.size,
           hash: fileHash,
-          path: file.path
+          path: file.path,
+          shellScripts: shellScripts // List of .sh files found in ZIP
         }
       });
     } catch (error) {
@@ -315,12 +326,71 @@ class CodeProtectionController {
             customOptions
           );
         } else if (fileExt === '.zip') {
-          obfResult = await obfuscatorService.obfuscateZip(
-            uploadPath,
-            outputPath,
-            level,
-            customOptions
-          );
+          // Detect if ZIP contains .sh files for bash multi-script support
+          let zipShellScripts = [];
+          try {
+            zipShellScripts = await this.detectShellScriptsInZip(uploadPath);
+          } catch (error) {
+            console.warn('Error detecting shell scripts:', error.message);
+          }
+
+          // If ZIP contains .sh files, use bash obfuscator
+          if (zipShellScripts.length > 0) {
+            // Prepare license config for bash ZIP
+            let licenseConfig = null;
+            const mainScript = bashInjection?.mainScript || null;
+
+            if (bashInjection && bashInjection.injectLicense && bashInjection.productId && mainScript) {
+              const product = await db.get('SELECT * FROM products WHERE id = ?', [bashInjection.productId]);
+
+              if (!product) {
+                throw new Error('Selected product not found');
+              }
+
+              const settings = await db.all('SELECT key, value FROM settings');
+              const settingsObj = settings.reduce((acc, s) => {
+                acc[s.key] = s.value;
+                return acc;
+              }, {});
+
+              const apiUrl = settingsObj.app_url
+                ? `${settingsObj.app_url}/api/validate`
+                : 'http://localhost:3000/api/validate';
+
+              licenseConfig = {
+                productId: product.id,
+                productName: product.name,
+                apiUrl: apiUrl,
+                welcomeMessage: bashInjection.welcomeMessage || `License Protected Script - ${product.name}`,
+                supportContact: bashInjection.supportContact || settingsObj.email_from_address || 'support@example.com',
+                checkExpiry: bashInjection.checkExpiry !== false,
+                checkActivation: bashInjection.checkActivation !== false,
+                checkMachine: bashInjection.checkMachine === true,
+                showInfo: bashInjection.showInfo !== false
+              };
+
+              licenseInjected = true;
+              injectedProductId = product.id;
+            }
+
+            // Obfuscate bash ZIP with main script selection
+            obfResult = await bashObfuscatorService.obfuscateZip(
+              uploadPath,
+              outputPath,
+              level,
+              customOptions,
+              mainScript,
+              licenseConfig
+            );
+          } else {
+            // Regular JavaScript ZIP
+            obfResult = await obfuscatorService.obfuscateZip(
+              uploadPath,
+              outputPath,
+              level,
+              customOptions
+            );
+          }
         } else if (fileExt === '.sh') {
           // Handle bash script
           let licenseConfig = null;
@@ -543,6 +613,45 @@ class CodeProtectionController {
         success: false,
         message: 'Error fetching quota'
       });
+    }
+  }
+
+  /**
+   * Detect shell scripts in uploaded ZIP file
+   */
+  async detectShellScriptsInZip(zipPath) {
+    const unzipper = require('unzipper');
+    const tempDir = path.join(path.dirname(zipPath), `detect_${Date.now()}`);
+
+    try {
+      // Create temp directory
+      await fs.mkdir(tempDir, { recursive: true });
+
+      // Extract ZIP
+      await fs.createReadStream(zipPath)
+        .pipe(unzipper.Extract({ path: tempDir }))
+        .promise();
+
+      // Find all .sh files using bashObfuscatorService
+      const shFiles = await bashObfuscatorService.findShellFiles(tempDir);
+
+      // Get relative paths
+      const shellScripts = shFiles.map(file => {
+        const relativePath = path.relative(tempDir, file);
+        return {
+          path: relativePath,
+          name: path.basename(file)
+        };
+      });
+
+      // Cleanup
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+
+      return shellScripts;
+    } catch (error) {
+      // Cleanup on error
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+      throw error;
     }
   }
 }
