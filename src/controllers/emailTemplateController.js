@@ -21,14 +21,30 @@ class EmailTemplateController {
       const templates = await db.all(
         `SELECT id, name, type, language, design_variation, subject, is_active, is_default, created_at, updated_at
          FROM email_templates
-         ORDER BY type, name, language, design_variation`
+         ORDER BY name, language, design_variation`
       );
+
+      // Group templates by name
+      const groupedTemplates = {};
+      templates.forEach(template => {
+        if (!groupedTemplates[template.name]) {
+          groupedTemplates[template.name] = {
+            name: template.name,
+            type: template.type,
+            variants: []
+          };
+        }
+        groupedTemplates[template.name].variants.push(template);
+      });
+
+      // Convert to array for rendering
+      const templateGroups = Object.values(groupedTemplates);
 
       res.render('settings/email-templates/index', {
         user: req.session,
         currentPage: 'settings',
         pageTitle: 'Email Templates',
-        templates,
+        templateGroups,
         moment
       });
     } catch (error) {
