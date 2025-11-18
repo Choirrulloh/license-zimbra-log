@@ -16,6 +16,7 @@ const featuresController = require('../controllers/featuresController');
 const settingsController = require('../controllers/settingsController');
 const roleController = require('../controllers/roleController');
 const permissionController = require('../controllers/permissionController');
+const emailTemplateController = require('../controllers/emailTemplateController');
 
 // Public routes
 router.get('/', (req, res) => {
@@ -113,6 +114,17 @@ router.delete('/permissions/:id', requireAdmin, permissionController.delete);
 // Settings (Admin only)
 router.get('/settings', requireAdmin, settingsController.index);
 router.post('/settings', requireAdmin, settingsController.updateSettings);
+
+// Email Templates (Admin only)
+router.get('/settings/email-templates', requireAdmin, emailTemplateController.index);
+router.get('/settings/email-templates/create', requireAdmin, emailTemplateController.create);
+router.post('/settings/email-templates/create', requireAdmin, emailTemplateController.create);
+router.get('/settings/email-templates/logs', requireAdmin, emailTemplateController.logs);
+router.get('/settings/email-templates/:id', requireAdmin, emailTemplateController.show);
+router.get('/settings/email-templates/:id/edit', requireAdmin, emailTemplateController.edit);
+router.post('/settings/email-templates/:id/edit', requireAdmin, emailTemplateController.update);
+router.post('/settings/email-templates/:id/preview', requireAdmin, emailTemplateController.preview);
+router.delete('/settings/email-templates/:id', requireAdmin, emailTemplateController.delete);
 
 // Public API for license validation
 router.post('/api/validate', apiController.validateLicense);
