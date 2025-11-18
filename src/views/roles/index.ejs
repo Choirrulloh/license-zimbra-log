@@ -1,25 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <%- include('../layout', { body: '' }) %>
+  <title>Roles & Permissions - License Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-  <div class="container mx-auto">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-800">Roles & Permissions</h1>
-        <p class="text-gray-600 mt-1">Manage system roles and their permissions</p>
+<body class="bg-gray-100">
+  <div class="flex h-screen overflow-hidden">
+    <aside class="w-64 bg-gray-800 text-white flex-shrink-0">
+      <div class="p-4">
+        <h1 class="text-2xl font-bold mb-8"><i class="fas fa-key"></i> License Manager</h1>
+        <nav class="space-y-2">
+          <a href="/dashboard" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-chart-line w-5"></i><span>Dashboard</span></a>
+          <a href="/products" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-box w-5"></i><span>Products</span></a>
+          <a href="/customers" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-users w-5"></i><span>Customers</span></a>
+          <a href="/licenses" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-certificate w-5"></i><span>Licenses</span></a>
+          <a href="/features" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-puzzle-piece w-5"></i><span>Features</span></a>
+          <a href="/users" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-user-shield w-5"></i><span>Users</span></a>
+          <a href="/roles" class="flex items-center space-x-3 p-3 rounded bg-gray-700"><i class="fas fa-user-tag w-5"></i><span>Roles & Permissions</span></a>
+          <a href="/reports" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-file-alt w-5"></i><span>Reports</span></a>
+          <a href="/docs" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-book w-5"></i><span>API Docs</span></a>
+          <a href="/settings" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700"><i class="fas fa-cog w-5"></i><span>Settings</span></a>
+        </nav>
       </div>
-      <div class="space-x-2">
-        <a href="/permissions" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
-          <i class="fas fa-key mr-2"></i>Manage Permissions
-        </a>
-        <a href="/roles/create" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-          <i class="fas fa-plus mr-2"></i>Create Role
-        </a>
+      <div class="absolute bottom-0 w-64 p-4 bg-gray-900">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center"><i class="fas fa-user"></i></div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate"><%= user.userName || 'Admin' %></p>
+            <p class="text-xs text-gray-400 truncate"><%= user.userEmail || '' %></p>
+          </div>
+          <a href="/logout" class="text-gray-400 hover:text-white"><i class="fas fa-sign-out-alt"></i></a>
+        </div>
       </div>
-    </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <header class="bg-white shadow-sm">
+        <div class="flex items-center justify-between p-4">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-800">Roles & Permissions</h2>
+            <p class="text-sm text-gray-600">Manage system roles and their permissions</p>
+          </div>
+          <div class="space-x-2">
+            <a href="/permissions" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm">
+              <i class="fas fa-key mr-1"></i>Manage Permissions
+            </a>
+            <a href="/roles/create" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
+              <i class="fas fa-plus mr-1"></i>Create Role
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-y-auto p-6">
+        <% if (roles.length === 0) { %>
+          <div class="bg-white rounded-lg shadow p-12 text-center">
+            <i class="fas fa-user-tag text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">No Roles Found</h3>
+            <p class="text-gray-600 mb-4">Get started by creating your first role.</p>
+            <a href="/roles/create" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700">
+              <i class="fas fa-plus mr-2"></i>Create First Role
+            </a>
+          </div>
+        <% } else { %>
 
     <!-- Roles Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -67,36 +111,56 @@
           </div>
         </div>
       <% }) %>
+          </div>
+        <% } %>
+      </main>
     </div>
-
-    <% if (roles.length === 0) { %>
-      <div class="bg-white rounded-lg shadow p-12 text-center">
-        <i class="fas fa-user-tag text-6xl text-gray-300 mb-4"></i>
-        <h3 class="text-xl font-semibold text-gray-800 mb-2">No Roles Found</h3>
-        <p class="text-gray-600 mb-4">Get started by creating your first role.</p>
-        <a href="/roles/create" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700">
-          <i class="fas fa-plus mr-2"></i>Create First Role
-        </a>
-      </div>
-    <% } %>
   </div>
 
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
   <script>
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        warning: 'bg-yellow-500',
+        info: 'bg-blue-500'
+      };
+      const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-times-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+      };
+      toast.className = `${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 min-w-[300px] max-w-md`;
+      toast.innerHTML = `
+        <i class="fas ${icons[type]} text-xl"></i>
+        <span class="flex-1">${message}</span>
+        <button onclick="this.parentElement.remove()" class="text-white hover:text-gray-200">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+
     async function deleteRole(id, name) {
       if (!confirm(`Are you sure you want to delete the role "${name}"?\n\nThis action cannot be undone.`)) {
         return;
       }
-
       try {
         const response = await fetch(`/roles/${id}`, {
           method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          headers: { 'Content-Type': 'application/json' }
         });
-
         const data = await response.json();
-
         if (response.ok) {
           showToast(`Role "${name}" deleted successfully`, 'success');
           setTimeout(() => window.location.reload(), 1000);
