@@ -22,17 +22,26 @@ class EmailTemplateController {
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
 
+      console.log('=== EMAIL TEMPLATES DEBUG START ===');
+
+      // Check if table exists
+      const tables = await db.all("SELECT name FROM sqlite_master WHERE type='table' AND name='email_templates'");
+      console.log('Table exists:', tables.length > 0);
+
+      // Get count
+      const countResult = await db.all('SELECT COUNT(*) as count FROM email_templates');
+      console.log('Count query result:', countResult[0].count);
+
       const templates = await db.all(
         `SELECT id, name, type, language, design_variation, subject, is_active, created_at, updated_at
          FROM email_templates
          ORDER BY type, name, language, design_variation`
       );
 
-      console.log('=== EMAIL TEMPLATES DEBUG ===');
       console.log('Templates fetched:', templates.length);
       console.log('Is array:', Array.isArray(templates));
       console.log('First template:', templates.length > 0 ? templates[0].name : 'NONE');
-      console.log('============================');
+      console.log('=== EMAIL TEMPLATES DEBUG END ===');
 
       res.render('settings/email-templates/index', {
         user: req.session,
