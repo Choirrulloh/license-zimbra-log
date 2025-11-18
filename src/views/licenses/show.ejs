@@ -194,6 +194,13 @@
       const days = prompt('Enter number of days to renew:', '365');
       if (!days) return;
 
+      const confirmed = await showConfirm(
+        `Are you sure you want to renew this license for ${days} days?`,
+        'Confirm License Renewal',
+        { type: 'info', confirmText: 'Renew' }
+      );
+      if (!confirmed) return;
+
       try {
         const res = await fetch('/licenses/<%= license.id %>/renew', {
           method: 'POST',
@@ -215,6 +222,13 @@
     async function suspendLicense() {
       const reason = prompt('Enter reason for suspension:');
       if (!reason) return;
+
+      const confirmed = await showConfirm(
+        'Are you sure you want to suspend this license? The license will be temporarily deactivated.',
+        'Confirm License Suspension',
+        { type: 'warning', confirmText: 'Suspend' }
+      );
+      if (!confirmed) return;
 
       try {
         const res = await fetch('/licenses/<%= license.id %>/suspend', {
