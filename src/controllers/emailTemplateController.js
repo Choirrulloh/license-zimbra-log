@@ -32,6 +32,14 @@ class EmailTemplateController {
       const countResult = await db.all('SELECT COUNT(*) as count FROM email_templates');
       console.log('Count query result:', countResult[0].count);
 
+      // If empty, auto-seed
+      if (countResult[0].count === 0) {
+        console.log('⚠️ Database empty! Auto-seeding templates...');
+        const seedEmailTemplates = require('../database/seedEmailTemplates');
+        await seedEmailTemplates();
+        console.log('✓ Auto-seed completed');
+      }
+
       const templates = await db.all(
         `SELECT id, name, type, language, design_variation, subject, is_active, created_at, updated_at
          FROM email_templates
