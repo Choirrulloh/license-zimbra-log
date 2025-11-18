@@ -415,12 +415,15 @@ class EmailTemplateController {
         await db.run('COMMIT');
 
         // Log activity
-        await ActivityLogger.log(
-          req.session.userId,
-          'email_template_default_set',
-          `Set ${template.name} (${template.type}) as default template`,
-          req
-        );
+        await ActivityLogger.log({
+          userId: req.session.userId,
+          action: 'email_template_default_set',
+          entityType: 'email_template',
+          entityId: template.id,
+          description: `Set ${template.name} (${template.type}) as default template`,
+          ipAddress: req.ip || req.connection?.remoteAddress,
+          userAgent: req.headers?.['user-agent']
+        });
 
         res.json({
           success: true,
