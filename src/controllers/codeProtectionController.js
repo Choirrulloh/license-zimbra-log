@@ -3,6 +3,7 @@ const moment = require('moment');
 const path = require('path');
 const fs = require('fs').promises;
 const obfuscatorService = require('../services/obfuscatorService');
+const bashObfuscatorService = require('../services/bashObfuscatorService');
 const ActivityLogger = require('../utils/activityLogger');
 
 class CodeProtectionController {
@@ -66,11 +67,23 @@ class CodeProtectionController {
         [userId]
       );
 
+      // Get products for bash license injection
+      const products = await db.all('SELECT id, name FROM products ORDER BY name');
+
+      // Get settings for API URL
+      const settings = await db.all('SELECT key, value FROM settings');
+      const settingsObj = settings.reduce((acc, s) => {
+        acc[s.key] = s.value;
+        return acc;
+      }, {});
+
       res.render('code-protection/index', {
         user: req.session,
         currentPage: 'code-protection',
         quota,
         recentObfuscations,
+        products,
+        apiUrl: settingsObj.app_url ? `${settingsObj.app_url}/api/validate` : 'http://localhost:3000/api/validate',
         moment
       });
     } catch (error) {
@@ -139,14 +152,14 @@ class CodeProtectionController {
       const userId = req.session.userId;
 
       // Validate file extension
-      const allowedExtensions = ['.js', '.zip'];
+      const allowedExtensions = ['.js', '.zip', '.sh'];
       const fileExt = path.extname(file.originalname).toLowerCase();
 
       if (!allowedExtensions.includes(fileExt)) {
         await fs.unlink(file.path);
         return res.status(400).json({
           success: false,
-          message: 'Invalid file type. Only .js and .zip files are allowed'
+          message: 'Invalid file type. Only .js, .sh, and .zip files are allowed'
         });
       }
 
@@ -219,7 +232,7 @@ class CodeProtectionController {
    */
   async obfuscate(req, res) {
     try {
-      const { fileId, level, options } = req.body;
+      const { fileId, level, options, bashInjection } = req.body;
       const userId = req.session.userId;
 
       if (!fileId || !level) {
@@ -291,6 +304,8 @@ class CodeProtectionController {
         // Obfuscate
         let obfResult;
         const startTime = Date.now();
+        let licenseInjected = false;
+        let injectedProductId = null;
 
         if (fileExt === '.js') {
           obfResult = await obfuscatorService.obfuscateFile(
@@ -305,6 +320,54 @@ class CodeProtectionController {
             outputPath,
             level,
             customOptions
+          );
+        } else if (fileExt === '.sh') {
+          // Handle bash script
+          let licenseConfig = null;
+
+          // Check if license injection is enabled
+          if (bashInjection && bashInjection.injectLicense && bashInjection.productId) {
+            // Get product info
+            const product = await db.get('SELECT * FROM products WHERE id = ?', [bashInjection.productId]);
+
+            if (!product) {
+              throw new Error('Selected product not found');
+            }
+
+            // Get settings for API URL
+            const settings = await db.all('SELECT key, value FROM settings');
+            const settingsObj = settings.reduce((acc, s) => {
+              acc[s.key] = s.value;
+              return acc;
+            }, {});
+
+            const apiUrl = settingsObj.app_url
+              ? `${settingsObj.app_url}/api/validate`
+              : 'http://localhost:3000/api/validate';
+
+            // Prepare license config
+            licenseConfig = {
+              productId: product.id,
+              productName: product.name,
+              apiUrl: apiUrl,
+              welcomeMessage: bashInjection.welcomeMessage || `License Protected Script - ${product.name}`,
+              supportContact: bashInjection.supportContact || settingsObj.email_from_address || 'support@example.com',
+              checkExpiry: bashInjection.checkExpiry !== false,
+              checkActivation: bashInjection.checkActivation !== false,
+              checkMachine: bashInjection.checkMachine === true,
+              showInfo: bashInjection.showInfo !== false
+            };
+
+            licenseInjected = true;
+            injectedProductId = product.id;
+          }
+
+          // Obfuscate bash script with optional license injection
+          obfResult = await bashObfuscatorService.obfuscateBashFile(
+            uploadPath,
+            outputPath,
+            level,
+            licenseConfig
           );
         }
 
@@ -321,9 +384,21 @@ class CodeProtectionController {
                output_path = ?,
                status = 'completed',
                completed_at = CURRENT_TIMESTAMP,
-               expires_at = ?
+               expires_at = ?,
+               license_injected = ?,
+               injected_product_id = ?,
+               validation_options = ?
            WHERE id = ?`,
-          [outputFilename, obfResult.obfuscatedSize, outputPath, expiresAt, obfuscationId]
+          [
+            outputFilename,
+            obfResult.obfuscatedSize,
+            outputPath,
+            expiresAt,
+            licenseInjected ? 1 : 0,
+            injectedProductId,
+            licenseInjected ? JSON.stringify(bashInjection || {}) : null,
+            obfuscationId
+          ]
         );
 
         // Update quota

@@ -58,8 +58,8 @@
             <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 mb-3"></i>
             <p class="text-lg text-gray-600 mb-2">Drag & Drop Files Here</p>
             <p class="text-sm text-gray-500 mb-4">or click to browse your computer</p>
-            <p class="text-xs text-gray-400">Supported: .js, .zip | Max size: <%= quota.max_file_size_mb %>MB</p>
-            <input type="file" id="fileInput" accept=".js,.zip" class="hidden">
+            <p class="text-xs text-gray-400">Supported: .js, .sh, .zip | Max size: <%= quota.max_file_size_mb %>MB</p>
+            <input type="file" id="fileInput" accept=".js,.sh,.zip" class="hidden">
           </div>
 
           <div id="uploadedFiles" class="hidden mb-4">
@@ -145,6 +145,71 @@
               <button onclick="resetAdvanced()" class="mt-2 text-sm text-blue-600 hover:text-blue-700">
                 Reset to Default
               </button>
+            </div>
+          </div>
+
+          <!-- Bash Script Protection (only shown for .sh files) -->
+          <div id="bashProtectionSection" class="hidden mt-4 border-t pt-4">
+            <label class="flex items-center cursor-pointer">
+              <input type="checkbox" id="bashInjectLicense" class="mr-2" onchange="toggleBashInjection()">
+              <span class="text-sm font-medium text-gray-700">
+                <i class="fas fa-terminal text-green-600 mr-1"></i>
+                Inject License Validation (Bash Scripts Only)
+              </span>
+            </label>
+
+            <div id="bashInjectionOptions" class="hidden mt-4 bg-green-50 rounded-lg p-4 border border-green-200">
+              <p class="text-sm text-gray-700 mb-3">
+                <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                The script will require a valid license key when executed
+              </p>
+
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Select Product:</label>
+                <select id="bashProductId" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                  <option value="">-- Select Product --</option>
+                  <% products.forEach(product => { %>
+                    <option value="<%= product.id %>"><%= product.name %></option>
+                  <% }) %>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Welcome Message:</label>
+                <input type="text" id="bashWelcomeMsg" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="License Protected Script">
+              </div>
+
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Support Contact:</label>
+                <input type="text" id="bashSupportContact" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="support@example.com">
+              </div>
+
+              <div class="space-y-2 mt-3">
+                <p class="text-sm font-medium text-gray-700">Validation Options:</p>
+                <label class="flex items-center">
+                  <input type="checkbox" id="bashCheckExpiry" class="mr-2" checked>
+                  <span class="text-sm text-gray-700">Check license expiry</span>
+                </label>
+                <label class="flex items-center">
+                  <input type="checkbox" id="bashCheckActivation" class="mr-2" checked>
+                  <span class="text-sm text-gray-700">Check activation status</span>
+                </label>
+                <label class="flex items-center">
+                  <input type="checkbox" id="bashCheckMachine" class="mr-2">
+                  <span class="text-sm text-gray-700">Validate machine binding</span>
+                </label>
+                <label class="flex items-center">
+                  <input type="checkbox" id="bashShowInfo" class="mr-2" checked>
+                  <span class="text-sm text-gray-700">Show license info after validation</span>
+                </label>
+              </div>
+
+              <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
+                <p class="text-xs text-blue-700">
+                  <i class="fas fa-lightbulb mr-1"></i>
+                  API Endpoint: <%= apiUrl %>
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -354,12 +419,12 @@
 
     function handleFileSelect(file) {
       // Validate file
-      const allowedExts = ['.js', '.zip'];
+      const allowedExts = ['.js', '.sh', '.zip'];
       const fileName = file.name.toLowerCase();
       const isValid = allowedExts.some(ext => fileName.endsWith(ext));
 
       if (!isValid) {
-        showToast('Invalid file type. Only .js and .zip files are allowed', 'error');
+        showToast('Invalid file type. Only .js, .sh, and .zip files are allowed', 'error');
         return;
       }
 
@@ -371,12 +436,27 @@
       // Store file
       uploadedFile = file;
 
+      // Check if bash script
+      const isBashScript = fileName.endsWith('.sh');
+
+      // Show/hide bash protection section
+      if (isBashScript) {
+        document.getElementById('bashProtectionSection').classList.remove('hidden');
+      } else {
+        document.getElementById('bashProtectionSection').classList.add('hidden');
+        document.getElementById('bashInjectLicense').checked = false;
+        document.getElementById('bashInjectionOptions').classList.add('hidden');
+      }
+
       // Show in UI
       document.getElementById('uploadedFiles').classList.remove('hidden');
+      const fileIcon = isBashScript ? 'fa-terminal' : 'fa-file-code';
+      const iconColor = isBashScript ? 'text-green-500' : 'text-blue-500';
+
       document.getElementById('filesList').innerHTML = `
         <div class="flex items-center justify-between bg-white p-3 rounded border">
           <div class="flex items-center space-x-3">
-            <i class="fas fa-file-code text-blue-500 text-xl"></i>
+            <i class="fas ${fileIcon} ${iconColor} text-xl"></i>
             <div>
               <p class="text-sm font-medium text-gray-800">${file.name}</p>
               <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(0)} KB</p>
@@ -432,6 +512,15 @@
       document.getElementById('optDisableConsole').checked = false;
     }
 
+    function toggleBashInjection() {
+      const options = document.getElementById('bashInjectionOptions');
+      if (document.getElementById('bashInjectLicense').checked) {
+        options.classList.remove('hidden');
+      } else {
+        options.classList.add('hidden');
+      }
+    }
+
     async function startObfuscation() {
       if (!uploadedFile) {
         showToast('Please upload a file first', 'warning');
@@ -473,6 +562,28 @@
           disableConsole: document.getElementById('optDisableConsole').checked
         };
 
+        // Get bash injection options if applicable
+        let bashInjection = null;
+        if (uploadedFile.name.toLowerCase().endsWith('.sh') &&
+            document.getElementById('bashInjectLicense').checked) {
+
+          const productId = document.getElementById('bashProductId').value;
+          if (!productId) {
+            throw new Error('Please select a product for license injection');
+          }
+
+          bashInjection = {
+            injectLicense: true,
+            productId: parseInt(productId),
+            welcomeMessage: document.getElementById('bashWelcomeMsg').value,
+            supportContact: document.getElementById('bashSupportContact').value,
+            checkExpiry: document.getElementById('bashCheckExpiry').checked,
+            checkActivation: document.getElementById('bashCheckActivation').checked,
+            checkMachine: document.getElementById('bashCheckMachine').checked,
+            showInfo: document.getElementById('bashShowInfo').checked
+          };
+        }
+
         // Obfuscate
         const obfRes = await fetch('/code-protection/obfuscate', {
           method: 'POST',
@@ -481,7 +592,8 @@
             fileId: uploadData.file.id,
             originalName: uploadedFile.name,
             level: selectedLevel,
-            options
+            options,
+            bashInjection
           })
         });
 

@@ -14,11 +14,25 @@ class ApiController {
    */
   async validateLicense(req, res) {
     try {
-      const { license_key, hardware_id, hostname, ip_address } = req.body;
+      const {
+        license_key,
+        licenseKey, // Support both formats (bash script uses this)
+        hardware_id,
+        hostname,
+        ip_address,
+        productId, // For bash script validation
+        machineId, // For bash script validation
+        checkExpiry,
+        checkActivation,
+        checkMachine
+      } = req.body;
 
-      if (!license_key) {
+      const key = license_key || licenseKey;
+
+      if (!key) {
         return res.status(400).json({
           valid: false,
+          message: 'License key is required',
           error: 'License key is required'
         });
       }
@@ -34,27 +48,38 @@ class ApiController {
          JOIN license_types lt ON l.license_type_id = lt.id
          JOIN customers c ON l.customer_id = c.id
          WHERE l.license_key = ?`,
-        [license_key]
+        [key]
       );
 
       if (!license) {
         return res.json({
           valid: false,
+          message: 'Invalid license key',
           error: 'Invalid license key'
         });
       }
 
-      // Check if license is active
-      if (license.status !== 'active') {
+      // Check product match (for bash scripts)
+      if (productId && license.product_id !== parseInt(productId)) {
         return res.json({
           valid: false,
+          message: 'License not valid for this product',
+          error: 'License not valid for this product'
+        });
+      }
+
+      // Check if license is active (if checkActivation is true or undefined)
+      if (checkActivation !== false && license.status !== 'active') {
+        return res.json({
+          valid: false,
+          message: `License is ${license.status}`,
           error: `License is ${license.status}`,
           status: license.status
         });
       }
 
-      // Check expiry date
-      if (license.expiry_date) {
+      // Check expiry date (if checkExpiry is true or undefined)
+      if (checkExpiry !== false && license.expiry_date) {
         const expiryDate = new Date(license.expiry_date);
         const now = new Date();
         if (now > expiryDate) {
@@ -66,6 +91,7 @@ class ApiController {
 
           return res.json({
             valid: false,
+            message: `License expired on ${license.expiry_date.split(' ')[0]}`,
             error: 'License has expired',
             expiry_date: license.expiry_date
           });
@@ -131,9 +157,25 @@ class ApiController {
         features = [];
       }
 
+      // Log bash script validation if applicable
+      if (productId) {
+        await db.run(
+          `INSERT INTO script_license_validations
+           (license_id, validation_result, ip_address, user_agent, validated_at)
+           VALUES (?, 'valid', ?, ?, CURRENT_TIMESTAMP)`,
+          [license.id, req.ip || req.connection?.remoteAddress, req.headers?.['user-agent']]
+        );
+      }
+
       // Return validation response
       res.json({
         valid: true,
+        // Bash script friendly fields
+        productName: license.product_name,
+        customerName: license.customer_name,
+        expiresAt: license.expiry_date,
+        status: license.status,
+        // Full license object for backward compatibility
         license: {
           key: license.license_key,
           product: {
