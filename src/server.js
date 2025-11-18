@@ -5,10 +5,26 @@ const path = require('path');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const cors = require('cors');
+const os = require('os');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0'; // Bind to all network interfaces
+
+// Function to get server IP address
+function getServerIP() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      // Skip internal (loopback) and non-IPv4 addresses
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+}
 
 // Security middleware
 app.use(helmet({
@@ -75,7 +91,9 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+const serverIP = getServerIP();
+
+app.listen(PORT, HOST, () => {
   console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║                                                       ║
@@ -83,7 +101,9 @@ app.listen(PORT, () => {
 ║   Server running on port ${PORT}                        ║
 ║                                                       ║
 ║   Environment: ${process.env.NODE_ENV || 'development'}                              ║
-║   URL: http://localhost:${PORT}                         ║
+║                                                       ║
+║   Local:   http://localhost:${PORT}                     ║
+║   Network: http://${serverIP}:${PORT}                   ║
 ║                                                       ║
 ║   Admin Login:                                        ║
 ║   Email: ${process.env.ADMIN_EMAIL || 'admin@example.com'}                    ║
