@@ -51,84 +51,264 @@
       </header>
 
       <main class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-4xl mx-auto">
-          <div class="bg-white rounded-lg shadow p-6">
-            <% if (error) { %>
-              <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                <%= error %>
+        <div class="max-w-5xl mx-auto">
+          <!-- Header Card with Gradient -->
+          <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-lg p-6 mb-6">
+            <div class="flex items-center space-x-4">
+              <div class="w-16 h-16 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                <i class="fas fa-plus-circle text-4xl"></i>
               </div>
-            <% } %>
+              <div>
+                <h2 class="text-2xl font-bold">Create New Email Template</h2>
+                <p class="text-blue-100 text-sm mt-1">
+                  Add a new email template variant with custom language and design
+                </p>
+              </div>
+            </div>
+          </div>
 
-            <form method="POST" action="/settings/email-templates/create">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label class="block text-gray-700 text-sm font-medium mb-2">Template Name *</label>
-                  <input type="text" name="name" required placeholder="e.g., welcome_email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-                  <p class="text-xs text-gray-500 mt-1">Use underscores, lowercase only</p>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left: Form -->
+            <div class="lg:col-span-2">
+              <div class="bg-white rounded-lg shadow">
+                <% if (error) { %>
+                  <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 m-4 rounded">
+                    <div class="flex items-center">
+                      <i class="fas fa-exclamation-triangle mr-2"></i>
+                      <span><%= error %></span>
+                    </div>
+                  </div>
+                <% } %>
+
+                <form method="POST" action="/settings/email-templates/create" class="p-6">
+                  <!-- Template Identity -->
+                  <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                      <i class="fas fa-tag text-blue-500 mr-2"></i>
+                      Template Identity
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-2">
+                          Template Name *
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          required
+                          placeholder="welcome_email"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                        <p class="text-xs text-gray-500 mt-1">
+                          <i class="fas fa-info-circle"></i> Use underscores, lowercase (e.g., license_created)
+                        </p>
+                      </div>
+
+                      <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-2">
+                          Type *
+                        </label>
+                        <select
+                          name="type"
+                          required
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">Select type...</option>
+                          <option value="user">👤 User</option>
+                          <option value="license">🔑 License</option>
+                          <option value="system">⚙️ System</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-2">
+                          Language *
+                        </label>
+                        <select
+                          name="language"
+                          required
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">Select language...</option>
+                          <option value="en">🇬🇧 English (EN)</option>
+                          <option value="id">🇮🇩 Indonesian (ID)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-2">
+                          Design Variation *
+                        </label>
+                        <select
+                          name="design_variation"
+                          required
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">Select variation...</option>
+                          <option value="1">Design 1 (Formal)</option>
+                          <option value="2">Design 2 (Modern)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="border-t pt-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                      <i class="fas fa-envelope text-blue-500 mr-2"></i>
+                      Email Content
+                    </h3>
+
+                    <div class="mb-4">
+                      <label class="block text-gray-700 text-sm font-medium mb-2">
+                        Subject Line *
+                      </label>
+                      <input
+                        type="text"
+                        name="subject"
+                        required
+                        placeholder="Welcome to {{company.name}}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                      <p class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-magic"></i> Use {{variable}} for dynamic content
+                      </p>
+                    </div>
+
+                    <div class="mb-4">
+                      <label class="block text-gray-700 text-sm font-medium mb-2">
+                        Available Variables
+                      </label>
+                      <input
+                        type="text"
+                        name="variables"
+                        placeholder="user.name, user.email, company.name, license.key"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                      <p class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-list"></i> Comma-separated list of variables used in template
+                      </p>
+                    </div>
+
+                    <div class="mb-4">
+                      <label class="block text-gray-700 text-sm font-medium mb-2 flex items-center justify-between">
+                        <span>HTML Body *</span>
+                        <span class="text-xs text-gray-500 font-normal">
+                          <i class="fas fa-code"></i> Full HTML template
+                        </span>
+                      </label>
+                      <textarea
+                        name="body_html"
+                        required
+                        rows="14"
+                        placeholder="<!DOCTYPE html><html>..."
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                      ></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                      <label class="block text-gray-700 text-sm font-medium mb-2 flex items-center justify-between">
+                        <span>Plain Text Body</span>
+                        <span class="text-xs text-gray-500 font-normal">
+                          <i class="fas fa-font"></i> Fallback for non-HTML clients
+                        </span>
+                      </label>
+                      <textarea
+                        name="body_text"
+                        rows="6"
+                        placeholder="Welcome! Your account: {{user.email}}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      ></textarea>
+                    </div>
+                  </div>
+
+                  <div class="border-t pt-6">
+                    <div class="flex space-x-3">
+                      <button
+                        type="submit"
+                        class="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all"
+                      >
+                        <i class="fas fa-save mr-2"></i> Create Template
+                      </button>
+                      <a
+                        href="/settings/email-templates"
+                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-lg text-center font-medium transition-all"
+                      >
+                        <i class="fas fa-times mr-2"></i> Cancel
+                      </a>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Right: Helper Sidebar -->
+            <div class="lg:col-span-1 space-y-4">
+              <!-- Quick Tips -->
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 class="font-semibold text-blue-900 mb-3 flex items-center">
+                  <i class="fas fa-lightbulb mr-2"></i>
+                  Quick Tips
+                </h4>
+                <ul class="text-sm text-blue-800 space-y-2">
+                  <li class="flex items-start">
+                    <i class="fas fa-check text-blue-600 mr-2 mt-0.5"></i>
+                    <span>Each template needs unique combination of name, language, and design</span>
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-check text-blue-600 mr-2 mt-0.5"></i>
+                    <span>Use lowercase with underscores for template names</span>
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-check text-blue-600 mr-2 mt-0.5"></i>
+                    <span>Set one variant as default after creation</span>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Common Variables -->
+              <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <h4 class="font-semibold text-purple-900 mb-3 flex items-center">
+                  <i class="fas fa-code mr-2"></i>
+                  Common Variables
+                </h4>
+                <div class="text-sm text-purple-800 space-y-2">
+                  <div class="bg-white bg-opacity-60 rounded px-2 py-1 font-mono text-xs">
+                    {{user.name}}
+                  </div>
+                  <div class="bg-white bg-opacity-60 rounded px-2 py-1 font-mono text-xs">
+                    {{user.email}}
+                  </div>
+                  <div class="bg-white bg-opacity-60 rounded px-2 py-1 font-mono text-xs">
+                    {{company.name}}
+                  </div>
+                  <div class="bg-white bg-opacity-60 rounded px-2 py-1 font-mono text-xs">
+                    {{license.key}}
+                  </div>
+                  <div class="bg-white bg-opacity-60 rounded px-2 py-1 font-mono text-xs">
+                    {{license.expiry}}
+                  </div>
                 </div>
-
-                <div>
-                  <label class="block text-gray-700 text-sm font-medium mb-2">Type *</label>
-                  <select name="type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-                    <option value="">Select type...</option>
-                    <option value="user">User</option>
-                    <option value="license">License</option>
-                    <option value="system">System</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label class="block text-gray-700 text-sm font-medium mb-2">Language *</label>
-                  <select name="language" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-                    <option value="">Select language...</option>
-                    <option value="en">English (EN)</option>
-                    <option value="id">Indonesian (ID)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label class="block text-gray-700 text-sm font-medium mb-2">Design Variation *</label>
-                  <select name="design_variation" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-                    <option value="">Select variation...</option>
-                    <option value="1">Version 1</option>
-                    <option value="2">Version 2</option>
-                  </select>
-                </div>
               </div>
 
-              <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-medium mb-2">Subject *</label>
-                <input type="text" name="subject" required placeholder="Welcome to {{company.name}}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-                <p class="text-xs text-gray-500 mt-1">Use {{variable}} for dynamic content</p>
+              <!-- Template Types -->
+              <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 class="font-semibold text-green-900 mb-3 flex items-center">
+                  <i class="fas fa-info-circle mr-2"></i>
+                  Template Types
+                </h4>
+                <ul class="text-sm text-green-800 space-y-2">
+                  <li>
+                    <strong>User:</strong> Registration, login, password reset
+                  </li>
+                  <li>
+                    <strong>License:</strong> Creation, renewal, expiration
+                  </li>
+                  <li>
+                    <strong>System:</strong> Reports, notifications
+                  </li>
+                </ul>
               </div>
-
-              <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-medium mb-2">Variables (comma-separated)</label>
-                <input type="text" name="variables" placeholder="user.name, user.email, company.name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-                <p class="text-xs text-gray-500 mt-1">List all variables used in this template</p>
-              </div>
-
-              <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-medium mb-2">HTML Body *</label>
-                <textarea name="body_html" required rows="12" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 font-mono text-sm"></textarea>
-                <p class="text-xs text-gray-500 mt-1">Full HTML email template</p>
-              </div>
-
-              <div class="mb-6">
-                <label class="block text-gray-700 text-sm font-medium mb-2">Plain Text Body</label>
-                <textarea name="body_text" rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"></textarea>
-                <p class="text-xs text-gray-500 mt-1">Fallback for email clients that don't support HTML</p>
-              </div>
-
-              <div class="flex space-x-2">
-                <button type="submit" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
-                  <i class="fas fa-save"></i> Create Template
-                </button>
-                <a href="/settings/email-templates" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg text-center">
-                  Cancel
-                </a>
-              </div>
-            </form>
+            </div>
           </div>
         </div>
       </main>
