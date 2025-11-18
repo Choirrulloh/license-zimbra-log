@@ -114,6 +114,7 @@ router.delete('/permissions/:id', requireAdmin, permissionController.delete);
 // Settings (Admin only)
 router.get('/settings', requireAdmin, settingsController.index);
 router.post('/settings', requireAdmin, settingsController.updateSettings);
+router.post('/settings/test-email', requireAdmin, settingsController.testEmail);
 
 // Email Templates (Admin only)
 router.get('/settings/email-templates', requireAdmin, emailTemplateController.index);

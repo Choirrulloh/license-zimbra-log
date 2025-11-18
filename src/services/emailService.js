@@ -271,6 +271,111 @@ class EmailService {
       language
     );
   }
+
+  // Send test email
+  async sendTestEmail(recipientEmail, settings) {
+    try {
+      // Create transporter with provided settings
+      const testTransporter = nodemailer.createTransport({
+        host: settings.smtp_host,
+        port: parseInt(settings.smtp_port),
+        secure: settings.smtp_secure === 'true',
+        auth: {
+          user: settings.smtp_user,
+          pass: settings.smtp_password
+        }
+      });
+
+      // Verify connection first
+      await testTransporter.verify();
+
+      // Send test email
+      const mailOptions = {
+        from: `"${settings.email_from_name}" <${settings.email_from_address}>`,
+        to: recipientEmail,
+        subject: 'SMTP Test Email - License Manager',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+              <h1 style="color: white; margin: 0;">✓ SMTP Test Successful!</h1>
+            </div>
+            <div style="background: #f7fafc; padding: 30px; border-radius: 0 0 10px 10px;">
+              <p style="font-size: 16px; color: #2d3748; margin-bottom: 20px;">
+                Congratulations! Your SMTP configuration is working correctly.
+              </p>
+              <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #48bb78;">
+                <h3 style="color: #2d3748; margin-top: 0;">Connection Details:</h3>
+                <ul style="color: #4a5568; line-height: 1.8;">
+                  <li><strong>SMTP Host:</strong> ${settings.smtp_host}</li>
+                  <li><strong>Port:</strong> ${settings.smtp_port}</li>
+                  <li><strong>Secure:</strong> ${settings.smtp_secure === 'true' ? 'Yes (SSL/TLS)' : 'No (STARTTLS)'}</li>
+                  <li><strong>From Name:</strong> ${settings.email_from_name}</li>
+                  <li><strong>From Address:</strong> ${settings.email_from_address}</li>
+                </ul>
+              </div>
+              <p style="font-size: 14px; color: #718096; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                This is an automated test email from ${settings.app_name || 'License Manager'}.<br>
+                If you received this email, your email configuration is ready to use.
+              </p>
+            </div>
+          </div>
+        `,
+        text: `SMTP Test Successful!
+
+Congratulations! Your SMTP configuration is working correctly.
+
+Connection Details:
+- SMTP Host: ${settings.smtp_host}
+- Port: ${settings.smtp_port}
+- Secure: ${settings.smtp_secure === 'true' ? 'Yes (SSL/TLS)' : 'No (STARTTLS)'}
+- From Name: ${settings.email_from_name}
+- From Address: ${settings.email_from_address}
+
+This is an automated test email from ${settings.app_name || 'License Manager'}.
+If you received this email, your email configuration is ready to use.`
+      };
+
+      await testTransporter.sendMail(mailOptions);
+
+      // Log test email
+      await db.run(
+        `INSERT INTO email_logs (recipient_email, recipient_name, subject, body_html, body_text, status, sent_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [recipientEmail, 'SMTP Test', mailOptions.subject, mailOptions.html, mailOptions.text, 'sent', new Date().toISOString()]
+      );
+
+      return {
+        success: true,
+        message: 'Test email sent successfully! Please check your inbox.'
+      };
+    } catch (error) {
+      console.error('Test email failed:', error);
+
+      // Log failed test
+      await db.run(
+        `INSERT INTO email_logs (recipient_email, recipient_name, subject, status, error_message)
+         VALUES (?, ?, ?, ?, ?)`,
+        [recipientEmail, 'SMTP Test', 'SMTP Test Email - License Manager', 'failed', error.message]
+      );
+
+      let errorMessage = 'Failed to send test email';
+      if (error.code === 'EAUTH') {
+        errorMessage = 'Authentication failed. Please check your SMTP username and password.';
+      } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
+        errorMessage = 'Connection failed. Please check your SMTP host and port settings.';
+      } else if (error.code === 'ESOCKET') {
+        errorMessage = 'Socket error. Please verify your SMTP server settings.';
+      } else {
+        errorMessage = `SMTP Error: ${error.message}`;
+      }
+
+      return {
+        success: false,
+        message: errorMessage,
+        error: error.message
+      };
+    }
+  }
 }
 
 module.exports = new EmailService();
