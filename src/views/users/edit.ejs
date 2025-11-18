@@ -67,11 +67,15 @@
 
               <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-medium mb-2">Role *</label>
-                <select name="role" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-                  <option value="admin" <%= viewUser.role === 'admin' ? 'selected' : '' %>>Admin</option>
-                  <option value="super_admin" <%= viewUser.role === 'super_admin' ? 'selected' : '' %>>Super Admin</option>
-                  <option value="viewer" <%= viewUser.role === 'viewer' ? 'selected' : '' %>>Viewer</option>
+                <select name="role_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                  <option value="">Select a role...</option>
+                  <% roles.forEach(role => { %>
+                    <option value="<%= role.id %>" <%= viewUser.role_id === role.id ? 'selected' : '' %>><%= role.display_name %></option>
+                  <% }); %>
                 </select>
+                <% if (roles.length === 0) { %>
+                  <p class="text-xs text-red-500 mt-1">No roles available. Please create roles first.</p>
+                <% } %>
               </div>
 
               <div class="mb-4">
@@ -98,7 +102,7 @@
               </div>
             </form>
 
-            <% if (viewUser.role !== 'super_admin') { %>
+            <% if (viewUser.role_name !== 'admin') { %>
               <div class="mt-6 pt-6 border-t">
                 <h3 class="text-lg font-semibold mb-4">Change Password</h3>
                 <form id="changePasswordForm" onsubmit="changePassword(event)">

@@ -18,9 +18,11 @@ class UserController {
   async index(req, res) {
     try {
       const users = await db.all(
-        `SELECT id, name, email, role, phone, is_active, last_login, created_at
-         FROM users
-         ORDER BY created_at DESC`
+        `SELECT u.id, u.name, u.email, u.role_id, u.phone, u.is_active, u.last_login, u.created_at,
+                r.name as role_name, r.display_name as role_display_name
+         FROM users u
+         LEFT JOIN roles r ON u.role_id = r.id
+         ORDER BY u.created_at DESC`
       );
 
       res.render('users/index', {
@@ -42,8 +44,11 @@ class UserController {
       const { id } = req.params;
 
       const viewUser = await db.get(
-        `SELECT id, name, email, role, phone, is_active, last_login, created_at, updated_at
-         FROM users WHERE id = ?`,
+        `SELECT u.id, u.name, u.email, u.role_id, u.phone, u.is_active, u.last_login, u.created_at, u.updated_at,
+                r.name as role_name, r.display_name as role_display_name, r.description as role_description
+         FROM users u
+         LEFT JOIN roles r ON u.role_id = r.id
+         WHERE u.id = ?`,
         [id]
       );
 
@@ -71,34 +76,57 @@ class UserController {
   // Create user form / submit
   async create(req, res) {
     if (req.method === 'GET') {
+      // Get all active roles for dropdown
+      const roles = await db.all(
+        `SELECT id, name, display_name, description
+         FROM roles
+         WHERE is_active = 1
+         ORDER BY display_name`
+      );
+
       return res.render('users/create', {
         user: req.session,
         currentPage: 'users',
         pageTitle: 'Create User',
+        roles,
         error: null
       });
     }
 
     try {
-      const { name, email, password, role, phone } = req.body;
+      const { name, email, password, role_id, phone } = req.body;
 
       // Validation
-      if (!name || !email || !password) {
+      if (!name || !email || !password || !role_id) {
+        const roles = await db.all(
+          `SELECT id, name, display_name, description
+           FROM roles
+           WHERE is_active = 1
+           ORDER BY display_name`
+        );
         return res.render('users/create', {
           user: req.session,
           currentPage: 'users',
           pageTitle: 'Create User',
-          error: 'Name, email, and password are required'
+          roles,
+          error: 'Name, email, password, and role are required'
         });
       }
 
       // Check if email already exists
       const existing = await db.get('SELECT id FROM users WHERE email = ?', [email]);
       if (existing) {
+        const roles = await db.all(
+          `SELECT id, name, display_name, description
+           FROM roles
+           WHERE is_active = 1
+           ORDER BY display_name`
+        );
         return res.render('users/create', {
           user: req.session,
           currentPage: 'users',
           pageTitle: 'Create User',
+          roles,
           error: 'Email already exists'
         });
       }
@@ -108,9 +136,9 @@ class UserController {
 
       // Insert user
       const result = await db.run(
-        `INSERT INTO users (name, email, password, role, phone, is_active)
+        `INSERT INTO users (name, email, password, role_id, phone, is_active)
          VALUES (?, ?, ?, ?, ?, 1)`,
-        [name, email, hashedPassword, role || 'admin', phone || null]
+        [name, email, hashedPassword, role_id, phone || null]
       );
 
       // Log activity
@@ -125,10 +153,17 @@ class UserController {
       res.redirect('/users');
     } catch (error) {
       console.error('Error creating user:', error);
+      const roles = await db.all(
+        `SELECT id, name, display_name, description
+         FROM roles
+         WHERE is_active = 1
+         ORDER BY display_name`
+      );
       res.render('users/create', {
         user: req.session,
         currentPage: 'users',
         pageTitle: 'Create User',
+        roles,
         error: 'Error creating user'
       });
     }
@@ -140,7 +175,11 @@ class UserController {
       const { id } = req.params;
 
       const viewUser = await db.get(
-        'SELECT id, name, email, role, phone, is_active FROM users WHERE id = ?',
+        `SELECT u.id, u.name, u.email, u.role_id, u.phone, u.is_active,
+                r.name as role_name
+         FROM users u
+         LEFT JOIN roles r ON u.role_id = r.id
+         WHERE u.id = ?`,
         [id]
       );
 
@@ -148,9 +187,17 @@ class UserController {
         return res.status(404).send('User not found');
       }
 
-      // Prevent editing super admin by non-super admin
-      if (viewUser.role === 'super_admin' && req.session.userRole !== 'super_admin') {
-        return res.status(403).send('You cannot edit a super admin user');
+      // Get all active roles for dropdown
+      const roles = await db.all(
+        `SELECT id, name, display_name, description
+         FROM roles
+         WHERE is_active = 1
+         ORDER BY display_name`
+      );
+
+      // Prevent editing admin role by non-admin
+      if (viewUser.role_name === 'admin' && req.session.userRole !== 'admin') {
+        return res.status(403).send('You cannot edit an admin user');
       }
 
       res.render('users/edit', {
@@ -158,6 +205,7 @@ class UserController {
         currentPage: 'users',
         pageTitle: 'Edit User',
         viewUser,
+        roles,
         error: null
       });
     } catch (error) {
@@ -170,40 +218,68 @@ class UserController {
   async update(req, res) {
     try {
       const { id } = req.params;
-      const { name, email, role, phone, is_active } = req.body;
+      const { name, email, role_id, phone, is_active } = req.body;
 
-      if (!name || !email) {
-        const viewUser = await db.get('SELECT * FROM users WHERE id = ?', [id]);
+      if (!name || !email || !role_id) {
+        const viewUser = await db.get(
+          `SELECT u.*, r.name as role_name
+           FROM users u
+           LEFT JOIN roles r ON u.role_id = r.id
+           WHERE u.id = ?`,
+          [id]
+        );
+        const roles = await db.all(
+          `SELECT id, name, display_name, description
+           FROM roles WHERE is_active = 1 ORDER BY display_name`
+        );
         return res.render('users/edit', {
           user: req.session,
           currentPage: 'users',
           pageTitle: 'Edit User',
           viewUser,
-          error: 'Name and email are required'
+          roles,
+          error: 'Name, email, and role are required'
         });
       }
 
       // Get current user data for logging
-      const oldUser = await db.get('SELECT * FROM users WHERE id = ?', [id]);
+      const oldUser = await db.get(
+        `SELECT u.*, r.name as role_name, r.display_name as role_display_name
+         FROM users u
+         LEFT JOIN roles r ON u.role_id = r.id
+         WHERE u.id = ?`,
+        [id]
+      );
 
       if (!oldUser) {
         return res.status(404).send('User not found');
       }
 
-      // Prevent editing super admin
-      if (oldUser.role === 'super_admin' && req.session.userRole !== 'super_admin') {
-        return res.status(403).send('You cannot edit a super admin user');
+      // Prevent editing admin role
+      if (oldUser.role_name === 'admin' && req.session.userRole !== 'admin') {
+        return res.status(403).send('You cannot edit an admin user');
       }
 
       // Check if email is taken by another user
       const emailCheck = await db.get('SELECT id FROM users WHERE email = ? AND id != ?', [email, id]);
       if (emailCheck) {
-        const viewUser = await db.get('SELECT * FROM users WHERE id = ?', [id]);
+        const viewUser = await db.get(
+          `SELECT u.*, r.name as role_name
+           FROM users u
+           LEFT JOIN roles r ON u.role_id = r.id
+           WHERE u.id = ?`,
+          [id]
+        );
+        const roles = await db.all(
+          `SELECT id, name, display_name, description
+           FROM roles WHERE is_active = 1 ORDER BY display_name`
+        );
         return res.render('users/edit', {
           user: req.session,
           currentPage: 'users',
           pageTitle: 'Edit User',
           viewUser,
+          roles,
           error: 'Email is already taken by another user'
         });
       }
@@ -211,16 +287,21 @@ class UserController {
       // Update user
       await db.run(
         `UPDATE users
-         SET name = ?, email = ?, role = ?, phone = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
+         SET name = ?, email = ?, role_id = ?, phone = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
-        [name, email, role || 'admin', phone || null, is_active === 'on' ? 1 : 0, id]
+        [name, email, role_id, phone || null, is_active === 'on' ? 1 : 0, id]
       );
+
+      // Get new role name for logging
+      const newRole = await db.get('SELECT name, display_name FROM roles WHERE id = ?', [role_id]);
 
       // Log activity with changes
       const changes = {};
       if (oldUser.name !== name) changes.name = { from: oldUser.name, to: name };
       if (oldUser.email !== email) changes.email = { from: oldUser.email, to: email };
-      if (oldUser.role !== role) changes.role = { from: oldUser.role, to: role };
+      if (oldUser.role_id !== parseInt(role_id)) {
+        changes.role = { from: oldUser.role_display_name, to: newRole.display_name };
+      }
 
       await ActivityLogger.logUpdate(
         req.session.userId,
@@ -244,7 +325,13 @@ class UserController {
       const { id } = req.params;
 
       // Get user data before deletion
-      const userToDelete = await db.get('SELECT * FROM users WHERE id = ?', [id]);
+      const userToDelete = await db.get(
+        `SELECT u.*, r.name as role_name
+         FROM users u
+         LEFT JOIN roles r ON u.role_id = r.id
+         WHERE u.id = ?`,
+        [id]
+      );
 
       if (!userToDelete) {
         return res.status(404).json({
@@ -253,11 +340,11 @@ class UserController {
         });
       }
 
-      // Prevent deleting super admin
-      if (userToDelete.role === 'super_admin') {
+      // Prevent deleting admin role
+      if (userToDelete.role_name === 'admin') {
         return res.status(403).json({
           success: false,
-          message: 'Cannot delete super admin user'
+          message: 'Cannot delete admin user'
         });
       }
 

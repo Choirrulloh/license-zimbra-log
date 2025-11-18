@@ -73,11 +73,15 @@
 
               <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-medium mb-2">Role *</label>
-                <select name="role" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-                  <option value="admin">Admin</option>
-                  <option value="super_admin">Super Admin</option>
-                  <option value="viewer">Viewer</option>
+                <select name="role_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                  <option value="">Select a role...</option>
+                  <% roles.forEach(role => { %>
+                    <option value="<%= role.id %>"><%= role.display_name %></option>
+                  <% }); %>
                 </select>
+                <% if (roles.length === 0) { %>
+                  <p class="text-xs text-red-500 mt-1">No roles available. Please create roles first.</p>
+                <% } %>
               </div>
 
               <div class="mb-6">

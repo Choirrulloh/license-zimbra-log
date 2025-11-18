@@ -74,9 +74,13 @@
                 <div>
                   <p class="text-xs text-gray-500 uppercase">Role</p>
                   <p class="mt-1">
-                    <span class="px-2 py-1 rounded-full text-xs font-semibold <%= viewUser.role === 'super_admin' ? 'bg-purple-100 text-purple-800' : viewUser.role === 'admin' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' %>">
-                      <%= viewUser.role %>
-                    </span>
+                    <% if (viewUser.role_display_name) { %>
+                      <span class="px-2 py-1 rounded-full text-xs font-semibold <%= viewUser.role_name === 'admin' ? 'bg-purple-100 text-purple-800' : viewUser.role_name === 'manager' ? 'bg-blue-100 text-blue-800' : viewUser.role_name === 'viewer' ? 'bg-gray-100 text-gray-800' : 'bg-green-100 text-green-800' %>" title="<%= viewUser.role_description || '' %>">
+                        <%= viewUser.role_display_name %>
+                      </span>
+                    <% } else { %>
+                      <span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">No Role</span>
+                    <% } %>
                   </p>
                 </div>
                 <div>
