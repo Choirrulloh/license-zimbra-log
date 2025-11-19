@@ -307,10 +307,11 @@ class ProductController {
         [name, duration_days, max_activations, price, features, is_active ? 1 : 0, id]
       );
 
+      // Parse feature_ids (comes as array or JSON string)
+      let featureIdsArray = [];
+
       // Update feature assignments in pivot table (if feature_ids provided)
       if (feature_ids !== undefined) {
-        // Parse feature_ids (comes as array or JSON string)
-        let featureIdsArray = [];
         if (typeof feature_ids === 'string') {
           try {
             featureIdsArray = JSON.parse(feature_ids);

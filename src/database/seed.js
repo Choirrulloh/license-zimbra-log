@@ -50,42 +50,42 @@ async function seed() {
 
     // Create license types for Product A (prices in IDR/Rupiah)
     const licenseTypesA = [
-      ['Trial', 'trial', 30, 1, 0, ['Basic features', 'Email support']],
-      ['Basic', 'basic', 365, 1, 1500000, ['All basic features', 'Email support', '5 users']],
-      ['Pro', 'pro', 365, 3, 4500000, ['All features', 'Priority support', '25 users', 'API access']],
-      ['Enterprise', 'enterprise', 365, 10, 15000000, ['Unlimited features', '24/7 support', 'Unlimited users', 'Custom integration']]
+      ['Trial Plan', 30, 1, 0, ['Basic features', 'Email support']],
+      ['Basic Plan', 365, 1, 1500000, ['All basic features', 'Email support', '5 users']],
+      ['Pro Plan', 365, 3, 4500000, ['All features', 'Priority support', '25 users', 'API access']],
+      ['Enterprise Plan', 365, 10, 15000000, ['Unlimited features', '24/7 support', 'Unlimited users', 'Custom integration']]
     ];
 
-    for (const [name, type, duration, maxAct, price, features] of licenseTypesA) {
+    for (const [name, duration, maxAct, price, features] of licenseTypesA) {
       const existing = await db.get(
         'SELECT id FROM license_types WHERE product_id = ? AND name = ?',
         [product1.id, name]
       );
       if (!existing) {
         await db.run(
-          `INSERT INTO license_types (product_id, name, type, duration_days, max_activations, price, features)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [product1.id, name, type, duration, maxAct, price, JSON.stringify(features)]
+          `INSERT INTO license_types (product_id, name, duration_days, max_activations, price, features)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [product1.id, name, duration, maxAct, price, JSON.stringify(features)]
         );
       }
     }
 
     // Create license types for Product B (prices in IDR/Rupiah)
     const licenseTypesB = [
-      ['Trial', 'trial', 14, 1, 0, ['10GB storage', 'Basic features']],
-      ['Standard', 'basic', 365, 2, 2250000, ['100GB storage', 'File sharing', 'Mobile app']]
+      ['Trial Plan', 14, 1, 0, ['10GB storage', 'Basic features']],
+      ['Standard Plan', 365, 2, 2250000, ['100GB storage', 'File sharing', 'Mobile app']]
     ];
 
-    for (const [name, type, duration, maxAct, price, features] of licenseTypesB) {
+    for (const [name, duration, maxAct, price, features] of licenseTypesB) {
       const existing = await db.get(
         'SELECT id FROM license_types WHERE product_id = ? AND name = ?',
         [product2.id, name]
       );
       if (!existing) {
         await db.run(
-          `INSERT INTO license_types (product_id, name, type, duration_days, max_activations, price, features)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [product2.id, name, type, duration, maxAct, price, JSON.stringify(features)]
+          `INSERT INTO license_types (product_id, name, duration_days, max_activations, price, features)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [product2.id, name, duration, maxAct, price, JSON.stringify(features)]
         );
       }
     }
