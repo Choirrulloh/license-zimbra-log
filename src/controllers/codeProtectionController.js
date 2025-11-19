@@ -22,6 +22,8 @@ class CodeProtectionController {
   async index(req, res) {
     try {
       const userId = req.session.userId;
+      const userRole = req.session.role || 'user';
+      const isAdmin = userRole === 'admin';
 
       // Get user's quota
       let quota = await db.get(
@@ -31,10 +33,12 @@ class CodeProtectionController {
 
       // Create quota if doesn't exist
       if (!quota) {
+        // Admin gets unlimited quota (monthly_limit = -1 means unlimited)
+        const monthlyLimit = isAdmin ? -1 : 10;
         await db.run(
           `INSERT INTO obfuscation_quotas (user_id, monthly_limit, used_this_month, max_file_size_mb, reset_date)
-           VALUES (?, 10, 0, 50, date('now', 'start of month', '+1 month'))`,
-          [userId]
+           VALUES (?, ?, 0, 50, date('now', 'start of month', '+1 month'))`,
+          [userId, monthlyLimit]
         );
         quota = await db.get(
           'SELECT * FROM obfuscation_quotas WHERE user_id = ?',
@@ -56,6 +60,15 @@ class CodeProtectionController {
         );
         quota.used_this_month = 0;
         quota.reset_date = moment().add(1, 'month').startOf('month').format('YYYY-MM-DD');
+      }
+
+      // Admin has unlimited quota
+      if (isAdmin && quota.monthly_limit !== -1) {
+        await db.run(
+          `UPDATE obfuscation_quotas SET monthly_limit = -1 WHERE user_id = ?`,
+          [userId]
+        );
+        quota.monthly_limit = -1;
       }
 
       // Get recent obfuscations
@@ -163,13 +176,17 @@ class CodeProtectionController {
         });
       }
 
-      // Check quota
+      // Check quota (skip for admin)
+      const userRole = req.session.role || 'user';
+      const isAdmin = userRole === 'admin';
+
       const quota = await db.get(
         'SELECT * FROM obfuscation_quotas WHERE user_id = ?',
         [userId]
       );
 
-      if (quota && quota.used_this_month >= quota.monthly_limit) {
+      // Check quota limit (skip if admin or unlimited quota)
+      if (!isAdmin && quota && quota.monthly_limit !== -1 && quota.used_this_month >= quota.monthly_limit) {
         await fs.unlink(file.path);
         return res.status(403).json({
           success: false,
@@ -253,13 +270,17 @@ class CodeProtectionController {
         });
       }
 
-      // Check quota again
+      // Check quota again (skip for admin)
+      const userRole = req.session.role || 'user';
+      const isAdmin = userRole === 'admin';
+
       const quota = await db.get(
         'SELECT * FROM obfuscation_quotas WHERE user_id = ?',
         [userId]
       );
 
-      if (quota && quota.used_this_month >= quota.monthly_limit) {
+      // Check quota limit (skip if admin or unlimited quota)
+      if (!isAdmin && quota && quota.monthly_limit !== -1 && quota.used_this_month >= quota.monthly_limit) {
         return res.status(403).json({
           success: false,
           message: 'Quota limit reached'
@@ -582,6 +603,8 @@ class CodeProtectionController {
   async getQuota(req, res) {
     try {
       const userId = req.session.userId;
+      const userRole = req.session.role || 'user';
+      const isAdmin = userRole === 'admin';
 
       const quota = await db.get(
         'SELECT * FROM obfuscation_quotas WHERE user_id = ?',
@@ -589,22 +612,28 @@ class CodeProtectionController {
       );
 
       if (!quota) {
+        const monthlyLimit = isAdmin ? -1 : 10;
         return res.json({
           success: true,
           quota: {
-            monthly_limit: 10,
+            monthly_limit: monthlyLimit,
             used_this_month: 0,
-            remaining: 10,
-            reset_date: moment().add(1, 'month').startOf('month').format('YYYY-MM-DD')
+            remaining: monthlyLimit === -1 ? -1 : monthlyLimit,
+            reset_date: moment().add(1, 'month').startOf('month').format('YYYY-MM-DD'),
+            isUnlimited: isAdmin
           }
         });
       }
+
+      // Calculate remaining (-1 for unlimited)
+      const remaining = quota.monthly_limit === -1 ? -1 : quota.monthly_limit - quota.used_this_month;
 
       res.json({
         success: true,
         quota: {
           ...quota,
-          remaining: quota.monthly_limit - quota.used_this_month
+          remaining,
+          isUnlimited: quota.monthly_limit === -1
         }
       });
     } catch (error) {

@@ -237,14 +237,25 @@
           </h4>
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-600">
-                <i class="fas fa-chart-bar text-blue-500 mr-2"></i>
-                Your Quota: <span class="font-semibold"><%= quota.monthly_limit - quota.used_this_month %> of <%= quota.monthly_limit %></span> remaining this month
-              </p>
-              <p class="text-xs text-gray-500 mt-1">
-                <i class="fas fa-calendar text-gray-400 mr-2"></i>
-                Resets on: <%= moment(quota.reset_date).format('MMMM D, YYYY') %>
-              </p>
+              <% if (quota.monthly_limit === -1) { %>
+                <p class="text-sm text-gray-600">
+                  <i class="fas fa-infinity text-green-500 mr-2"></i>
+                  Your Quota: <span class="font-semibold text-green-600">Unlimited</span>
+                </p>
+                <p class="text-xs text-gray-500 mt-1">
+                  <i class="fas fa-crown text-yellow-500 mr-1"></i>
+                  Admin privilege - No quota limits
+                </p>
+              <% } else { %>
+                <p class="text-sm text-gray-600">
+                  <i class="fas fa-chart-bar text-blue-500 mr-2"></i>
+                  Your Quota: <span class="font-semibold"><%= quota.monthly_limit - quota.used_this_month %> of <%= quota.monthly_limit %></span> remaining this month
+                </p>
+                <p class="text-xs text-gray-500 mt-1">
+                  <i class="fas fa-calendar text-gray-400 mr-2"></i>
+                  Resets on: <%= moment(quota.reset_date).format('MMMM D, YYYY') %>
+                </p>
+              <% } %>
             </div>
           </div>
         </div>
