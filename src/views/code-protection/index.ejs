@@ -473,7 +473,8 @@
 
         const uploadRes = await fetch('/code-protection/upload', {
           method: 'POST',
-          body: formData
+          body: formData,
+          credentials: 'same-origin'
         });
 
         const uploadData = await uploadRes.json();
@@ -691,6 +692,7 @@
         const obfRes = await fetch('/code-protection/obfuscate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
           body: JSON.stringify({
             fileId: uploadedFileData.id,
             originalName: uploadedFile.name,
