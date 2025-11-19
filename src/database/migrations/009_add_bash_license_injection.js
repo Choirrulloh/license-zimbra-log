@@ -8,24 +8,43 @@ async function migrate() {
   console.log('Running migration: Add bash license injection support...');
 
   try {
-    // Add columns to code_obfuscations table
-    await db.run(`
-      ALTER TABLE code_obfuscations
-      ADD COLUMN license_injected BOOLEAN DEFAULT 0
-    `);
-    console.log('✓ Added license_injected column');
+    // Helper function to check if column exists
+    const columnExists = async (tableName, columnName) => {
+      const result = await db.get(`PRAGMA table_info(${tableName})`);
+      const columns = await db.all(`PRAGMA table_info(${tableName})`);
+      return columns.some(col => col.name === columnName);
+    };
 
-    await db.run(`
-      ALTER TABLE code_obfuscations
-      ADD COLUMN injected_product_id INTEGER
-    `);
-    console.log('✓ Added injected_product_id column');
+    // Add columns to code_obfuscations table (only if they don't exist)
+    if (!(await columnExists('code_obfuscations', 'license_injected'))) {
+      await db.run(`
+        ALTER TABLE code_obfuscations
+        ADD COLUMN license_injected BOOLEAN DEFAULT 0
+      `);
+      console.log('✓ Added license_injected column');
+    } else {
+      console.log('⊳ Column license_injected already exists');
+    }
 
-    await db.run(`
-      ALTER TABLE code_obfuscations
-      ADD COLUMN validation_options TEXT
-    `);
-    console.log('✓ Added validation_options column');
+    if (!(await columnExists('code_obfuscations', 'injected_product_id'))) {
+      await db.run(`
+        ALTER TABLE code_obfuscations
+        ADD COLUMN injected_product_id INTEGER
+      `);
+      console.log('✓ Added injected_product_id column');
+    } else {
+      console.log('⊳ Column injected_product_id already exists');
+    }
+
+    if (!(await columnExists('code_obfuscations', 'validation_options'))) {
+      await db.run(`
+        ALTER TABLE code_obfuscations
+        ADD COLUMN validation_options TEXT
+      `);
+      console.log('✓ Added validation_options column');
+    } else {
+      console.log('⊳ Column validation_options already exists');
+    }
 
     // Create table for tracking bash script validations
     await db.run(`
