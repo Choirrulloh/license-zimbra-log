@@ -58,7 +58,7 @@
                       </span>
                     </td>
                     <td class="px-6 py-4 text-sm">
-                      <%= l.expiry_date ? moment(l.expiry_date).format('MMM D, YYYY') : 'Never' %>
+                      <%= l.expiry_date ? moment(l.expiry_date).tz('Asia/Jakarta').format('MMM D, YYYY') : 'Never' %>
                     </td>
                     <td class="px-6 py-4 text-sm space-x-2">
                       <a href="/licenses/<%= l.id %>" class="text-blue-600 hover:text-blue-900">

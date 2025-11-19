@@ -45,7 +45,7 @@
             </div>
             <div>
               <p class="text-sm text-gray-500">Created</p>
-              <p class="font-medium"><%= moment(product.created_at).format('MMM D, YYYY') %></p>
+              <p class="font-medium"><%= moment(product.created_at).tz('Asia/Jakarta').format('MMM D, YYYY') %></p>
             </div>
             <div class="md:col-span-2">
               <p class="text-sm text-gray-500">Description</p>
@@ -209,7 +209,7 @@
                         </span>
                       </td>
                       <td class="px-6 py-4 text-sm">
-                        <%= l.expiry_date ? moment(l.expiry_date).format('MMM D, YYYY') : 'Never' %>
+                        <%= l.expiry_date ? moment(l.expiry_date).tz('Asia/Jakarta').format('MMM D, YYYY') : 'Never' %>
                       </td>
                     </tr>
                   <% }); %>

@@ -66,12 +66,12 @@
             </div>
             <div>
               <p class="text-sm text-gray-500">Issue Date</p>
-              <p class="font-medium"><%= moment(license.issue_date).format('MMM D, YYYY HH:mm') %></p>
+              <p class="font-medium"><%= moment(license.issue_date).tz('Asia/Jakarta').format('MMM D, YYYY HH:mm') %></p>
             </div>
             <div>
               <p class="text-sm text-gray-500">Expiry Date</p>
               <p class="font-medium <%= license.expiry_date && moment(license.expiry_date).isBefore(moment()) ? 'text-red-600' : '' %>">
-                <%= license.expiry_date ? moment(license.expiry_date).format('MMM D, YYYY HH:mm') : 'Never' %>
+                <%= license.expiry_date ? moment(license.expiry_date).tz('Asia/Jakarta').format('MMM D, YYYY HH:mm') : 'Never' %>
               </p>
             </div>
             <div>
@@ -147,8 +147,8 @@
                       <td class="px-6 py-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded"><%= a.hardware_id.substring(0, 16) %>...</code></td>
                       <td class="px-6 py-4 text-sm"><%= a.hostname || '-' %></td>
                       <td class="px-6 py-4 text-sm"><%= a.ip_address || '-' %></td>
-                      <td class="px-6 py-4 text-sm"><%= moment(a.activated_at).format('MMM D, YYYY HH:mm') %></td>
-                      <td class="px-6 py-4 text-sm"><%= moment(a.last_check).format('MMM D, YYYY HH:mm') %></td>
+                      <td class="px-6 py-4 text-sm"><%= moment(a.activated_at).tz('Asia/Jakarta').format('MMM D, YYYY HH:mm') %></td>
+                      <td class="px-6 py-4 text-sm"><%= moment(a.last_check).tz('Asia/Jakarta').format('MMM D, YYYY HH:mm') %></td>
                       <td class="px-6 py-4">
                         <span class="px-2 py-1 rounded-full text-xs font-semibold <%= a.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' %>">
                           <%= a.is_active ? 'Active' : 'Inactive' %>
@@ -180,7 +180,7 @@
                     <p class="font-medium text-gray-900"><%= h.action.replace(/_/g, ' ').toUpperCase() %></p>
                     <p class="text-sm text-gray-600"><%= h.description || '-' %></p>
                     <p class="text-xs text-gray-400 mt-1">
-                      <%= moment(h.created_at).format('MMM D, YYYY HH:mm') %>
+                      <%= moment(h.created_at).tz('Asia/Jakarta').format('MMM D, YYYY HH:mm') %>
                       <% if (h.user_name) { %>by <%= h.user_name %><% } %>
                     </p>
                   </div>

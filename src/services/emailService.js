@@ -279,6 +279,49 @@ class EmailService {
     );
   }
 
+  // Test SMTP connection (verify only, no email sent)
+  async testConnection(settings) {
+    try {
+      // Create transporter with provided settings
+      const testTransporter = nodemailer.createTransport({
+        host: settings.smtp_host,
+        port: parseInt(settings.smtp_port),
+        secure: settings.smtp_secure === true || settings.smtp_secure === 'true',
+        auth: {
+          user: settings.smtp_user,
+          pass: settings.smtp_password
+        }
+      });
+
+      // Verify connection
+      await testTransporter.verify();
+
+      return {
+        success: true,
+        message: `SMTP connection successful! Connected to ${settings.smtp_host}:${settings.smtp_port} using ${settings.smtp_secure ? 'SSL/TLS' : 'STARTTLS'}.`
+      };
+    } catch (error) {
+      console.error('SMTP connection test failed:', error);
+
+      let errorMessage = 'Failed to connect to SMTP server';
+      if (error.code === 'EAUTH') {
+        errorMessage = 'Authentication failed. Please check your SMTP username and password.';
+      } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
+        errorMessage = 'Connection failed. Please check your SMTP host and port settings.';
+      } else if (error.code === 'ESOCKET') {
+        errorMessage = 'Socket error. Please verify your SMTP server settings and check if SSL/TLS is configured correctly for the port.';
+      } else {
+        errorMessage = `SMTP Error: ${error.message}`;
+      }
+
+      return {
+        success: false,
+        message: errorMessage,
+        error: error.message
+      };
+    }
+  }
+
   // Send test email
   async sendTestEmail(recipientEmail, settings) {
     try {

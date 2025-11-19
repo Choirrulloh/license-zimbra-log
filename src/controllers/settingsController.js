@@ -99,60 +99,41 @@ class SettingsController {
 
   async testEmail(req, res) {
     try {
-      const { email } = req.body;
+      // Get SMTP settings from request body (test before saving)
+      const { smtp_host, smtp_port, smtp_user, smtp_password, smtp_secure } = req.body;
 
-      // Validate email
-      if (!email) {
+      // Validate required SMTP settings
+      if (!smtp_host || !smtp_port || !smtp_user || !smtp_password) {
         return res.status(400).json({
           success: false,
-          message: 'Email address is required'
+          message: 'Please fill in all SMTP settings (host, port, username, password).'
         });
       }
 
-      // Email validation regex
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid email address format'
-        });
-      }
+      // Auto-detect secure based on port
+      // Port 465 = SSL/TLS (secure: true)
+      // Port 587/25/2525 = STARTTLS (secure: false)
+      const port = parseInt(smtp_port);
+      const secure = port === 465;
 
-      // Get SMTP settings from database
-      const settingsRows = await db.all('SELECT * FROM settings');
-      const settings = {};
-      settingsRows.forEach(row => {
-        settings[row.key] = row.value;
-      });
-
-      // Check if email is enabled
-      if (settings.email_enabled !== 'true') {
-        return res.status(400).json({
-          success: false,
-          message: 'Email is not enabled. Please enable email and configure SMTP settings first.'
-        });
-      }
-
-      // Check if SMTP is configured
-      if (!settings.smtp_host || !settings.smtp_user || !settings.smtp_password) {
-        return res.status(400).json({
-          success: false,
-          message: 'SMTP is not fully configured. Please fill in all SMTP settings (host, username, password).'
-        });
-      }
-
-      // Send test email using emailService
+      // Test SMTP connection using emailService
       const emailService = require('../services/emailService');
-      const result = await emailService.sendTestEmail(email, settings);
+      const result = await emailService.testConnection({
+        smtp_host,
+        smtp_port: port,
+        smtp_user,
+        smtp_password,
+        smtp_secure: secure
+      });
 
       // Log activity
       await ActivityLogger.log({
         userId: req.session.userId,
         action: 'test',
-        entityType: 'email',
+        entityType: 'smtp_connection',
         entityId: null,
-        description: `Sent test email to ${email}`,
-        metadata: { success: result.success, recipient: email },
+        description: `Tested SMTP connection to ${smtp_host}:${smtp_port}`,
+        metadata: { success: result.success, host: smtp_host, port: smtp_port, secure },
         ipAddress: req.ip || req.connection?.remoteAddress,
         userAgent: req.headers?.['user-agent']
       });
@@ -169,10 +150,10 @@ class SettingsController {
         });
       }
     } catch (error) {
-      console.error('Error sending test email:', error);
+      console.error('Error testing SMTP connection:', error);
       res.status(500).json({
         success: false,
-        message: `Failed to send test email: ${error.message}`
+        message: `Failed to test SMTP connection: ${error.message}`
       });
     }
   }

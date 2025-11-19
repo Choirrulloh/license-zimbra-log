@@ -290,7 +290,7 @@
                   <% recentObfuscations.forEach(obf => { %>
                     <tr>
                       <td class="px-4 py-3 text-sm text-gray-800">
-                        <%= moment(obf.created_at).format('MMM DD, h:mm A') %>
+                        <%= moment(obf.created_at).tz('Asia/Jakarta').format('MMM DD, h:mm A') %>
                       </td>
                       <td class="px-4 py-3 text-sm text-gray-800"><%= obf.original_filename %></td>
                       <td class="px-4 py-3">

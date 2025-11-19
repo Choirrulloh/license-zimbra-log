@@ -165,7 +165,7 @@
                       <div class="flex-1">
                         <p class="font-medium text-gray-800"><%= license.customer_name %></p>
                         <p class="text-sm text-gray-500"><%= license.product_name %></p>
-                        <p class="text-xs text-gray-400"><%= moment(license.expiry_date).format('MMM D, YYYY') %></p>
+                        <p class="text-xs text-gray-400"><%= moment(license.expiry_date).tz('Asia/Jakarta').format('MMM D, YYYY') %></p>
                       </div>
                       <span class="px-3 py-1 rounded-full text-xs font-medium <%= daysLeft <= 7 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800' %>">
                         <%= daysLeft %> days
