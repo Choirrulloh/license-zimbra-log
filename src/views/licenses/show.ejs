@@ -293,17 +293,19 @@
 
       try {
         const res = await fetch('/licenses/<%= license.id %>', {
-          method: 'DELETE'
+          method: 'DELETE',
+          credentials: 'same-origin'
         });
         const data = await res.json();
         if (data.success) {
           showToast('License deleted successfully!', 'success');
-          setTimeout(() => window.location.href = '/licenses', 1000);
+          setTimeout(() => window.location.href = '/licenses', 2000);
         } else {
           showToast('Error: ' + data.message, 'error');
         }
       } catch (e) {
-        showToast('Error deleting license', 'error');
+        console.error('Delete error:', e);
+        showToast('Error deleting license: ' + e.message, 'error');
       }
     }
   </script>

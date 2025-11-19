@@ -117,34 +117,53 @@
               <span class="text-sm font-medium text-gray-700">Show Advanced Options</span>
             </label>
 
-            <div id="advancedOptions" class="hidden mt-4 bg-gray-50 rounded-lg p-4 space-y-2">
-              <label class="flex items-center">
+            <div id="advancedOptions" class="hidden mt-4 bg-gray-50 rounded-lg p-4 space-y-3">
+              <p class="text-xs text-gray-600 mb-2">
+                <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                These options control JavaScript obfuscation behavior
+              </p>
+
+              <label class="flex items-center group cursor-pointer">
                 <input type="checkbox" id="optCompact" class="mr-2" checked>
                 <span class="text-sm text-gray-700">Compact code (remove whitespace)</span>
+                <span class="ml-2 text-xs text-gray-400 group-hover:text-blue-600" title="Removes all unnecessary whitespace and newlines to make code smaller">ℹ️</span>
               </label>
-              <label class="flex items-center">
+
+              <label class="flex items-center group cursor-pointer">
                 <input type="checkbox" id="optRenameVars" class="mr-2" checked>
                 <span class="text-sm text-gray-700">Rename variables and functions</span>
+                <span class="ml-2 text-xs text-gray-400 group-hover:text-blue-600" title="Renames variables and function names to short, meaningless names like 'a', 'b', '_0x1234'">ℹ️</span>
               </label>
-              <label class="flex items-center">
+
+              <label class="flex items-center group cursor-pointer">
                 <input type="checkbox" id="optStringEnc" class="mr-2" checked>
                 <span class="text-sm text-gray-700">String array encoding</span>
+                <span class="ml-2 text-xs text-gray-400 group-hover:text-blue-600" title="Moves all string literals to a central array and encodes them (e.g., base64, unicode escapes)">ℹ️</span>
               </label>
-              <label class="flex items-center">
+
+              <label class="flex items-center group cursor-pointer">
                 <input type="checkbox" id="optControlFlow" class="mr-2">
-                <span class="text-sm text-gray-700">Control flow flattening (slower)</span>
+                <span class="text-sm text-gray-700">Control flow flattening</span>
+                <span class="ml-2 text-xs text-gray-400 group-hover:text-blue-600" title="Transforms code structure into switch-case statements, making logic harder to follow (slower performance)">ℹ️</span>
               </label>
-              <label class="flex items-center">
+
+              <label class="flex items-center group cursor-pointer">
                 <input type="checkbox" id="optDeadCode" class="mr-2">
                 <span class="text-sm text-gray-700">Dead code injection</span>
+                <span class="ml-2 text-xs text-gray-400 group-hover:text-blue-600" title="Injects random blocks of code that never execute, making the code larger and harder to analyze">ℹ️</span>
               </label>
-              <label class="flex items-center">
+
+              <label class="flex items-center group cursor-pointer">
                 <input type="checkbox" id="optDisableConsole" class="mr-2">
                 <span class="text-sm text-gray-700">Disable console output</span>
+                <span class="ml-2 text-xs text-gray-400 group-hover:text-blue-600" title="Removes all console.log, console.warn, and other debugging statements from the code">ℹ️</span>
               </label>
-              <button onclick="resetAdvanced()" class="mt-2 text-sm text-blue-600 hover:text-blue-700">
-                Reset to Default
-              </button>
+
+              <div class="pt-2 border-t border-gray-200">
+                <button onclick="resetAdvanced()" class="text-sm text-blue-600 hover:text-blue-700">
+                  <i class="fas fa-undo mr-1"></i>Reset to Default
+                </button>
+              </div>
             </div>
           </div>
 
@@ -210,8 +229,9 @@
                   <span class="text-sm text-gray-700">Check activation status</span>
                 </label>
                 <label class="flex items-center">
-                  <input type="checkbox" id="bashCheckMachine" class="mr-2">
+                  <input type="checkbox" id="bashCheckMachine" class="mr-2" checked>
                   <span class="text-sm text-gray-700">Validate machine binding</span>
+                  <span class="ml-2 text-xs text-blue-600" title="Prevents license from being used on multiple machines">ℹ️</span>
                 </label>
                 <label class="flex items-center">
                   <input type="checkbox" id="bashShowInfo" class="mr-2" checked>
