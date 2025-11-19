@@ -22,7 +22,7 @@ class CodeProtectionController {
   async index(req, res) {
     try {
       const userId = req.session.userId;
-      const userRole = req.session.role || 'user';
+      const userRole = req.session.userRole || 'user';
       const isAdmin = userRole === 'admin';
 
       // Get user's quota
@@ -182,7 +182,7 @@ class CodeProtectionController {
       }
 
       // Check quota (skip for admin)
-      const userRole = req.session.role || 'user';
+      const userRole = req.session.userRole || 'user';
       const isAdmin = userRole === 'admin';
 
       const quota = await db.get(
@@ -284,7 +284,7 @@ class CodeProtectionController {
       }
 
       // Check quota again (skip for admin)
-      const userRole = req.session.role || 'user';
+      const userRole = req.session.userRole || 'user';
       const isAdmin = userRole === 'admin';
       console.log('User role:', userRole, 'isAdmin:', isAdmin);
 
@@ -332,7 +332,7 @@ class CodeProtectionController {
         [userId, originalFilename, fileStats.size, level, JSON.stringify(options || {})]
       );
 
-      const obfuscationId = result.lastID;
+      const obfuscationId = result.id;
       console.log('Obfuscation record created with ID:', obfuscationId);
 
       try {
@@ -631,7 +631,7 @@ class CodeProtectionController {
   async getQuota(req, res) {
     try {
       const userId = req.session.userId;
-      const userRole = req.session.role || 'user';
+      const userRole = req.session.userRole || 'user';
       const isAdmin = userRole === 'admin';
 
       const quota = await db.get(
