@@ -154,7 +154,10 @@ class CodeProtectionController {
    */
   async upload(req, res) {
     try {
+      console.log('Upload request received from user:', req.session.userId);
+
       if (!req.file) {
+        console.log('No file in request');
         return res.status(400).json({
           success: false,
           message: 'No file uploaded'
@@ -163,6 +166,8 @@ class CodeProtectionController {
 
       const file = req.file;
       const userId = req.session.userId;
+
+      console.log('File uploaded:', file.originalname, 'Size:', file.size, 'bytes');
 
       // Validate file extension
       const allowedExtensions = ['.js', '.zip', '.sh'];
@@ -263,7 +268,15 @@ class CodeProtectionController {
       const { fileId, level, options, bashInjection } = req.body;
       const userId = req.session.userId;
 
+      console.log('Obfuscate request:', {
+        userId,
+        fileId,
+        level,
+        hasBashInjection: !!bashInjection
+      });
+
       if (!fileId || !level) {
+        console.log('Missing parameters - fileId:', fileId, 'level:', level);
         return res.status(400).json({
           success: false,
           message: 'Missing required parameters'
