@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Features - License Manager</title>
+  <title>Features Management - License Manager</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -13,20 +13,24 @@
       <header class="bg-white shadow-sm">
         <div class="flex items-center justify-between p-4">
           <h2 class="text-xl font-semibold text-gray-800">Features Management</h2>
-          <span class="text-sm text-gray-600"><%= moment().format('dddd, MMMM D, YYYY') %></span>
+          <% if (user.userRole === 'admin') { %>
+            <a href="/features/create" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+              <i class="fas fa-plus mr-2"></i>Add Feature
+            </a>
+          <% } %>
         </div>
       </header>
 
       <main class="flex-1 overflow-y-auto p-6">
         <div class="mb-6">
-          <h3 class="text-2xl font-bold text-gray-800">License Features</h3>
-          <p class="text-gray-600">Manage features for each license type</p>
+          <h3 class="text-2xl font-bold text-gray-800">Product Features</h3>
+          <p class="text-gray-600">Master list of features available for license types</p>
         </div>
 
         <% if (products.length === 0) { %>
           <div class="bg-white rounded-lg shadow p-8 text-center">
             <i class="fas fa-puzzle-piece text-6xl text-gray-300 mb-4"></i>
-            <p class="text-gray-500 mb-4">No products or license types found</p>
+            <p class="text-gray-500 mb-4">No products found</p>
             <a href="/products/create" class="text-blue-500 hover:text-blue-600">
               Create your first product
             </a>
@@ -35,64 +39,92 @@
           <div class="space-y-6">
             <% products.forEach(product => { %>
               <div class="bg-white rounded-lg shadow overflow-hidden">
-                <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <!-- Product Header -->
+                <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
                   <div class="flex items-center justify-between">
                     <div>
-                      <h4 class="text-lg font-semibold text-gray-800">
-                        <%= product.name %>
-                        <span class="text-sm text-gray-500 ml-2">v<%= product.version || '1.0.0' %></span>
+                      <h4 class="text-lg font-semibold text-white">
+                        <i class="fas fa-cube mr-2"></i><%= product.name %>
+                        <span class="text-blue-200 ml-2 text-sm">v<%= product.version || '1.0.0' %></span>
                       </h4>
+                      <p class="text-blue-100 text-sm mt-1">
+                        <%= product.features.length %> feature<%= product.features.length !== 1 ? 's' : '' %> defined
+                      </p>
                     </div>
-                    <a href="/products/<%= product.id %>" class="text-blue-500 hover:text-blue-600 text-sm">
-                      <i class="fas fa-external-link-alt"></i> View Product
-                    </a>
+                    <% if (user.userRole === 'admin') { %>
+                      <a href="/features/create?product_id=<%= product.id %>"
+                         class="bg-white text-blue-600 px-4 py-2 rounded-md hover:bg-blue-50 text-sm">
+                        <i class="fas fa-plus mr-2"></i>Add Feature
+                      </a>
+                    <% } %>
                   </div>
                 </div>
 
-                <% if (product.license_types.length === 0) { %>
-                  <div class="p-6 text-center text-gray-500">
-                    <p>No license types configured for this product</p>
-                    <a href="/products/<%= product.id %>" class="text-blue-500 hover:text-blue-600 text-sm mt-2 inline-block">
-                      Add License Type
-                    </a>
-                  </div>
-                <% } else { %>
-                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-                    <% product.license_types.forEach(lt => { %>
-                      <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
-                        <div class="flex items-center justify-between mb-3">
-                          <h5 class="font-semibold text-gray-800"><%= lt.name %></h5>
-                          <span class="text-sm font-medium text-green-600">
-                            Rp <%= new Intl.NumberFormat('id-ID').format(lt.price || 0) %>
-                          </span>
-                        </div>
+                <!-- Features List -->
+                <div class="p-6">
+                  <% if (product.features.length === 0) { %>
+                    <div class="text-center py-8 text-gray-500">
+                      <i class="fas fa-inbox text-4xl mb-3 opacity-50"></i>
+                      <p>No features defined for this product yet</p>
+                      <% if (user.userRole === 'admin') { %>
+                        <a href="/features/create?product_id=<%= product.id %>"
+                           class="text-blue-500 hover:text-blue-600 text-sm mt-2 inline-block">
+                          <i class="fas fa-plus-circle mr-1"></i>Add your first feature
+                        </a>
+                      <% } %>
+                    </div>
+                  <% } else { %>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <% product.features.forEach(feature => { %>
+                        <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all <%= feature.is_active ? '' : 'opacity-60 bg-gray-50' %>">
+                          <!-- Feature Header -->
+                          <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                              <div class="flex items-center space-x-2 mb-1">
+                                <h5 class="font-semibold text-gray-800"><%= feature.name %></h5>
+                                <% if (!feature.is_active) { %>
+                                  <span class="text-xs px-2 py-0.5 bg-gray-200 text-gray-600 rounded">Inactive</span>
+                                <% } %>
+                              </div>
+                              <code class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded"><%= feature.feature_key %></code>
+                            </div>
+                            <% if (user.userRole === 'admin') { %>
+                              <div class="flex items-center space-x-1 ml-2">
+                                <a href="/features/<%= feature.id %>/edit"
+                                   class="text-blue-600 hover:text-blue-700 p-1" title="Edit">
+                                  <i class="fas fa-edit"></i>
+                                </a>
+                                <button onclick="deleteFeature(<%= feature.id %>, '<%= feature.name %>')"
+                                        class="text-red-600 hover:text-red-700 p-1" title="Delete">
+                                  <i class="fas fa-trash"></i>
+                                </button>
+                              </div>
+                            <% } %>
+                          </div>
 
-                        <div class="mb-3">
-                          <p class="text-xs text-gray-500 font-medium mb-2">FEATURES:</p>
-                          <% if (lt.features.length === 0) { %>
-                            <p class="text-sm text-gray-400 italic">No features defined</p>
-                          <% } else { %>
-                            <ul class="space-y-1">
-                              <% lt.features.forEach(feature => { %>
-                                <li class="text-sm text-gray-700 flex items-start">
-                                  <i class="fas fa-check-circle text-green-500 mt-0.5 mr-2"></i>
-                                  <span><%= feature %></span>
-                                </li>
-                              <% }); %>
-                            </ul>
+                          <!-- Feature Description -->
+                          <% if (feature.description) { %>
+                            <p class="text-sm text-gray-600 mb-3"><%= feature.description %></p>
                           <% } %>
-                        </div>
 
-                        <div class="pt-3 border-t border-gray-100">
-                          <button onclick="openEditModal(<%= lt.id %>, '<%= lt.name %>', <%= JSON.stringify(lt.features) %>)"
-                                  class="text-sm text-blue-600 hover:text-blue-700">
-                            <i class="fas fa-edit"></i> Edit Features
-                          </button>
+                          <!-- Feature Metadata -->
+                          <div class="pt-3 border-t border-gray-100">
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                              <% if (feature.category) { %>
+                                <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded">
+                                  <%= feature.category %>
+                                </span>
+                              <% } else { %>
+                                <span></span>
+                              <% } %>
+                              <span>Order: <%= feature.display_order || 0 %></span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    <% }); %>
-                  </div>
-                <% } %>
+                      <% }); %>
+                    </div>
+                  <% } %>
+                </div>
               </div>
             <% }); %>
           </div>
@@ -104,14 +136,18 @@
             <i class="fas fa-info-circle text-blue-500 text-2xl mr-4 mt-1"></i>
             <div>
               <h4 class="font-semibold text-blue-900 mb-2">About Features</h4>
-              <p class="text-blue-800 text-sm mb-2">
-                Features define what capabilities each license type provides. They are included in the API response
-                when validating licenses, allowing your applications to enable/disable functionality based on the license.
+              <p class="text-blue-800 text-sm mb-3">
+                Features are master data that can be assigned to multiple license types. Each feature has:
               </p>
-              <p class="text-blue-700 text-sm">
-                <strong>Example:</strong> A "Professional" license might include features like
-                ["advanced_reporting", "api_access", "priority_support"], while a "Basic" license only includes
-                ["basic_reporting"].
+              <ul class="text-blue-800 text-sm space-y-1 ml-4 list-disc">
+                <li><strong>Name</strong>: Display name shown to users (e.g., "API Access")</li>
+                <li><strong>Feature Key</strong>: Unique identifier for code integration (e.g., "api_access")</li>
+                <li><strong>Description</strong>: Explains what the feature provides</li>
+                <li><strong>Category</strong>: Groups related features (optional)</li>
+                <li><strong>Display Order</strong>: Controls the order features appear</li>
+              </ul>
+              <p class="text-blue-700 text-sm mt-3">
+                <strong>Tip:</strong> Create features here first, then assign them to license types when editing products.
               </p>
             </div>
           </div>
@@ -123,52 +159,8 @@
   <!-- Toast Container -->
   <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-  <!-- Edit Features Modal -->
-  <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
-      <div class="bg-blue-600 text-white px-6 py-4 flex items-center justify-between">
-        <h3 class="text-xl font-semibold">
-          <i class="fas fa-edit mr-2"></i>Edit Features
-        </h3>
-        <button onclick="closeEditModal()" class="text-white hover:text-gray-200">
-          <i class="fas fa-times text-2xl"></i>
-        </button>
-      </div>
-
-      <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 140px);">
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">License Type</label>
-          <input type="text" id="modalLicenseTypeName" readonly
-                 class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
-        </div>
-
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Features
-            <span class="text-xs text-gray-500">(One per line)</span>
-          </label>
-          <div id="featuresList" class="space-y-2 mb-3">
-            <!-- Features will be added here dynamically -->
-          </div>
-          <button onclick="addFeatureInput()"
-                  class="text-sm text-blue-600 hover:text-blue-700">
-            <i class="fas fa-plus-circle"></i> Add Feature
-          </button>
-        </div>
-      </div>
-
-      <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-3 border-t">
-        <button onclick="closeEditModal()"
-                class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-          Cancel
-        </button>
-        <button onclick="saveFeatures()"
-                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-          <i class="fas fa-save mr-2"></i>Save Changes
-        </button>
-      </div>
-    </div>
-  </div>
+  <!-- Confirm Delete Modal -->
+  <%- include('../partials/confirm-modal') %>
 
   <script>
     function showToast(message, type = 'success') {
@@ -207,127 +199,38 @@
       }, 5000);
     }
 
-    // Edit Features Modal Functions
-    let currentLicenseTypeId = null;
-    let currentLicenseTypeData = null;
-
-    async function openEditModal(licenseTypeId, licenseTypeName, features) {
-      currentLicenseTypeId = licenseTypeId;
-      document.getElementById('modalLicenseTypeName').value = licenseTypeName;
-
-      // Store features data
-      currentLicenseTypeData = {
-        id: licenseTypeId,
-        name: licenseTypeName,
-        features: features
-      };
-
-      // Clear existing features
-      const featuresList = document.getElementById('featuresList');
-      featuresList.innerHTML = '';
-
-      // Add existing features
-      if (features && features.length > 0) {
-        features.forEach(feature => {
-          addFeatureInput(feature);
-        });
-      } else {
-        // Add one empty input if no features
-        addFeatureInput();
-      }
-
-      // Show modal
-      const modal = document.getElementById('editModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-
-    function closeEditModal() {
-      const modal = document.getElementById('editModal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-      currentLicenseTypeId = null;
-    }
-
-    function addFeatureInput(value = '') {
-      const featuresList = document.getElementById('featuresList');
-      const featureDiv = document.createElement('div');
-      featureDiv.className = 'flex items-center space-x-2';
-      featureDiv.innerHTML = `
-        <input type="text"
-               value="${value}"
-               placeholder="Enter feature name"
-               class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        <button onclick="removeFeature(this)"
-                class="text-red-600 hover:text-red-700 px-3 py-2">
-          <i class="fas fa-trash"></i>
-        </button>
-      `;
-      featuresList.appendChild(featureDiv);
-
-      // Focus on the new input
-      if (!value) {
-        featureDiv.querySelector('input').focus();
-      }
-    }
-
-    function removeFeature(button) {
-      button.parentElement.remove();
-    }
-
-    async function saveFeatures() {
-      if (!currentLicenseTypeId) {
-        showToast('Invalid license type', 'error');
-        return;
-      }
-
-      // Collect all feature values
-      const inputs = document.querySelectorAll('#featuresList input');
-      const features = [];
-      inputs.forEach(input => {
-        const value = input.value.trim();
-        if (value) {
-          features.push(value);
-        }
-      });
-
-      try {
-        const response = await fetch(`/features/license-types/${currentLicenseTypeId}`, {
-          method: 'PUT',
+    function deleteFeature(featureId, featureName) {
+      if (confirm(`Are you sure you want to delete the feature "${featureName}"?\n\nThis will remove it from all license types that use it.`)) {
+        fetch(`/features/${featureId}`, {
+          method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
           },
-          credentials: 'include',
-          body: JSON.stringify({
-            features: JSON.stringify(features)
-          })
+          credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showToast('Feature deleted successfully', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+          } else {
+            showToast(data.message || 'Failed to delete feature', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showToast('An error occurred', 'error');
         });
-
-        const result = await response.json();
-
-        if (result.success) {
-          showToast('Features updated successfully!', 'success');
-          closeEditModal();
-
-          // Reload page to show updated features
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-        } else {
-          showToast(result.message || 'Failed to update features', 'error');
-        }
-      } catch (error) {
-        console.error('Error saving features:', error);
-        showToast('An error occurred while saving', 'error');
       }
     }
 
-    // Close modal when clicking outside
-    document.getElementById('editModal')?.addEventListener('click', function(e) {
-      if (e.target === this) {
-        closeEditModal();
-      }
-    });
+    // Show success message if redirected after create/update
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success')) {
+      showToast(urlParams.get('message') || 'Operation completed successfully', 'success');
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   </script>
 </body>
 </html>

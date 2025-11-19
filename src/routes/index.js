@@ -87,8 +87,14 @@ router.post('/users/:id/edit', requireSelfOrAdmin('id'), userController.update);
 router.delete('/users/:id', requireAdmin, userController.delete);
 router.post('/users/:id/change-password', requireSelfOrAdmin('id'), userController.changePassword);
 
-// Features
+// Features - Full CRUD (Admin only for create/edit/delete)
 router.get('/features', requireAuth, featuresController.index);
+router.get('/features/create', requireAdmin, featuresController.create);
+router.post('/features/create', requireAdmin, featuresController.store);
+router.get('/features/:id/edit', requireAdmin, featuresController.edit);
+router.post('/features/:id/edit', requireAdmin, featuresController.update);
+router.delete('/features/:id', requireAdmin, featuresController.delete);
+// Legacy endpoint for backward compatibility
 router.put('/features/license-types/:id', requireAuth, featuresController.updateFeatures);
 
 // Licenses (Admin only for create/modify/delete)

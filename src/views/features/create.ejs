@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Create Feature - License Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+  <div class="flex h-screen overflow-hidden">
+    <%- include('../partials/sidebar', { currentPage: 'features', user: user }) %>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <header class="bg-white shadow-sm">
+        <div class="flex items-center justify-between p-4">
+          <div class="flex items-center space-x-3">
+            <a href="/features" class="text-gray-600 hover:text-gray-800">
+              <i class="fas fa-arrow-left"></i>
+            </a>
+            <h2 class="text-xl font-semibold text-gray-800">Create New Feature</h2>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-3xl mx-auto">
+          <div class="bg-white rounded-lg shadow p-6">
+            <form id="createFeatureForm">
+              <!-- Product Selection -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Product <span class="text-red-500">*</span>
+                </label>
+                <select name="product_id" id="product_id" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  <option value="">Select a product</option>
+                  <% products.forEach(product => { %>
+                    <option value="<%= product.id %>"><%= product.name %></option>
+                  <% }); %>
+                </select>
+                <p class="text-sm text-gray-500 mt-1">Which product this feature belongs to</p>
+              </div>
+
+              <!-- Feature Name -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Feature Name <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="name" id="name" required
+                       placeholder="e.g., API Access"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <p class="text-sm text-gray-500 mt-1">Display name shown to users</p>
+              </div>
+
+              <!-- Feature Key -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Feature Key <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="feature_key" id="feature_key" required
+                       placeholder="e.g., api_access"
+                       pattern="[a-z0-9_]+"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <p class="text-sm text-gray-500 mt-1">
+                  Unique identifier for code (lowercase letters, numbers, and underscores only)
+                </p>
+                <button type="button" onclick="generateKey()" class="text-sm text-blue-600 hover:text-blue-700 mt-1">
+                  <i class="fas fa-magic mr-1"></i>Generate from name
+                </button>
+              </div>
+
+              <!-- Description -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea name="description" id="description" rows="3"
+                          placeholder="Describe what this feature provides..."
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                <p class="text-sm text-gray-500 mt-1">Helps users understand what this feature does</p>
+              </div>
+
+              <!-- Category -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Category
+                </label>
+                <input type="text" name="category" id="category"
+                       placeholder="e.g., integration, support, analytics"
+                       list="categoryList"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <datalist id="categoryList">
+                  <option value="integration">
+                  <option value="support">
+                  <option value="analytics">
+                  <option value="security">
+                  <option value="storage">
+                  <option value="automation">
+                </datalist>
+                <p class="text-sm text-gray-500 mt-1">Group related features (optional)</p>
+              </div>
+
+              <!-- Display Order -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Display Order
+                </label>
+                <input type="number" name="display_order" id="display_order" value="0"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <p class="text-sm text-gray-500 mt-1">Controls the order features appear (lower numbers appear first)</p>
+              </div>
+
+              <!-- Form Actions -->
+              <div class="flex items-center justify-end space-x-3 pt-6 border-t">
+                <a href="/features" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                  Cancel
+                </a>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                  <i class="fas fa-save mr-2"></i>Create Feature
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Help Panel -->
+          <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-start">
+              <i class="fas fa-lightbulb text-blue-500 text-xl mr-3 mt-0.5"></i>
+              <div class="text-sm text-blue-800">
+                <p class="font-medium mb-1">Best Practices:</p>
+                <ul class="list-disc ml-4 space-y-1">
+                  <li>Use clear, descriptive names that users will understand</li>
+                  <li>Keep feature keys consistent and lowercase (e.g., api_access, not API-Access)</li>
+                  <li>Write descriptions that explain the value, not just repeat the name</li>
+                  <li>Use categories to organize features logically</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+  <script>
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+
+      const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        info: 'bg-blue-500'
+      };
+
+      toast.className = `${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3`;
+      toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'info'}-circle text-xl"></i>
+        <span class="flex-1">${message}</span>
+        <button onclick="this.parentElement.remove()" class="text-white hover:text-gray-200">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+
+    // Auto-generate feature key from name
+    function generateKey() {
+      const name = document.getElementById('name').value;
+      const key = name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, '_')
+        .trim();
+      document.getElementById('feature_key').value = key;
+    }
+
+    // Auto-generate on name input
+    document.getElementById('name').addEventListener('input', function() {
+      if (!document.getElementById('feature_key').value) {
+        generateKey();
+      }
+    });
+
+    // Pre-select product if coming from query param
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('product_id');
+    if (productId) {
+      document.getElementById('product_id').value = productId;
+    }
+
+    // Form submission
+    document.getElementById('createFeatureForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
+
+      try {
+        const response = await fetch('/features/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showToast('Feature created successfully!', 'success');
+          setTimeout(() => {
+            window.location.href = '/features?success=1&message=Feature+created+successfully';
+          }, 1000);
+        } else {
+          showToast(result.message || 'Failed to create feature', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('An error occurred', 'error');
+      }
+    });
+  </script>
+</body>
+</html>
