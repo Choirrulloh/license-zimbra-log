@@ -88,6 +88,7 @@ router.delete('/users/:id', requireAdmin, userController.delete);
 router.post('/users/:id/change-password', requireSelfOrAdmin('id'), userController.changePassword);
 
 // Features - Inline management (Admin only)
+router.post('/products/:productId/features/batch', requireAdmin, featuresController.createFeaturesBatch);
 router.post('/products/:productId/features', requireAdmin, featuresController.createFeature);
 router.delete('/features/:id', requireAdmin, featuresController.deleteFeature);
 

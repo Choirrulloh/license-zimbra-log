@@ -4,6 +4,7 @@ const ActivityLogger = require('../utils/activityLogger');
 class FeaturesController {
   constructor() {
     this.createFeature = this.createFeature.bind(this);
+    this.createFeaturesBatch = this.createFeaturesBatch.bind(this);
     this.deleteFeature = this.deleteFeature.bind(this);
   }
 
@@ -14,7 +15,7 @@ class FeaturesController {
   async createFeature(req, res) {
     try {
       const { productId } = req.params;
-      const { name, feature_key, description } = req.body;
+      const { name, feature_key } = req.body;
 
       // Validate required fields
       if (!name || !feature_key) {
@@ -39,9 +40,9 @@ class FeaturesController {
 
       // Insert feature
       const result = await db.run(
-        `INSERT INTO features (product_id, name, feature_key, description)
-         VALUES (?, ?, ?, ?)`,
-        [productId, name, feature_key, description || null]
+        `INSERT INTO features (product_id, name, feature_key)
+         VALUES (?, ?, ?)`,
+        [productId, name, feature_key]
       );
 
       // Log activity
@@ -65,6 +66,80 @@ class FeaturesController {
       res.status(500).json({
         success: false,
         message: 'Error creating feature'
+      });
+    }
+  }
+
+  /**
+   * Create multiple features at once (batch)
+   * POST /products/:productId/features/batch
+   */
+  async createFeaturesBatch(req, res) {
+    try {
+      const { productId } = req.params;
+      const { features } = req.body;
+
+      // Validate
+      if (!features || !Array.isArray(features) || features.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Features array is required'
+        });
+      }
+
+      let successCount = 0;
+      const errors = [];
+
+      for (const feature of features) {
+        const { name, feature_key } = feature;
+
+        if (!name || !feature_key) {
+          errors.push(`Missing name or key for feature`);
+          continue;
+        }
+
+        // Check if feature_key already exists
+        const existing = await db.get(
+          'SELECT id FROM features WHERE product_id = ? AND feature_key = ?',
+          [productId, feature_key]
+        );
+
+        if (existing) {
+          errors.push(`Feature key "${feature_key}" already exists`);
+          continue;
+        }
+
+        // Insert feature
+        await db.run(
+          `INSERT INTO features (product_id, name, feature_key)
+           VALUES (?, ?, ?)`,
+          [productId, name, feature_key]
+        );
+
+        successCount++;
+      }
+
+      // Log activity
+      await ActivityLogger.log({
+        userId: req.session.userId,
+        action: 'create_batch',
+        entityType: 'feature',
+        description: `Created ${successCount} feature(s) in batch`,
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.headers?.['user-agent']
+      });
+
+      res.json({
+        success: true,
+        message: `${successCount} feature(s) created successfully`,
+        count: successCount,
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error) {
+      console.error('Error creating features batch:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error creating features'
       });
     }
   }
