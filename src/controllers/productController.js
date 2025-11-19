@@ -112,7 +112,7 @@ class ProductController {
       await ActivityLogger.logCreate(
         req.session.userId,
         'product',
-        result.lastID,
+        result.id,
         name,
         req
       );
@@ -257,7 +257,7 @@ class ProductController {
         for (const featureId of featureIdsArray) {
           await db.run(
             'INSERT INTO license_type_features (license_type_id, feature_id) VALUES (?, ?)',
-            [result.lastID, featureId]
+            [result.id, featureId]
           );
         }
       }
@@ -266,7 +266,7 @@ class ProductController {
       await ActivityLogger.logCreate(
         req.session.userId,
         'license_type',
-        result.lastID,
+        result.id,
         name,
         req
       );
