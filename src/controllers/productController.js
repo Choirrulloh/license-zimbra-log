@@ -236,19 +236,19 @@ class ProductController {
   // License Types Management
   async createLicenseType(req, res) {
     try {
-      const { product_id, name, type, duration_days, max_activations, price, features, feature_ids } = req.body;
+      const { product_id, name, duration_days, max_activations, price, features, feature_ids } = req.body;
 
-      if (!name || !type || !duration_days) {
+      if (!name || !duration_days) {
         return res.status(400).json({
           success: false,
-          message: 'Name, type, and duration are required'
+          message: 'Name and duration are required'
         });
       }
 
       const result = await db.run(
-        `INSERT INTO license_types (product_id, name, type, duration_days, max_activations, price, features)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [product_id, name, type, duration_days, max_activations || 1, price || 0, features || null]
+        `INSERT INTO license_types (product_id, name, duration_days, max_activations, price, features)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [product_id, name, duration_days, max_activations || 1, price || 0, features || null]
       );
 
       // Insert feature assignments to pivot table (if feature_ids provided)
@@ -284,14 +284,14 @@ class ProductController {
   async updateLicenseType(req, res) {
     try {
       const { id } = req.params;
-      const { name, type, duration_days, max_activations, price, features, is_active, feature_ids } = req.body;
+      const { name, duration_days, max_activations, price, features, is_active, feature_ids } = req.body;
 
       // Update license type basic info
       await db.run(
         `UPDATE license_types
-         SET name = ?, type = ?, duration_days = ?, max_activations = ?, price = ?, features = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
+         SET name = ?, duration_days = ?, max_activations = ?, price = ?, features = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
-        [name, type, duration_days, max_activations, price, features, is_active ? 1 : 0, id]
+        [name, duration_days, max_activations, price, features, is_active ? 1 : 0, id]
       );
 
       // Update feature assignments in pivot table (if feature_ids provided)
