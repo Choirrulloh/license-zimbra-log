@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= permission.name %> - License Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+</head>
+<body class="bg-gray-100">
+  <div class="flex h-screen overflow-hidden">
+    <%- include('../partials/sidebar', { currentPage: 'permissions', user: user }) %>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <header class="bg-white shadow-sm">
+        <div class="flex items-center justify-between p-4">
+          <div>
+            <a href="/permissions" class="text-blue-600 hover:text-blue-800 text-sm mb-1 inline-block">
+              <i class="fas fa-arrow-left mr-1"></i>Back to Permissions
+            </a>
+            <h2 class="text-xl font-semibold text-gray-800"><%= permission.name %></h2>
+            <p class="text-sm text-gray-600"><%= permission.description || 'No description provided' %></p>
+          </div>
+          <div class="space-x-2">
+            <a href="/permissions/<%= permission.id %>/edit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
+              <i class="fas fa-edit mr-1"></i>Edit
+            </a>
+            <button onclick="deletePermission(<%= permission.id %>, '<%= permission.name %>')"
+                    class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm">
+              <i class="fas fa-trash mr-1"></i>Delete
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-y-auto p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Permission Info -->
+          <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg shadow-md p-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">Permission Details</h3>
+
+              <dl class="space-y-3">
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Name</dt>
+                  <dd class="mt-1">
+                    <code class="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded"><%= permission.name %></code>
+                  </dd>
+                </div>
+
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Resource</dt>
+                  <dd class="mt-1">
+                    <span class="inline-flex items-center px-3 py-1 rounded bg-purple-100 text-purple-800 text-sm font-medium capitalize">
+                      <i class="fas fa-<%= permission.resource === 'dashboard' ? 'chart-line' : permission.resource === 'products' ? 'box' : permission.resource === 'customers' ? 'users' : permission.resource === 'licenses' ? 'certificate' : permission.resource === 'users' ? 'user-shield' : permission.resource === 'roles' ? 'user-tag' : permission.resource === 'permissions' ? 'key' : permission.resource === 'reports' ? 'file-alt' : permission.resource === 'settings' ? 'cog' : 'puzzle-piece' %> mr-2"></i>
+                      <%= permission.resource %>
+                    </span>
+                  </dd>
+                </div>
+
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Action</dt>
+                  <dd class="mt-1">
+                    <span class="inline-flex items-center px-3 py-1 rounded bg-green-100 text-green-800 text-sm font-medium">
+                      <%= permission.action %>
+                    </span>
+                  </dd>
+                </div>
+
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Created</dt>
+                  <dd class="mt-1 text-sm text-gray-900">
+                    <script>document.write(moment('<%= permission.created_at %>').format('MMMM D, YYYY'))</script>
+                  </dd>
+                </div>
+
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Last Updated</dt>
+                  <dd class="mt-1 text-sm text-gray-900">
+                    <script>document.write(moment('<%= permission.updated_at %>').fromNow())</script>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
+          <!-- Roles with this permission -->
+          <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-md p-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                Roles with this Permission (<%= roles.length %>)
+              </h3>
+
+              <% if (roles.length === 0) { %>
+                <div class="text-center py-12">
+                  <i class="fas fa-user-tag text-5xl text-gray-300 mb-4"></i>
+                  <p class="text-gray-500">This permission is not assigned to any roles yet.</p>
+                  <a href="/roles" class="inline-block mt-4 text-blue-600 hover:text-blue-800">
+                    <i class="fas fa-arrow-right mr-2"></i>Manage Roles
+                  </a>
+                </div>
+              <% } else { %>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <% roles.forEach(role => { %>
+                    <a href="/roles/<%= role.id %>"
+                       class="block p-4 border rounded-lg hover:bg-gray-50 hover:border-blue-500 transition">
+                      <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-semibold text-gray-900"><%= role.display_name %></h4>
+                        <% if (role.is_active) { %>
+                          <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Active</span>
+                        <% } else { %>
+                          <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Inactive</span>
+                        <% } %>
+                      </div>
+                      <p class="text-sm text-gray-600 line-clamp-2"><%= role.description || 'No description' %></p>
+                      <div class="mt-2">
+                        <code class="text-xs text-gray-500"><%= role.name %></code>
+                      </div>
+                    </a>
+                  <% }) %>
+                </div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+  <script>
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        warning: 'bg-yellow-500',
+        info: 'bg-blue-500'
+      };
+      const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-times-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+      };
+      toast.className = `${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 min-w-[300px] max-w-md`;
+      toast.innerHTML = `
+        <i class="fas ${icons[type]} text-xl"></i>
+        <span class="flex-1">${message}</span>
+        <button onclick="this.parentElement.remove()" class="text-white hover:text-gray-200">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+
+    async function deletePermission(id, name) {
+      const confirmed = await showConfirm(
+        `Are you sure you want to delete the permission "${name}"? This will remove it from all roles. This action cannot be undone.`,
+        'Confirm Deletion',
+        { type: 'delete', confirmText: 'Delete' }
+      );
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch(`/permissions/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showToast(`Permission "${name}" deleted successfully`, 'success');
+          setTimeout(() => window.location.href = '/permissions', 1000);
+        } else {
+          showToast(data.error || 'Failed to delete permission', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to delete permission', 'error');
+      }
+    }
+  </script>
+  <%- include('../partials/confirm-modal') %>
+</body>
+</html>

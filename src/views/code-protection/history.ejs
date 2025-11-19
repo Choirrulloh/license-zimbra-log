@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Obfuscation History - License Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+  <div class="flex h-screen overflow-hidden">
+    <%- include('../partials/sidebar', { currentPage: 'code-protection', user: user }) %>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <header class="bg-white shadow-sm">
+        <div class="flex items-center justify-between p-4">
+          <h2 class="text-xl font-semibold text-gray-800">Code Protection History</h2>
+          <span class="text-sm text-gray-600"><%= moment().format('dddd, MMMM D, YYYY') %></span>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-y-auto p-6">
+        <!-- Back Button -->
+        <div class="mb-6">
+          <a href="/code-protection" class="text-blue-600 hover:text-blue-700 inline-flex items-center">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Code Protection
+          </a>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+              <div class="p-3 bg-blue-100 rounded-lg">
+                <i class="fas fa-file-code text-2xl text-blue-600"></i>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm text-gray-600">Total Obfuscations</p>
+                <p class="text-2xl font-semibold text-gray-800"><%= pagination.total %></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+              <div class="p-3 bg-green-100 rounded-lg">
+                <i class="fas fa-check-circle text-2xl text-green-600"></i>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm text-gray-600">Completed</p>
+                <p class="text-2xl font-semibold text-gray-800">
+                  <%= obfuscations.filter(o => o.status === 'completed').length %>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+              <div class="p-3 bg-red-100 rounded-lg">
+                <i class="fas fa-times-circle text-2xl text-red-600"></i>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm text-gray-600">Failed</p>
+                <p class="text-2xl font-semibold text-gray-800">
+                  <%= obfuscations.filter(o => o.status === 'failed').length %>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+          <div class="p-6 border-b">
+            <h3 class="text-lg font-semibold text-gray-800">
+              <i class="fas fa-history text-blue-500 mr-2"></i>
+              Obfuscation History
+            </h3>
+          </div>
+
+          <div class="overflow-x-auto">
+            <% if (obfuscations && obfuscations.length > 0) { %>
+              <table class="min-w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date & Time</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Files</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Level</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Size</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <% obfuscations.forEach(obf => { %>
+                    <tr class="hover:bg-gray-50">
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-800 font-medium">
+                          <%= moment(obf.created_at).format('MMM DD, YYYY') %>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                          <%= moment(obf.created_at).format('h:mm A') %>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <div class="flex items-center space-x-2">
+                          <i class="fas <%= obf.original_filename.endsWith('.zip') ? 'fa-file-archive' : 'fa-file-code' %> text-blue-500"></i>
+                          <div>
+                            <div class="text-sm font-medium text-gray-800"><%= obf.original_filename %></div>
+                            <div class="text-xs text-gray-500"><%= (obf.file_size / 1024).toFixed(0) %> KB</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-3 py-1 text-xs font-medium rounded-full <%= obf.obfuscation_level === 'high' ? 'bg-red-100 text-red-600' : obf.obfuscation_level === 'medium' ? 'bg-blue-100 text-blue-600' : 'bg-yellow-100 text-yellow-600' %>">
+                          <%= obf.obfuscation_level.toUpperCase() %>
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <% if (obf.obfuscated_size) { %>
+                          <div class="text-sm text-gray-800">
+                            <%= (obf.obfuscated_size / 1024).toFixed(0) %> KB
+                          </div>
+                          <div class="text-xs text-gray-500">
+                            <%= (((obf.file_size - obf.obfuscated_size) / obf.file_size) * 100).toFixed(1) %>% reduction
+                          </div>
+                        <% } else { %>
+                          <span class="text-sm text-gray-400">-</span>
+                        <% } %>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <% if (obf.status === 'completed') { %>
+                          <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            Completed
+                          </span>
+                        <% } else if (obf.status === 'failed') { %>
+                          <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
+                            <i class="fas fa-times-circle mr-1"></i>
+                            Failed
+                          </span>
+                        <% } else if (obf.status === 'processing') { %>
+                          <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                            <i class="fas fa-spinner fa-spin mr-1"></i>
+                            Processing
+                          </span>
+                        <% } else { %>
+                          <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+                            <%= obf.status %>
+                          </span>
+                        <% } %>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <% if (obf.status === 'completed') { %>
+                          <% if (obf.expires_at && new Date(obf.expires_at) > new Date()) { %>
+                            <a href="/code-protection/download/<%= obf.id %>" class="text-blue-600 hover:text-blue-700 text-sm font-medium inline-flex items-center">
+                              <i class="fas fa-download mr-1"></i>
+                              Download
+                            </a>
+                          <% } else { %>
+                            <span class="text-red-500 text-xs">
+                              <i class="fas fa-clock mr-1"></i>
+                              Expired
+                            </span>
+                          <% } %>
+                        <% } else if (obf.status === 'failed') { %>
+                          <button onclick="showError('<%= obf.error_message || 'Unknown error' %>')" class="text-red-600 hover:text-red-700 text-sm">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Details
+                          </button>
+                        <% } else { %>
+                          <span class="text-gray-400 text-sm">-</span>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+
+              <!-- Pagination -->
+              <% if (pagination.totalPages > 1) { %>
+                <div class="px-6 py-4 bg-gray-50 border-t flex items-center justify-between">
+                  <div class="text-sm text-gray-600">
+                    Showing <%= obfuscations.length %> of <%= pagination.total %> results
+                  </div>
+                  <div class="flex space-x-2">
+                    <% if (pagination.page > 1) { %>
+                      <a href="/code-protection/history?page=<%= pagination.page - 1 %>" class="px-3 py-1 bg-white border rounded hover:bg-gray-50">
+                        <i class="fas fa-chevron-left"></i> Previous
+                      </a>
+                    <% } %>
+
+                    <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+                      <% if (i === pagination.page) { %>
+                        <span class="px-3 py-1 bg-blue-600 text-white rounded"><%= i %></span>
+                      <% } else if (i === 1 || i === pagination.totalPages || (i >= pagination.page - 1 && i <= pagination.page + 1)) { %>
+                        <a href="/code-protection/history?page=<%= i %>" class="px-3 py-1 bg-white border rounded hover:bg-gray-50"><%= i %></a>
+                      <% } else if (i === pagination.page - 2 || i === pagination.page + 2) { %>
+                        <span class="px-3 py-1">...</span>
+                      <% } %>
+                    <% } %>
+
+                    <% if (pagination.page < pagination.totalPages) { %>
+                      <a href="/code-protection/history?page=<%= pagination.page + 1 %>" class="px-3 py-1 bg-white border rounded hover:bg-gray-50">
+                        Next <i class="fas fa-chevron-right"></i>
+                      </a>
+                    <% } %>
+                  </div>
+                </div>
+              <% } %>
+            <% } else { %>
+              <div class="text-center py-16">
+                <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500 text-lg mb-2">No obfuscations found</p>
+                <p class="text-gray-400 text-sm mb-6">Upload files to start protecting your code</p>
+                <a href="/code-protection" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+                  <i class="fas fa-plus mr-2"></i>Start Obfuscation
+                </a>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Error Details Modal -->
+  <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+      <div class="flex items-start space-x-3 mb-4">
+        <i class="fas fa-exclamation-triangle text-2xl text-red-500 mt-1"></i>
+        <div class="flex-1">
+          <h3 class="text-lg font-semibold text-gray-800 mb-2">Error Details</h3>
+          <p id="errorMessage" class="text-sm text-gray-600"></p>
+        </div>
+      </div>
+      <div class="flex justify-end">
+        <button onclick="closeErrorModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <%- include('../partials/toast-notification') %>
+
+  <script>
+    function showError(message) {
+      document.getElementById('errorMessage').textContent = message;
+      document.getElementById('errorModal').classList.remove('hidden');
+    }
+
+    function closeErrorModal() {
+      document.getElementById('errorModal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

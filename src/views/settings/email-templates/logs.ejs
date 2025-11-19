@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Email Logs - License Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+  <div class="flex h-screen overflow-hidden">
+    <%- include('../../partials/sidebar', { currentPage: 'settings', user: user }) %>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <header class="bg-white shadow-sm">
+        <div class="flex items-center justify-between p-4">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-800">Email Logs</h2>
+            <nav class="text-sm text-gray-600 mt-1">
+              <a href="/settings" class="hover:text-gray-800">Settings</a> /
+              <a href="/settings/email-templates" class="hover:text-gray-800">Email Templates</a> /
+              Logs
+            </nav>
+          </div>
+          <a href="/settings/email-templates" class="text-gray-600 hover:text-gray-800"><i class="fas fa-arrow-left"></i> Back</a>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-y-auto p-6">
+        <div class="bg-white rounded-lg shadow">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Template</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Recipient</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <% if (logs.length > 0) { %>
+                <% logs.forEach(log => { %>
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                      <%= moment(log.created_at).format('MMM D, YYYY HH:mm') %>
+                    </td>
+                    <td class="px-6 py-4 text-sm">
+                      <% if (log.template_name) { %>
+                        <span class="text-gray-900"><%= log.template_name %></span>
+                        <span class="text-xs text-gray-500 block"><%= log.template_type %></span>
+                      <% } else { %>
+                        <span class="text-gray-400">-</span>
+                      <% } %>
+                    </td>
+                    <td class="px-6 py-4 text-sm">
+                      <div class="text-gray-900"><%= log.recipient_name || '-' %></div>
+                      <div class="text-xs text-gray-500"><%= log.recipient_email %></div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                      <%= log.subject %>
+                    </td>
+                    <td class="px-6 py-4 text-sm">
+                      <% if (log.status === 'sent') { %>
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                          <i class="fas fa-check-circle"></i> Sent
+                        </span>
+                      <% } else if (log.status === 'simulated') { %>
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                          <i class="fas fa-flask"></i> Simulated
+                        </span>
+                      <% } else if (log.status === 'failed') { %>
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800" title="<%= log.error_message || 'Unknown error' %>">
+                          <i class="fas fa-times-circle"></i> Failed
+                        </span>
+                      <% } else { %>
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+                          <%= log.status %>
+                        </span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }); %>
+              <% } else { %>
+                <tr>
+                  <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                    <i class="fas fa-inbox text-4xl mb-3 block text-gray-300"></i>
+                    No email logs found
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+
+        <% if (totalPages > 1) { %>
+          <div class="mt-6 flex justify-center">
+            <nav class="flex space-x-2">
+              <% for (let i = 1; i <= totalPages; i++) { %>
+                <a href="/settings/email-templates/logs?page=<%= i %>" class="px-4 py-2 <%= currentPage === i ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' %> rounded-lg">
+                  <%= i %>
+                </a>
+              <% } %>
+            </nav>
+          </div>
+        <% } %>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

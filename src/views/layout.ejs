@@ -24,6 +24,24 @@
         transform: translateX(-100%);
       }
     }
+
+    .menu-group > .submenu {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-in-out;
+    }
+
+    .menu-group.open > .submenu {
+      max-height: 500px;
+    }
+
+    .menu-group > .menu-header .chevron {
+      transition: transform 0.3s ease-in-out;
+    }
+
+    .menu-group.open > .menu-header .chevron {
+      transform: rotate(180deg);
+    }
   </style>
 </head>
 <body class="bg-gray-100">
@@ -35,47 +53,84 @@
           <i class="fas fa-key"></i> License Manager
         </h1>
 
-        <nav class="space-y-2">
+        <nav class="space-y-1">
+          <!-- Dashboard -->
           <a href="/dashboard" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'dashboard' ? 'bg-gray-700' : '' %>">
             <i class="fas fa-chart-line w-5"></i>
             <span>Dashboard</span>
           </a>
 
-          <a href="/products" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'products' ? 'bg-gray-700' : '' %>">
-            <i class="fas fa-box w-5"></i>
-            <span>Products</span>
-          </a>
+          <!-- Management Group -->
+          <div class="menu-group <%= typeof currentPage !== 'undefined' && ['products', 'customers', 'licenses'].includes(currentPage) ? 'open' : '' %>">
+            <div class="menu-header flex items-center justify-between p-3 rounded hover:bg-gray-700 cursor-pointer" onclick="toggleMenu(this.parentElement)">
+              <div class="flex items-center space-x-3">
+                <i class="fas fa-folder w-5"></i>
+                <span>Management</span>
+              </div>
+              <i class="fas fa-chevron-down chevron text-sm"></i>
+            </div>
+            <div class="submenu pl-4 space-y-1">
+              <a href="/products" class="flex items-center space-x-3 p-2 pl-8 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'products' ? 'bg-gray-700' : '' %>">
+                <i class="fas fa-box w-4 text-sm"></i>
+                <span class="text-sm">Products</span>
+              </a>
+              <a href="/customers" class="flex items-center space-x-3 p-2 pl-8 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'customers' ? 'bg-gray-700' : '' %>">
+                <i class="fas fa-users w-4 text-sm"></i>
+                <span class="text-sm">Customers</span>
+              </a>
+              <a href="/licenses" class="flex items-center space-x-3 p-2 pl-8 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'licenses' ? 'bg-gray-700' : '' %>">
+                <i class="fas fa-certificate w-4 text-sm"></i>
+                <span class="text-sm">Licenses</span>
+              </a>
+            </div>
+          </div>
 
-          <a href="/customers" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'customers' ? 'bg-gray-700' : '' %>">
-            <i class="fas fa-users w-5"></i>
-            <span>Customers</span>
-          </a>
-
-          <a href="/licenses" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'licenses' ? 'bg-gray-700' : '' %>">
-            <i class="fas fa-certificate w-5"></i>
-            <span>Licenses</span>
-          </a>
-
+          <!-- Features -->
           <a href="/features" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'features' ? 'bg-gray-700' : '' %>">
             <i class="fas fa-puzzle-piece w-5"></i>
             <span>Features</span>
           </a>
 
-          <a href="/users" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'users' ? 'bg-gray-700' : '' %>">
-            <i class="fas fa-user-shield w-5"></i>
-            <span>Users</span>
-          </a>
+          <!-- Access Control Group -->
+          <div class="menu-group <%= typeof currentPage !== 'undefined' && ['users', 'roles', 'permissions'].includes(currentPage) ? 'open' : '' %>">
+            <div class="menu-header flex items-center justify-between p-3 rounded hover:bg-gray-700 cursor-pointer" onclick="toggleMenu(this.parentElement)">
+              <div class="flex items-center space-x-3">
+                <i class="fas fa-shield-alt w-5"></i>
+                <span>Access Control</span>
+              </div>
+              <i class="fas fa-chevron-down chevron text-sm"></i>
+            </div>
+            <div class="submenu pl-4 space-y-1">
+              <a href="/users" class="flex items-center space-x-3 p-2 pl-8 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'users' ? 'bg-gray-700' : '' %>">
+                <i class="fas fa-user w-4 text-sm"></i>
+                <span class="text-sm">Users</span>
+              </a>
+              <a href="/roles" class="flex items-center space-x-3 p-2 pl-8 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && ['roles', 'permissions'].includes(currentPage) ? 'bg-gray-700' : '' %>">
+                <i class="fas fa-user-tag w-4 text-sm"></i>
+                <span class="text-sm">Roles & Permissions</span>
+              </a>
+            </div>
+          </div>
 
+          <!-- Reports -->
           <a href="/reports" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'reports' ? 'bg-gray-700' : '' %>">
             <i class="fas fa-file-alt w-5"></i>
             <span>Reports</span>
           </a>
 
+          <!-- Code Protection -->
+          <a href="/code-protection" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'code-protection' ? 'bg-gray-700' : '' %>">
+            <i class="fas fa-shield-alt w-5"></i>
+            <span>Code Protection</span>
+          </a>
+
+          <!-- API Docs -->
           <a href="/docs" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'docs' ? 'bg-gray-700' : '' %>">
             <i class="fas fa-book w-5"></i>
             <span>API Docs</span>
           </a>
 
+          <!-- Settings -->
           <a href="/settings" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'settings' ? 'bg-gray-700' : '' %>">
             <i class="fas fa-cog w-5"></i>
             <span>Settings</span>
@@ -130,13 +185,101 @@
   <!-- Toast Container -->
   <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all">
+      <div class="p-6">
+        <div class="flex items-start space-x-4">
+          <div id="confirmIcon" class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center">
+            <i class="fas fa-exclamation-triangle text-2xl"></i>
+          </div>
+          <div class="flex-1">
+            <h3 id="confirmTitle" class="text-lg font-semibold text-gray-900 mb-2">Confirm Action</h3>
+            <p id="confirmMessage" class="text-sm text-gray-600"></p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-gray-50 px-6 py-4 flex space-x-3 rounded-b-lg">
+        <button id="confirmCancelBtn" onclick="closeConfirmModal(false)" class="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors">
+          Cancel
+        </button>
+        <button id="confirmOkBtn" onclick="closeConfirmModal(true)" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     function toggleSidebar() {
       document.querySelector('.sidebar').classList.toggle('hidden');
     }
 
-    function confirmDelete(message) {
-      return confirm(message || 'Are you sure you want to delete this item?');
+    // Toggle collapsible menu groups
+    function toggleMenu(menuGroup) {
+      menuGroup.classList.toggle('open');
+    }
+
+    // Global variable to store confirm callback
+    let confirmCallback = null;
+
+    // Show confirmation modal
+    function showConfirm(message, title = 'Confirm Action', options = {}) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        const titleEl = document.getElementById('confirmTitle');
+        const messageEl = document.getElementById('confirmMessage');
+        const iconEl = document.getElementById('confirmIcon');
+        const okBtn = document.getElementById('confirmOkBtn');
+
+        // Set content
+        titleEl.textContent = title;
+        messageEl.textContent = message;
+
+        // Set icon and button color based on type
+        const type = options.type || 'warning';
+        if (type === 'danger' || type === 'delete') {
+          iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center';
+          iconEl.querySelector('i').className = 'fas fa-exclamation-triangle text-2xl text-red-600';
+          okBtn.className = 'flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors';
+          okBtn.textContent = options.confirmText || 'Delete';
+        } else if (type === 'warning') {
+          iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center';
+          iconEl.querySelector('i').className = 'fas fa-exclamation-triangle text-2xl text-yellow-600';
+          okBtn.className = 'flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors';
+          okBtn.textContent = options.confirmText || 'Confirm';
+        } else if (type === 'info') {
+          iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center';
+          iconEl.querySelector('i').className = 'fas fa-info-circle text-2xl text-blue-600';
+          okBtn.className = 'flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors';
+          okBtn.textContent = options.confirmText || 'OK';
+        }
+
+        // Show modal
+        modal.classList.remove('hidden');
+
+        // Store callback
+        confirmCallback = resolve;
+      });
+    }
+
+    // Close confirmation modal
+    function closeConfirmModal(result) {
+      const modal = document.getElementById('confirmModal');
+      modal.classList.add('hidden');
+      if (confirmCallback) {
+        confirmCallback(result);
+        confirmCallback = null;
+      }
+    }
+
+    // Legacy function for backward compatibility
+    async function confirmDelete(message) {
+      return await showConfirm(
+        message || 'Are you sure you want to delete this item?',
+        'Confirm Deletion',
+        { type: 'delete', confirmText: 'Delete' }
+      );
     }
 
     // Toast notification function
@@ -176,6 +319,16 @@
         setTimeout(() => toast.remove(), 300);
       }, 5000);
     }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('confirmModal');
+        if (!modal.classList.contains('hidden')) {
+          closeConfirmModal(false);
+        }
+      }
+    });
   </script>
 </body>
 </html>

@@ -1,0 +1,4 @@
+uploads/temp/*
+!uploads/temp/.gitkeep
+uploads/obfuscated/*
+!uploads/obfuscated/.gitkeep

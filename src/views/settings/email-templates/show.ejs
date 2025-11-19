@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Email Template Details - License Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+  <div class="flex h-screen overflow-hidden">
+    <%- include('../../partials/sidebar', { currentPage: 'settings', user: user }) %>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <header class="bg-white shadow-sm">
+        <div class="flex items-center justify-between p-4">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-800">Email Template Details</h2>
+            <nav class="text-sm text-gray-600 mt-1">
+              <a href="/settings" class="hover:text-gray-800">Settings</a> /
+              <a href="/settings/email-templates" class="hover:text-gray-800">Email Templates</a> /
+              Details
+            </nav>
+          </div>
+          <div class="space-x-2">
+            <button onclick="showPreview()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm">
+              <i class="fas fa-eye"></i> Preview
+            </button>
+            <a href="/settings/email-templates/<%= template.id %>/edit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm inline-block">
+              <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="/settings/email-templates" class="text-gray-600 hover:text-gray-800 text-sm">
+              <i class="fas fa-arrow-left"></i> Back
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-4xl mx-auto">
+          <!-- Template Info Card -->
+          <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <p class="text-xs text-gray-500 uppercase mb-1">Template Name</p>
+                <p class="text-lg font-semibold"><%= template.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) %></p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 uppercase mb-1">Type</p>
+                <p class="text-lg">
+                  <span class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-800">
+                    <%= template.type %>
+                  </span>
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 uppercase mb-1">Language</p>
+                <p class="text-lg">
+                  <span class="px-3 py-1 rounded text-sm font-semibold <%= template.language === 'en' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' %>">
+                    <%= template.language.toUpperCase() %>
+                  </span>
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 uppercase mb-1">Design Variation</p>
+                <p class="text-lg">
+                  <span class="px-3 py-1 rounded text-sm font-semibold bg-purple-100 text-purple-800">
+                    Version <%= template.design_variation %>
+                  </span>
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 uppercase mb-1">Status</p>
+                <p class="text-lg">
+                  <% if (template.is_active) { %>
+                    <span class="px-3 py-1 rounded text-sm font-semibold bg-green-100 text-green-800">
+                      <i class="fas fa-check-circle"></i> Active
+                    </span>
+                  <% } else { %>
+                    <span class="px-3 py-1 rounded text-sm font-semibold bg-red-100 text-red-800">
+                      <i class="fas fa-times-circle"></i> Inactive
+                    </span>
+                  <% } %>
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 uppercase mb-1">Last Updated</p>
+                <p class="text-sm"><%= moment(template.updated_at).format('MMM D, YYYY HH:mm') %></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subject -->
+          <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4">Email Subject</h3>
+            <div class="bg-gray-50 p-4 rounded border">
+              <code class="text-sm"><%= template.subject %></code>
+            </div>
+          </div>
+
+          <!-- Variables -->
+          <% if (template.variables) { %>
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+              <h3 class="text-lg font-semibold mb-4">Available Variables</h3>
+              <div class="flex flex-wrap gap-2">
+                <% template.variables.split(',').forEach(variable => { %>
+                  <code class="px-3 py-1 bg-gray-100 rounded text-sm">{{ <%= variable.trim() %> }}</code>
+                <% }); %>
+              </div>
+              <p class="text-xs text-gray-500 mt-3">
+                <i class="fas fa-info-circle"></i> Use these variables in your template using the format: {{ variable.name }}
+              </p>
+            </div>
+          <% } %>
+
+          <!-- HTML Body -->
+          <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4">HTML Body</h3>
+            <div class="bg-gray-50 p-4 rounded border overflow-x-auto">
+              <pre class="text-xs"><code><%= template.body_html %></code></pre>
+            </div>
+          </div>
+
+          <!-- Plain Text Body -->
+          <% if (template.body_text) { %>
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+              <h3 class="text-lg font-semibold mb-4">Plain Text Body</h3>
+              <div class="bg-gray-50 p-4 rounded border">
+                <pre class="text-sm whitespace-pre-wrap"><%= template.body_text %></pre>
+              </div>
+            </div>
+          <% } %>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Preview Modal -->
+  <div id="previewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div class="flex items-center justify-between p-6 border-b">
+        <h3 class="text-xl font-bold text-gray-800">Email Preview</h3>
+        <button onclick="closePreview()" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-2xl"></i>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="mb-4 p-4 bg-gray-50 border rounded">
+          <p class="text-sm text-gray-600 mb-2"><strong>Subject:</strong></p>
+          <p id="previewSubject" class="text-lg"></p>
+        </div>
+        <div class="border rounded">
+          <iframe id="previewFrame" class="w-full" style="min-height: 500px; border: none;"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function showPreview() {
+      try {
+        const res = await fetch('/settings/email-templates/<%= template.id %>/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          document.getElementById('previewSubject').textContent = data.subject;
+          const iframe = document.getElementById('previewFrame');
+          iframe.srcdoc = data.body_html;
+          document.getElementById('previewModal').classList.remove('hidden');
+        } else {
+          showToast('Error loading preview: ' + (data.message || 'Unknown error'), 'error');
+        }
+      } catch (error) {
+        showToast('Error loading preview: ' + error.message, 'error');
+      }
+    }
+
+    function closePreview() {
+      document.getElementById('previewModal').classList.add('hidden');
+    }
+  </script>
+  <%- include('../../partials/confirm-modal') %>
+</body>
+</html>

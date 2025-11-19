@@ -1,6 +1,26 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
 const { requireAuth, requireAdmin, requireRole, requireSelfOrAdmin } = require('../middleware/auth');
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/temp/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB
+  }
+});
 
 // Controllers
 const authController = require('../controllers/authController');
@@ -14,6 +34,10 @@ const docsController = require('../controllers/docsController');
 const userController = require('../controllers/userController');
 const featuresController = require('../controllers/featuresController');
 const settingsController = require('../controllers/settingsController');
+const roleController = require('../controllers/roleController');
+const permissionController = require('../controllers/permissionController');
+const emailTemplateController = require('../controllers/emailTemplateController');
+const codeProtectionController = require('../controllers/codeProtectionController');
 
 // Public routes
 router.get('/', (req, res) => {
@@ -90,9 +114,48 @@ router.get('/reports/license/:id/pdf', requireAuth, reportController.generateLic
 // Docs
 router.get('/docs', requireAuth, docsController.index);
 
+// Roles (Admin only)
+router.get('/roles', requireAdmin, roleController.index);
+router.get('/roles/create', requireAdmin, roleController.create);
+router.post('/roles/create', requireAdmin, roleController.create);
+router.get('/roles/:id', requireAdmin, roleController.show);
+router.get('/roles/:id/edit', requireAdmin, roleController.edit);
+router.post('/roles/:id/edit', requireAdmin, roleController.update);
+router.delete('/roles/:id', requireAdmin, roleController.delete);
+
+// Permissions (Admin only)
+router.get('/permissions', requireAdmin, permissionController.index);
+router.get('/permissions/create', requireAdmin, permissionController.create);
+router.post('/permissions/create', requireAdmin, permissionController.create);
+router.get('/permissions/:id', requireAdmin, permissionController.show);
+router.get('/permissions/:id/edit', requireAdmin, permissionController.edit);
+router.post('/permissions/:id/edit', requireAdmin, permissionController.update);
+router.delete('/permissions/:id', requireAdmin, permissionController.delete);
+
 // Settings (Admin only)
 router.get('/settings', requireAdmin, settingsController.index);
 router.post('/settings', requireAdmin, settingsController.updateSettings);
+router.post('/settings/test-email', requireAdmin, settingsController.testEmail);
+
+// Email Templates (Admin only)
+router.get('/settings/email-templates', requireAdmin, emailTemplateController.index);
+router.get('/settings/email-templates/create', requireAdmin, emailTemplateController.create);
+router.post('/settings/email-templates/create', requireAdmin, emailTemplateController.create);
+router.get('/settings/email-templates/logs', requireAdmin, emailTemplateController.logs);
+router.get('/settings/email-templates/:id', requireAdmin, emailTemplateController.show);
+router.get('/settings/email-templates/:id/edit', requireAdmin, emailTemplateController.edit);
+router.post('/settings/email-templates/:id/edit', requireAdmin, emailTemplateController.update);
+router.post('/settings/email-templates/:id/preview', requireAdmin, emailTemplateController.preview);
+router.post('/settings/email-templates/:id/set-default', requireAdmin, emailTemplateController.setAsDefault);
+router.delete('/settings/email-templates/:id', requireAdmin, emailTemplateController.delete);
+
+// Code Protection Service (All authenticated users)
+router.get('/code-protection', requireAuth, codeProtectionController.index);
+router.get('/code-protection/history', requireAuth, codeProtectionController.history);
+router.post('/code-protection/upload', requireAuth, upload.single('file'), codeProtectionController.upload);
+router.post('/code-protection/obfuscate', requireAuth, codeProtectionController.obfuscate);
+router.get('/code-protection/download/:id', requireAuth, codeProtectionController.download);
+router.get('/code-protection/quota', requireAuth, codeProtectionController.getQuota);
 
 // Public API for license validation
 router.post('/api/validate', apiController.validateLicense);

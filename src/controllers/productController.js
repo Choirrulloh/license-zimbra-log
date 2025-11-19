@@ -181,8 +181,16 @@ class ProductController {
     try {
       const { id } = req.params;
 
-      // Get product name before deleting
+      // Get product before deleting
       const product = await db.get('SELECT name FROM products WHERE id = ?', [id]);
+
+      // Check if product exists
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: 'Product not found'
+        });
+      }
 
       // Check if product has licenses
       const licensesCount = await db.get(

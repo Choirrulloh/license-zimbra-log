@@ -185,6 +185,36 @@ class LicenseController {
         );
       }
 
+      // Send license created email using default template settings
+      try {
+        const emailService = require('../services/emailService');
+        const { getDefaultTemplateSettings } = require('../utils/templateSettings');
+        const customer = await db.get('SELECT * FROM customers WHERE id = ?', [customer_id]);
+        const product = await db.get('SELECT * FROM products WHERE id = ?', [product_id]);
+        const templateSettings = await getDefaultTemplateSettings('license_created');
+
+        if (customer && customer.email) {
+          await emailService.sendEmail(
+            'license_created',
+            customer.email,
+            customer.name,
+            {
+              'user.name': customer.name,
+              'license.key': licenseKey,
+              'license.product': product.name,
+              'license.expiry': expiryDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+              'license.type': licenseType.name
+            },
+            templateSettings.language,
+            templateSettings.design
+          );
+          console.log(`✓ License created email sent to ${customer.email} (${templateSettings.language}, design ${templateSettings.design})`);
+        }
+      } catch (emailError) {
+        console.error('Failed to send license email:', emailError.message);
+        // Don't block license creation if email fails
+      }
+
       res.redirect(`/licenses/${result.id}`);
     } catch (error) {
       console.error('Error creating license:', error);

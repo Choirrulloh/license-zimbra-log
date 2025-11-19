@@ -5,6 +5,7 @@ class SettingsController {
   constructor() {
     this.index = this.index.bind(this);
     this.updateSettings = this.updateSettings.bind(this);
+    this.testEmail = this.testEmail.bind(this);
   }
 
   async index(req, res) {
@@ -92,6 +93,86 @@ class SettingsController {
       res.status(500).json({
         success: false,
         message: 'Error updating settings'
+      });
+    }
+  }
+
+  async testEmail(req, res) {
+    try {
+      const { email } = req.body;
+
+      // Validate email
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email address is required'
+        });
+      }
+
+      // Email validation regex
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid email address format'
+        });
+      }
+
+      // Get SMTP settings from database
+      const settingsRows = await db.all('SELECT * FROM settings');
+      const settings = {};
+      settingsRows.forEach(row => {
+        settings[row.key] = row.value;
+      });
+
+      // Check if email is enabled
+      if (settings.email_enabled !== 'true') {
+        return res.status(400).json({
+          success: false,
+          message: 'Email is not enabled. Please enable email and configure SMTP settings first.'
+        });
+      }
+
+      // Check if SMTP is configured
+      if (!settings.smtp_host || !settings.smtp_user || !settings.smtp_password) {
+        return res.status(400).json({
+          success: false,
+          message: 'SMTP is not fully configured. Please fill in all SMTP settings (host, username, password).'
+        });
+      }
+
+      // Send test email using emailService
+      const emailService = require('../services/emailService');
+      const result = await emailService.sendTestEmail(email, settings);
+
+      // Log activity
+      await ActivityLogger.log({
+        userId: req.session.userId,
+        action: 'test',
+        entityType: 'email',
+        entityId: null,
+        description: `Sent test email to ${email}`,
+        metadata: { success: result.success, recipient: email },
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.headers?.['user-agent']
+      });
+
+      if (result.success) {
+        res.json({
+          success: true,
+          message: result.message
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: result.message
+        });
+      }
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      res.status(500).json({
+        success: false,
+        message: `Failed to send test email: ${error.message}`
       });
     }
   }
