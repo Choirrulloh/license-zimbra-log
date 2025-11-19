@@ -152,11 +152,11 @@ class ApiController {
 
       // Fetch features from normalized database (pivot table)
       const features = await db.all(
-        `SELECT f.id, f.name, f.feature_key, f.description, f.category
+        `SELECT f.id, f.name, f.feature_key, f.description
          FROM features f
          INNER JOIN license_type_features ltf ON f.id = ltf.feature_id
          WHERE ltf.license_type_id = ?
-         ORDER BY f.display_order, f.name`,
+         ORDER BY f.name`,
         [license.license_type_id]
       );
 
@@ -304,11 +304,11 @@ class ApiController {
 
       // Fetch features from normalized database (pivot table)
       const features = await db.all(
-        `SELECT f.id, f.name, f.feature_key, f.description, f.category
+        `SELECT f.id, f.name, f.feature_key, f.description
          FROM features f
          INNER JOIN license_type_features ltf ON f.id = ltf.feature_id
          WHERE ltf.license_type_id = ?
-         ORDER BY f.display_order, f.name`,
+         ORDER BY f.name`,
         [license.license_type_id]
       );
 
@@ -352,11 +352,11 @@ class ApiController {
 
       // Fetch features assigned to this license type from pivot table
       const features = await db.all(
-        `SELECT f.id, f.name, f.feature_key, f.description, f.category, f.display_order
+        `SELECT f.id, f.name, f.feature_key, f.description
          FROM features f
          INNER JOIN license_type_features ltf ON f.id = ltf.feature_id
          WHERE ltf.license_type_id = ?
-         ORDER BY f.display_order, f.name`,
+         ORDER BY f.name`,
         [id]
       );
 

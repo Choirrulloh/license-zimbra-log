@@ -67,7 +67,7 @@ class ProductController {
 
       // Fetch available features for this product
       const features = await db.all(
-        'SELECT * FROM features WHERE product_id = ? AND is_active = 1 ORDER BY display_order, name',
+        'SELECT * FROM features WHERE product_id = ? ORDER BY name',
         [id]
       );
 

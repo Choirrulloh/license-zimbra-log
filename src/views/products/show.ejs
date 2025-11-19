@@ -54,6 +54,78 @@
           </div>
         </div>
 
+        <!-- Product Features -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Product Features</h3>
+            <button onclick="toggleFeatureForm()" id="addFeatureBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
+              <i class="fas fa-plus"></i> Add Feature
+            </button>
+          </div>
+
+          <!-- Add Feature Form (Hidden by default) -->
+          <div id="featureForm" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+            <h4 class="font-semibold mb-3">New Feature</h4>
+            <form id="createFeatureForm" onsubmit="submitCreateFeature(event)">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Feature Name *</label>
+                  <input type="text" id="feature_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="e.g., API Access">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Feature Key *</label>
+                  <input type="text" id="feature_key" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-gray-100" placeholder="auto_generated" readonly>
+                  <p class="text-xs text-gray-500 mt-1">Auto-generated from name</p>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                  <input type="text" id="feature_description" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Brief description of this feature">
+                </div>
+              </div>
+              <div class="flex space-x-2 mt-3">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
+                  <i class="fas fa-save"></i> Add Feature
+                </button>
+                <button type="button" onclick="toggleFeatureForm()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg text-sm">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Features List -->
+          <div id="featuresList">
+            <% if (features.length === 0) { %>
+              <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-inbox text-4xl mb-3 opacity-50"></i>
+                <p>No features defined yet. Click "Add Feature" to create one.</p>
+              </div>
+            <% } else { %>
+              <div class="space-y-2">
+                <% features.forEach(feature => { %>
+                  <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <div class="flex-1">
+                      <div class="flex items-center space-x-3">
+                        <i class="fas fa-check-circle text-blue-500"></i>
+                        <div>
+                          <span class="font-medium text-gray-800"><%= feature.name %></span>
+                          <code class="ml-2 text-xs bg-gray-100 px-2 py-1 rounded text-gray-600"><%= feature.feature_key %></code>
+                          <% if (feature.description) { %>
+                            <p class="text-sm text-gray-500 mt-1"><%= feature.description %></p>
+                          <% } %>
+                        </div>
+                      </div>
+                    </div>
+                    <button onclick="deleteFeature(<%= feature.id %>, '<%= feature.name %>')" class="text-red-500 hover:text-red-600 px-3 py-1">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                <% }); %>
+              </div>
+            <% } %>
+          </div>
+        </div>
+
         <!-- License Types -->
         <div class="bg-white rounded-lg shadow p-6 mb-6">
           <div class="flex justify-between items-center mb-4">
@@ -532,6 +604,86 @@
         toast.style.transform = 'translateX(100%)';
         setTimeout(() => toast.remove(), 300);
       }, 5000);
+    }
+
+    // Feature Management Functions
+    function toggleFeatureForm() {
+      const form = document.getElementById('featureForm');
+      const btn = document.getElementById('addFeatureBtn');
+      if (form.classList.contains('hidden')) {
+        form.classList.remove('hidden');
+        btn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+      } else {
+        form.classList.add('hidden');
+        btn.innerHTML = '<i class="fas fa-plus"></i> Add Feature';
+        document.getElementById('createFeatureForm').reset();
+      }
+    }
+
+    // Auto-generate feature key from name
+    document.addEventListener('DOMContentLoaded', function() {
+      const nameInput = document.getElementById('feature_name');
+      const keyInput = document.getElementById('feature_key');
+
+      if (nameInput && keyInput) {
+        nameInput.addEventListener('input', function(e) {
+          const name = e.target.value;
+          const key = name.toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .replace(/\s+/g, '_');
+          keyInput.value = key;
+        });
+      }
+    });
+
+    async function submitCreateFeature(e) {
+      e.preventDefault();
+      const name = document.getElementById('feature_name').value;
+      const key = document.getElementById('feature_key').value;
+      const description = document.getElementById('feature_description').value;
+
+      try {
+        const res = await fetch('/products/<%= product.id %>/features', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, feature_key: key, description }),
+          credentials: 'include'
+        });
+        const result = await res.json();
+        if (result.success) {
+          showToast('Feature added successfully!', 'success');
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast('Error: ' + result.message, 'error');
+        }
+      } catch (err) {
+        showToast('Error adding feature', 'error');
+      }
+    }
+
+    async function deleteFeature(id, name) {
+      const confirmed = await showConfirm(
+        `Are you sure you want to delete feature "${name}"? This will remove it from all license types.`,
+        'Confirm Deletion',
+        { type: 'delete', confirmText: 'Delete' }
+      );
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(`/features/${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        const result = await res.json();
+        if (result.success) {
+          showToast('Feature deleted successfully!', 'success');
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast('Error: ' + result.message, 'error');
+        }
+      } catch (err) {
+        showToast('Error deleting feature', 'error');
+      }
     }
 
     function createToastContainer() {
