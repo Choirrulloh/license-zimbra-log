@@ -127,7 +127,6 @@
               <thead class="bg-gray-50">
                 <tr>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Max Activations</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
@@ -138,30 +137,22 @@
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <% if (licenseTypes.length > 0) { %>
-                  <% licenseTypes.forEach(lt => {
-                    let features = [];
-                    try {
-                      features = lt.features ? JSON.parse(lt.features) : [];
-                    } catch (e) {
-                      features = [];
-                    }
-                  %>
+                  <% licenseTypes.forEach(lt => { %>
                     <tr>
                       <td class="px-6 py-4 text-sm font-medium"><%= lt.name %></td>
-                      <td class="px-6 py-4 text-sm"><%= lt.type %></td>
                       <td class="px-6 py-4 text-sm"><%= lt.duration_days %> days</td>
                       <td class="px-6 py-4 text-sm"><%= lt.max_activations %></td>
                       <td class="px-6 py-4 text-sm font-medium">Rp <%= new Intl.NumberFormat('id-ID').format(lt.price) %></td>
                       <td class="px-6 py-4 text-sm">
-                        <% if (features.length === 0) { %>
+                        <% if (!lt.assignedFeatures || lt.assignedFeatures.length === 0) { %>
                           <span class="text-gray-400 italic">No features</span>
-                        <% } else if (features.length <= 2) { %>
-                          <% features.forEach((f, i) => { %>
-                            <div class="text-xs"><i class="fas fa-check text-green-500"></i> <%= f %></div>
+                        <% } else if (lt.assignedFeatures.length <= 2) { %>
+                          <% lt.assignedFeatures.forEach((f, i) => { %>
+                            <div class="text-xs"><i class="fas fa-check text-green-500"></i> <%= f.name %></div>
                           <% }); %>
                         <% } else { %>
-                          <div class="text-xs"><i class="fas fa-check text-green-500"></i> <%= features[0] %></div>
-                          <div class="text-xs text-gray-500">+<%= features.length - 1 %> more</div>
+                          <div class="text-xs"><i class="fas fa-check text-green-500"></i> <%= lt.assignedFeatures[0].name %></div>
+                          <div class="text-xs text-gray-500">+<%= lt.assignedFeatures.length - 1 %> more</div>
                         <% } %>
                       </td>
                       <td class="px-6 py-4">

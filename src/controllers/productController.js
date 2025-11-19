@@ -54,6 +54,19 @@ class ProductController {
         [id]
       );
 
+      // Fetch features for each license type from pivot table
+      for (const lt of licenseTypes) {
+        const ltFeatures = await db.all(
+          `SELECT f.id, f.name, f.feature_key
+           FROM features f
+           INNER JOIN license_type_features ltf ON f.id = ltf.feature_id
+           WHERE ltf.license_type_id = ?
+           ORDER BY f.name`,
+          [lt.id]
+        );
+        lt.assignedFeatures = ltFeatures;
+      }
+
       const licenses = await db.all(
         `SELECT l.*, c.name as customer_name, c.email as customer_email,
                 lt.name as license_type_name
@@ -328,7 +341,7 @@ class ProductController {
         'license_type',
         id,
         name,
-        { name, type, duration_days, max_activations, price, features: featureIdsArray?.length || 0 },
+        { name, duration_days, max_activations, price, features: featureIdsArray?.length || 0 },
         req
       );
 
