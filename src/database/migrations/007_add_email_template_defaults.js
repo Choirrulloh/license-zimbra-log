@@ -9,13 +9,22 @@ async function migrate() {
   console.log('Running migration: Add is_default to email_templates...');
 
   try {
-    // Add is_default column
-    await db.run(`
-      ALTER TABLE email_templates
-      ADD COLUMN is_default INTEGER DEFAULT 0
-    `);
+    // Helper function to check if column exists
+    const columnExists = async (tableName, columnName) => {
+      const columns = await db.all(`PRAGMA table_info(${tableName})`);
+      return columns.some(col => col.name === columnName);
+    };
 
-    console.log('✓ Added is_default column to email_templates');
+    // Add is_default column (only if it doesn't exist)
+    if (!(await columnExists('email_templates', 'is_default'))) {
+      await db.run(`
+        ALTER TABLE email_templates
+        ADD COLUMN is_default INTEGER DEFAULT 0
+      `);
+      console.log('✓ Added is_default column to email_templates');
+    } else {
+      console.log('⊳ Column is_default already exists');
+    }
 
     // Set English Design 1 as default for all email types
     const emailTypes = [
