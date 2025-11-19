@@ -162,28 +162,16 @@ echo ""
     // Remove shebang if exists
     let cleanScript = script.replace(/^#!\/bin\/bash\s*\n/, '');
 
-    // Split into lines for obfuscation
-    const lines = cleanScript.split('\n');
-    const obfuscatedLines = [];
+    // Encode entire script as one block to preserve structure
+    const encoded = Buffer.from(cleanScript).toString('base64');
 
-    for (const line of lines) {
-      // Skip empty lines and comments
-      if (!line.trim() || line.trim().startsWith('#')) {
-        continue;
-      }
+    // Create obfuscated script that decodes and executes
+    const obfuscatedScript = `# Obfuscated Script Content
+__obf_data="${encoded}"
+eval "$(echo "$__obf_data" | base64 -d)"
+`;
 
-      // Encode line to base64
-      const encoded = Buffer.from(line).toString('base64');
-
-      // Generate random variable name
-      const varName = this.generateRandomVarName();
-
-      // Create obfuscated line
-      obfuscatedLines.push(`${varName}="${encoded}"`);
-      obfuscatedLines.push(`eval "$(echo "$${varName}" | base64 -d)"`);
-    }
-
-    return obfuscatedLines.join('\n');
+    return obfuscatedScript;
   }
 
   /**
@@ -216,11 +204,25 @@ echo ""
       const originalSize = (await fs.stat(inputPath)).size;
       const obfuscatedSize = (await fs.stat(outputPath)).size;
 
+      // Calculate size change
+      const diff = obfuscatedSize - originalSize;
+      const percentChange = Math.abs((diff / originalSize) * 100).toFixed(2);
+
+      // Return appropriate message
+      let reduction;
+      if (diff > 0) {
+        reduction = `+${percentChange}`; // File grew (due to license injection)
+      } else if (diff < 0) {
+        reduction = percentChange; // File shrunk
+      } else {
+        reduction = '0.00'; // No change
+      }
+
       return {
         success: true,
         originalSize,
         obfuscatedSize,
-        reduction: ((originalSize - obfuscatedSize) / originalSize * 100).toFixed(2)
+        reduction
       };
     } catch (error) {
       throw new Error(`Bash obfuscation error: ${error.message}`);

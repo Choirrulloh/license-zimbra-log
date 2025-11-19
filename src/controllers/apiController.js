@@ -98,22 +98,34 @@ class ApiController {
         }
       }
 
-      // Check hardware binding if provided
-      if (hardware_id) {
+      // Check hardware/machine binding if provided
+      const hwId = hardware_id || machineId; // Support both formats
+
+      // If checkMachine is explicitly true, require machine ID
+      if (checkMachine === true && !hwId) {
+        return res.json({
+          valid: false,
+          message: 'Machine ID is required for this license',
+          error: 'Machine binding is required'
+        });
+      }
+
+      if (hwId) {
         // Check if this hardware is already activated
         const activation = await db.get(
           'SELECT * FROM license_activations WHERE license_id = ? AND hardware_id = ?',
-          [license.id, hardware_id]
+          [license.id, hwId]
         );
 
         if (activation) {
+          // Hardware already activated - allow access
           // Update last check time
           await db.run(
             'UPDATE license_activations SET last_check = CURRENT_TIMESTAMP WHERE id = ?',
             [activation.id]
           );
         } else {
-          // Check if max activations reached
+          // New hardware - check if max activations reached
           const activeActivations = await db.get(
             'SELECT COUNT(*) as count FROM license_activations WHERE license_id = ? AND is_active = 1',
             [license.id]
@@ -122,8 +134,10 @@ class ApiController {
           if (activeActivations.count >= license.max_activations) {
             return res.json({
               valid: false,
+              message: `Maximum activations (${license.max_activations}) reached. This license is already in use on other machines.`,
               error: 'Maximum activations reached',
-              max_activations: license.max_activations
+              max_activations: license.max_activations,
+              current_activations: activeActivations.count
             });
           }
 
@@ -131,7 +145,7 @@ class ApiController {
           await db.run(
             `INSERT INTO license_activations (license_id, hardware_id, ip_address, hostname)
              VALUES (?, ?, ?, ?)`,
-            [license.id, hardware_id, ip_address || null, hostname || null]
+            [license.id, hwId, ip_address || null, hostname || null]
           );
 
           // Update current activations count
@@ -144,7 +158,7 @@ class ApiController {
           await db.run(
             `INSERT INTO license_history (license_id, action, description)
              VALUES (?, 'activated_device', ?)`,
-            [license.id, `Device activated: ${hardware_id.substring(0, 8)}...`]
+            [license.id, `Device activated: ${hwId.substring(0, 8)}...`]
           );
         }
       }
