@@ -286,14 +286,17 @@ class CodeProtectionController {
       // Check quota again (skip for admin)
       const userRole = req.session.role || 'user';
       const isAdmin = userRole === 'admin';
+      console.log('User role:', userRole, 'isAdmin:', isAdmin);
 
       const quota = await db.get(
         'SELECT * FROM obfuscation_quotas WHERE user_id = ?',
         [userId]
       );
+      console.log('User quota:', quota);
 
       // Check quota limit (skip if admin or unlimited quota)
       if (!isAdmin && quota && quota.monthly_limit !== -1 && quota.used_this_month >= quota.monthly_limit) {
+        console.log('Quota limit reached for user:', userId);
         return res.status(403).json({
           success: false,
           message: 'Quota limit reached'
@@ -302,10 +305,13 @@ class CodeProtectionController {
 
       // Find uploaded file
       const uploadPath = path.join(__dirname, '../../uploads/temp', fileId);
+      console.log('Looking for file at:', uploadPath);
 
       try {
         await fs.access(uploadPath);
-      } catch {
+        console.log('File found:', uploadPath);
+      } catch (error) {
+        console.log('File not found:', uploadPath, 'Error:', error.message);
         return res.status(404).json({
           success: false,
           message: 'Uploaded file not found'
@@ -315,8 +321,10 @@ class CodeProtectionController {
       const originalFilename = req.body.originalName || fileId;
       const fileExt = path.extname(originalFilename).toLowerCase();
       const fileStats = await fs.stat(uploadPath);
+      console.log('File stats:', { originalFilename, fileExt, size: fileStats.size });
 
       // Create obfuscation record
+      console.log('Creating obfuscation record...');
       const result = await db.run(
         `INSERT INTO code_obfuscations
          (user_id, original_filename, file_size, obfuscation_level, options, status)
@@ -325,6 +333,7 @@ class CodeProtectionController {
       );
 
       const obfuscationId = result.lastID;
+      console.log('Obfuscation record created with ID:', obfuscationId);
 
       try {
         // Generate output filename
@@ -427,10 +436,12 @@ class CodeProtectionController {
           }
         } else if (fileExt === '.sh') {
           // Handle bash script
+          console.log('Processing bash script with bashInjection:', bashInjection);
           let licenseConfig = null;
 
           // Check if license injection is enabled
           if (bashInjection && bashInjection.injectLicense && bashInjection.productId) {
+            console.log('License injection enabled for product:', bashInjection.productId);
             // Get product info
             const product = await db.get('SELECT * FROM products WHERE id = ?', [bashInjection.productId]);
 
@@ -467,12 +478,16 @@ class CodeProtectionController {
           }
 
           // Obfuscate bash script with optional license injection
+          console.log('Calling bashObfuscatorService.obfuscateBashFile...');
           obfResult = await bashObfuscatorService.obfuscateBashFile(
             uploadPath,
             outputPath,
             level,
             licenseConfig
           );
+          console.log('Bash obfuscation completed:', obfResult);
+        } else {
+          throw new Error(`Unsupported file type: ${fileExt}`);
         }
 
         const processingTime = ((Date.now() - startTime) / 1000).toFixed(2);
