@@ -89,6 +89,7 @@ router.post('/users/:id/change-password', requireSelfOrAdmin('id'), userControll
 
 // Features
 router.get('/features', requireAuth, featuresController.index);
+router.put('/features/license-types/:id', requireAuth, featuresController.updateFeatures);
 
 // Licenses (Admin only for create/modify/delete)
 router.get('/licenses', requireAuth, licenseController.index);
