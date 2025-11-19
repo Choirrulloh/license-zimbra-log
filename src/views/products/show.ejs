@@ -213,8 +213,24 @@
         </div>
         <div class="mb-3">
           <label class="block text-gray-700 text-sm font-medium mb-1">Features</label>
-          <textarea id="create_features" name="features" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Enter features, one per line&#10;e.g.:&#10;Advanced Reporting&#10;API Access&#10;Priority Support"></textarea>
-          <p class="text-xs text-gray-500 mt-1">Enter one feature per line</p>
+          <div class="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto">
+            <% if (features.length === 0) { %>
+              <p class="text-sm text-gray-500 italic">No features available. <a href="/features/create?product_id=<%= product.id %>" class="text-blue-500 hover:text-blue-600">Create features first</a></p>
+            <% } else { %>
+              <% features.forEach(feature => { %>
+                <label class="flex items-center mb-2 hover:bg-gray-50 p-2 rounded cursor-pointer">
+                  <input type="checkbox" name="feature_ids[]" value="<%= feature.id %>" class="form-checkbox h-4 w-4 text-blue-600">
+                  <div class="ml-3 flex-1">
+                    <span class="text-sm font-medium text-gray-700"><%= feature.name %></span>
+                    <% if (feature.description) { %>
+                      <p class="text-xs text-gray-500"><%= feature.description %></p>
+                    <% } %>
+                  </div>
+                </label>
+              <% }); %>
+            <% } %>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">Select features to include in this license type</p>
         </div>
         <div class="flex space-x-2">
           <button type="submit" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
@@ -267,8 +283,24 @@
         </div>
         <div class="mb-3">
           <label class="block text-gray-700 text-sm font-medium mb-1">Features</label>
-          <textarea id="edit_features" name="features" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Enter features, one per line&#10;e.g.:&#10;Advanced Reporting&#10;API Access&#10;Priority Support"></textarea>
-          <p class="text-xs text-gray-500 mt-1">Enter one feature per line</p>
+          <div id="edit_features_container" class="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto">
+            <% if (features.length === 0) { %>
+              <p class="text-sm text-gray-500 italic">No features available. <a href="/features/create?product_id=<%= product.id %>" class="text-blue-500 hover:text-blue-600">Create features first</a></p>
+            <% } else { %>
+              <% features.forEach(feature => { %>
+                <label class="flex items-center mb-2 hover:bg-gray-50 p-2 rounded cursor-pointer">
+                  <input type="checkbox" name="feature_ids[]" value="<%= feature.id %>" class="edit-feature-checkbox form-checkbox h-4 w-4 text-blue-600" data-feature-id="<%= feature.id %>">
+                  <div class="ml-3 flex-1">
+                    <span class="text-sm font-medium text-gray-700"><%= feature.name %></span>
+                    <% if (feature.description) { %>
+                      <p class="text-xs text-gray-500"><%= feature.description %></p>
+                    <% } %>
+                  </div>
+                </label>
+              <% }); %>
+            <% } %>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">Select features to include in this license type</p>
         </div>
         <div class="mb-3">
           <label class="flex items-center">
@@ -338,7 +370,7 @@
       document.getElementById('editLicenseTypeForm').reset();
     }
 
-    function editLicenseType(lt) {
+    async function editLicenseType(lt) {
       document.getElementById('edit_id').value = lt.id;
       document.getElementById('edit_name').value = lt.name;
       document.getElementById('edit_type').value = lt.type;
@@ -348,17 +380,27 @@
       document.getElementById('edit_price_display').value = formatNumber(lt.price);
       document.getElementById('edit_is_active').checked = lt.is_active;
 
-      // Handle features - convert JSON array to multiline text
-      let featuresText = '';
-      if (lt.features) {
-        try {
-          const featuresArray = typeof lt.features === 'string' ? JSON.parse(lt.features) : lt.features;
-          featuresText = Array.isArray(featuresArray) ? featuresArray.join('\n') : '';
-        } catch (e) {
-          featuresText = '';
+      // Uncheck all features first
+      document.querySelectorAll('.edit-feature-checkbox').forEach(cb => cb.checked = false);
+
+      // Fetch currently assigned features for this license type
+      try {
+        const res = await fetch(`/api/license-types/${lt.id}/features`, {
+          credentials: 'include'
+        });
+        if (res.ok) {
+          const result = await res.json();
+          const assignedFeatureIds = result.features.map(f => f.id);
+
+          // Check the assigned features
+          assignedFeatureIds.forEach(featureId => {
+            const checkbox = document.querySelector(`.edit-feature-checkbox[data-feature-id="${featureId}"]`);
+            if (checkbox) checkbox.checked = true;
+          });
         }
+      } catch (err) {
+        console.error('Error loading features:', err);
       }
-      document.getElementById('edit_features').value = featuresText;
 
       document.getElementById('editLicenseTypeModal').classList.remove('hidden');
     }
@@ -369,21 +411,20 @@
       const data = Object.fromEntries(formData);
       data.product_id = <%= product.id %>;
 
-      // Convert features from multiline text to JSON array
-      if (data.features) {
-        const featuresArray = data.features.split('\n')
-          .map(f => f.trim())
-          .filter(f => f.length > 0);
-        data.features = JSON.stringify(featuresArray);
-      } else {
-        data.features = JSON.stringify([]);
-      }
+      // Collect selected feature IDs from checkboxes
+      const selectedFeatures = Array.from(document.querySelectorAll('#createLicenseTypeForm input[name="feature_ids[]"]:checked'))
+        .map(cb => parseInt(cb.value));
+      data.feature_ids = selectedFeatures;
+
+      // Keep backward compatibility with old features field (empty for now)
+      data.features = JSON.stringify([]);
 
       try {
         const res = await fetch('/license-types', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          body: JSON.stringify(data),
+          credentials: 'include'
         });
         const result = await res.json();
         if (result.success) {
@@ -405,21 +446,20 @@
       delete data.id;
       data.is_active = data.is_active === 'on' ? 1 : 0;
 
-      // Convert features from multiline text to JSON array
-      if (data.features) {
-        const featuresArray = data.features.split('\n')
-          .map(f => f.trim())
-          .filter(f => f.length > 0);
-        data.features = JSON.stringify(featuresArray);
-      } else {
-        data.features = JSON.stringify([]);
-      }
+      // Collect selected feature IDs from checkboxes
+      const selectedFeatures = Array.from(document.querySelectorAll('#editLicenseTypeForm input[name="feature_ids[]"]:checked'))
+        .map(cb => parseInt(cb.value));
+      data.feature_ids = selectedFeatures;
+
+      // Keep backward compatibility with old features field (empty for now)
+      data.features = JSON.stringify([]);
 
       try {
         const res = await fetch(`/license-types/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          body: JSON.stringify(data),
+          credentials: 'include'
         });
         const result = await res.json();
         if (result.success) {

@@ -101,6 +101,16 @@ class LicenseController {
         [id]
       );
 
+      // Fetch features from normalized database (pivot table)
+      const features = await db.all(
+        `SELECT f.id, f.name, f.feature_key, f.description, f.category
+         FROM features f
+         INNER JOIN license_type_features ltf ON f.id = ltf.feature_id
+         WHERE ltf.license_type_id = ?
+         ORDER BY f.display_order, f.name`,
+        [license.license_type_id]
+      );
+
       // Generate offline validation code
       const offlineCode = licenseGenerator.generateOfflineCode(
         license.license_key,
@@ -112,6 +122,7 @@ class LicenseController {
         license,
         activations,
         history,
+        features,
         offlineCode,
         moment
       });

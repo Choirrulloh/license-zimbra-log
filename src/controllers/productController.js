@@ -65,11 +65,18 @@ class ProductController {
         [id]
       );
 
+      // Fetch available features for this product
+      const features = await db.all(
+        'SELECT * FROM features WHERE product_id = ? AND is_active = 1 ORDER BY display_order, name',
+        [id]
+      );
+
       res.render('products/show', {
         user: req.session,
         product,
         licenseTypes,
         licenses,
+        features,
         moment
       });
     } catch (error) {
@@ -229,7 +236,7 @@ class ProductController {
   // License Types Management
   async createLicenseType(req, res) {
     try {
-      const { product_id, name, type, duration_days, max_activations, price, features } = req.body;
+      const { product_id, name, type, duration_days, max_activations, price, features, feature_ids } = req.body;
 
       if (!name || !type || !duration_days) {
         return res.status(400).json({
@@ -243,6 +250,17 @@ class ProductController {
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [product_id, name, type, duration_days, max_activations || 1, price || 0, features || null]
       );
+
+      // Insert feature assignments to pivot table (if feature_ids provided)
+      if (feature_ids && feature_ids.length > 0) {
+        const featureIdsArray = Array.isArray(feature_ids) ? feature_ids : [];
+        for (const featureId of featureIdsArray) {
+          await db.run(
+            'INSERT INTO license_type_features (license_type_id, feature_id) VALUES (?, ?)',
+            [result.lastID, featureId]
+          );
+        }
+      }
 
       // Log activity
       await ActivityLogger.logCreate(
@@ -266,8 +284,9 @@ class ProductController {
   async updateLicenseType(req, res) {
     try {
       const { id } = req.params;
-      const { name, type, duration_days, max_activations, price, features, is_active } = req.body;
+      const { name, type, duration_days, max_activations, price, features, is_active, feature_ids } = req.body;
 
+      // Update license type basic info
       await db.run(
         `UPDATE license_types
          SET name = ?, type = ?, duration_days = ?, max_activations = ?, price = ?, features = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
@@ -275,13 +294,41 @@ class ProductController {
         [name, type, duration_days, max_activations, price, features, is_active ? 1 : 0, id]
       );
 
+      // Update feature assignments in pivot table (if feature_ids provided)
+      if (feature_ids !== undefined) {
+        // Parse feature_ids (comes as array or JSON string)
+        let featureIdsArray = [];
+        if (typeof feature_ids === 'string') {
+          try {
+            featureIdsArray = JSON.parse(feature_ids);
+          } catch (e) {
+            featureIdsArray = [];
+          }
+        } else if (Array.isArray(feature_ids)) {
+          featureIdsArray = feature_ids;
+        }
+
+        // Remove all existing feature assignments
+        await db.run('DELETE FROM license_type_features WHERE license_type_id = ?', [id]);
+
+        // Add new feature assignments
+        if (featureIdsArray.length > 0) {
+          for (const featureId of featureIdsArray) {
+            await db.run(
+              'INSERT INTO license_type_features (license_type_id, feature_id) VALUES (?, ?)',
+              [id, featureId]
+            );
+          }
+        }
+      }
+
       // Log activity
       await ActivityLogger.logUpdate(
         req.session.userId,
         'license_type',
         id,
         name,
-        { name, type, duration_days, max_activations, price },
+        { name, type, duration_days, max_activations, price, features: featureIdsArray?.length || 0 },
         req
       );
 

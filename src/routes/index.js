@@ -168,5 +168,6 @@ router.get('/code-protection/quota', requireAuth, codeProtectionController.getQu
 router.post('/api/validate', apiController.validateLicense);
 router.post('/api/deactivate', apiController.deactivateLicense);
 router.get('/api/license/:key', apiController.getLicenseInfo);
+router.get('/api/license-types/:id/features', apiController.getLicenseTypeFeatures);
 
 module.exports = router;
