@@ -316,8 +316,8 @@ async function seed() {
     } else {
       await db.run(
         `INSERT INTO email_templates (
-          name, type, language, design_variation, subject, body, is_active, is_default
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          name, type, language, design_variation, subject, body_html, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           'customer_access',
           'customer',
@@ -409,7 +409,6 @@ async function seed() {
   </div>
 </body>
 </html>`,
-          1,
           1
         ]
       );
