@@ -41,6 +41,15 @@ const codeProtectionController = require('../controllers/codeProtectionControlle
 
 // Public routes
 router.get('/', (req, res) => {
+  // If customer subdomain, redirect to customer login
+  if (req.isCustomerPortal) {
+    if (req.session.customerId) {
+      return res.redirect('/customer/dashboard');
+    }
+    return res.redirect('/customer/login');
+  }
+
+  // Admin portal (default)
   if (req.session.userId) {
     return res.redirect('/dashboard');
   }

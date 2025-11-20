@@ -9,6 +9,13 @@ const {
   checkCodeProtectionQuota
 } = require('../middleware/customerAuth');
 
+// Middleware to set customer portal base URL for views
+router.use((req, res, next) => {
+  // If on customer subdomain, use root path, otherwise use /customer
+  res.locals.customerPortalBase = req.isCustomerPortal ? '' : '/customer';
+  next();
+});
+
 // Public routes (not authenticated)
 router.get('/login', redirectIfCustomerAuthenticated, customerPortalController.showLogin);
 router.post('/login', redirectIfCustomerAuthenticated, customerPortalController.login);

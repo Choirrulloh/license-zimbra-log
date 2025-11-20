@@ -201,13 +201,24 @@ class EmailService {
 
   // Send password reset email
   async sendPasswordResetEmail(user, resetToken, language = 'en') {
+    // Use CUSTOMER_PORTAL_URL if set, otherwise construct from APP_URL
+    let resetUrl;
+    if (process.env.CUSTOMER_PORTAL_URL) {
+      resetUrl = `${process.env.CUSTOMER_PORTAL_URL}/reset-password?token=${resetToken}`;
+    } else {
+      const appUrl = process.env.APP_URL || 'http://localhost:3000';
+      // Try to convert to customer subdomain (admin.domain.com -> customer.domain.com)
+      const customerUrl = appUrl.replace(/^(https?:\/\/)(?:admin\.|app\.)?/, '$1customer.');
+      resetUrl = `${customerUrl}/reset-password?token=${resetToken}`;
+    }
+
     return await this.sendEmail(
       'password_reset',
       user.email,
       user.name,
       {
         'reset.token': resetToken,
-        'reset.url': `${process.env.APP_URL || 'http://localhost:3000'}/customer/reset-password?token=${resetToken}`,
+        'reset.url': resetUrl,
         'reset.expiry': '24 hours'
       },
       language

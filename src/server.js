@@ -86,12 +86,50 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// Subdomain detection middleware
+app.use((req, res, next) => {
+  const hostname = req.hostname;
+
+  // Detect customer subdomain
+  // Matches: customer.*, portal.*, my.*
+  if (hostname.match(/^(customer|portal|my)\./i) || hostname === 'customer.localhost' || hostname === 'portal.localhost' || hostname === 'my.localhost') {
+    req.isCustomerPortal = true;
+    req.isAdminPortal = false;
+  }
+  // Detect admin subdomain
+  // Matches: admin.*, app.*
+  else if (hostname.match(/^(admin|app)\./i) || hostname === 'admin.localhost' || hostname === 'app.localhost') {
+    req.isAdminPortal = true;
+    req.isCustomerPortal = false;
+  }
+  // Fallback to admin for bare domains
+  else {
+    req.isAdminPortal = true;
+    req.isCustomerPortal = false;
+  }
+
+  next();
+});
+
 // Routes
 const customerPortalRoutes = require('./routes/customerPortalRoutes');
-app.use('/customer', customerPortalRoutes);
-
 const routes = require('./routes');
-app.use('/', routes);
+
+// Dynamic routing based on subdomain
+app.use((req, res, next) => {
+  if (req.isCustomerPortal) {
+    // On customer subdomain, mount customer routes on root
+    customerPortalRoutes(req, res, next);
+  } else {
+    // On admin subdomain or bare domain
+    // Still support /customer path for backward compatibility
+    if (req.path.startsWith('/customer')) {
+      customerPortalRoutes(req, res, next);
+    } else {
+      routes(req, res, next);
+    }
+  }
+});
 
 // 404 handler
 app.use((req, res) => {
