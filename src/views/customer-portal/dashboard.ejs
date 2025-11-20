@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard - Customer Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+  <%- include('partials/sidebar') %>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <%- include('partials/header', { title: 'Dashboard', subtitle: 'Welcome back, ' + customer.name }) %>
+
+    <main class="flex-1 overflow-y-auto p-6">
+      <!-- Impersonation Banner -->
+      <% if (isImpersonation) { %>
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <i class="fas fa-exclamation-triangle mr-3 text-xl"></i>
+              <div>
+                <p class="font-semibold">Viewing as: <%= customer.name %> (<%= customer.email %>)</p>
+                <p class="text-sm">Admin: <%= adminUser.email %></p>
+              </div>
+            </div>
+            <a href="/customer/logout" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded">
+              <i class="fas fa-sign-out-alt mr-2"></i> Exit Customer View
+            </a>
+          </div>
+        </div>
+      <% } %>
+
+      <!-- Password Change Warning -->
+      <% if (customer.must_change_password === 1) { %>
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
+          <div class="flex items-center">
+            <i class="fas fa-lock mr-3 text-xl"></i>
+            <div class="flex-1">
+              <p class="font-semibold">Security: Password Change Required</p>
+              <p class="text-sm">For your security, please change your password after first login.</p>
+            </div>
+            <a href="/customer/profile" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded ml-4">
+              Change Password
+            </a>
+          </div>
+        </div>
+      <% } %>
+
+      <!-- Quota Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <!-- License Quota -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800">
+              <i class="fas fa-key text-blue-600 mr-2"></i> License Quota
+            </h3>
+            <span class="text-2xl font-bold <%= quotaInfo.license_percentage >= 90 ? 'text-red-600' : quotaInfo.license_percentage >= 70 ? 'text-yellow-600' : 'text-green-600' %>">
+              <%= quotaInfo.license_used %>/<%= quotaInfo.license_limit === 0 ? '∞' : quotaInfo.license_limit %>
+            </span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+            <div class="bg-blue-600 h-4 rounded-full" style="width: <%= quotaInfo.license_percentage %>%"></div>
+          </div>
+          <p class="text-sm text-gray-600">
+            <% if (quotaInfo.license_limit === 0) { %>
+              Unlimited licenses available
+            <% } else { %>
+              <%= quotaInfo.license_remaining %> license<%= quotaInfo.license_remaining !== 1 ? 's' : '' %> remaining
+            <% } %>
+          </p>
+        </div>
+
+        <!-- Code Protection Quota -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800">
+              <i class="fas fa-shield-alt text-purple-600 mr-2"></i> Code Protection Quota
+            </h3>
+            <span class="text-2xl font-bold <%= quotaInfo.code_protection_percentage >= 90 ? 'text-red-600' : quotaInfo.code_protection_percentage >= 70 ? 'text-yellow-600' : 'text-green-600' %>">
+              <%= quotaInfo.code_protection_used %>/<%= quotaInfo.code_protection_limit === 0 ? '∞' : quotaInfo.code_protection_limit %>
+            </span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+            <div class="bg-purple-600 h-4 rounded-full" style="width: <%= quotaInfo.code_protection_percentage %>%"></div>
+          </div>
+          <p class="text-sm text-gray-600">
+            <% if (quotaInfo.code_protection_limit === 0) { %>
+              Unlimited code protections available
+            <% } else { %>
+              <%= quotaInfo.code_protection_remaining %> protection<%= quotaInfo.code_protection_remaining !== 1 ? 's' : '' %> remaining
+            <% } %>
+          </p>
+        </div>
+      </div>
+
+      <!-- Statistics Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0 bg-blue-100 rounded-lg p-3">
+              <i class="fas fa-certificate text-blue-600 text-2xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Total Licenses</p>
+              <p class="text-2xl font-semibold text-gray-900"><%= licenseStats.total_licenses || 0 %></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0 bg-green-100 rounded-lg p-3">
+              <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Active</p>
+              <p class="text-2xl font-semibold text-gray-900"><%= licenseStats.active_licenses || 0 %></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0 bg-red-100 rounded-lg p-3">
+              <i class="fas fa-times-circle text-red-600 text-2xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Expired</p>
+              <p class="text-2xl font-semibold text-gray-900"><%= licenseStats.expired_licenses || 0 %></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0 bg-purple-100 rounded-lg p-3">
+              <i class="fas fa-shield-alt text-purple-600 text-2xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Code Protections</p>
+              <p class="text-2xl font-semibold text-gray-900"><%= codeProtectionStats.active_protections || 0 %></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Licenses -->
+      <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-800">
+              <i class="fas fa-history mr-2"></i> Recent Licenses
+            </h3>
+            <a href="/customer/licenses" class="text-blue-600 hover:text-blue-800 text-sm">
+              View All <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">License Key</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expires</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <% if (recentLicenses.length > 0) { %>
+                <% recentLicenses.forEach(license => { %>
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <code class="text-sm bg-gray-100 px-2 py-1 rounded"><%= license.license_key %></code>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900"><%= license.product_name %></td>
+                    <td class="px-6 py-4 text-sm text-gray-600"><%= license.license_type_name %></td>
+                    <td class="px-6 py-4">
+                      <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full <%= license.status === 'active' ? 'bg-green-100 text-green-800' : license.status === 'expired' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800' %>">
+                        <%= license.status %>
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">
+                      <% if (license.expires_at) { %>
+                        <%= moment(license.expires_at).tz(timezone).format('MMM D, YYYY') %>
+                      <% } else { %>
+                        Never
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                    No licenses yet. <a href="/customer/generate-license" class="text-blue-600 hover:text-blue-800">Generate your first license</a>
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <%- include('partials/toast') %>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<div class="flex h-screen overflow-hidden">
+  <!-- Sidebar -->
+  <aside class="bg-gray-800 text-white w-64 flex-shrink-0 hidden md:flex flex-col">
+    <!-- Logo -->
+    <div class="p-4 border-b border-gray-700">
+      <div class="flex items-center space-x-3">
+        <div class="bg-blue-600 w-10 h-10 rounded-lg flex items-center justify-center">
+          <i class="fas fa-user-circle text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold">Customer Portal</h1>
+          <p class="text-xs text-gray-400">License Management</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 overflow-y-auto py-4">
+      <a href="/customer/dashboard" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'dashboard' ? 'bg-gray-700 text-white' : '' %>">
+        <i class="fas fa-chart-line w-5"></i>
+        <span class="ml-3">Dashboard</span>
+      </a>
+
+      <a href="/customer/licenses" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'licenses' ? 'bg-gray-700 text-white' : '' %>">
+        <i class="fas fa-key w-5"></i>
+        <span class="ml-3">My Licenses</span>
+      </a>
+
+      <a href="/customer/generate-license" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'generate' ? 'bg-gray-700 text-white' : '' %>">
+        <i class="fas fa-plus-circle w-5"></i>
+        <span class="ml-3">Generate License</span>
+      </a>
+
+      <a href="/customer/products" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'products' ? 'bg-gray-700 text-white' : '' %>">
+        <i class="fas fa-box w-5"></i>
+        <span class="ml-3">Products</span>
+      </a>
+
+      <a href="/customer/code-protection" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'code-protection' ? 'bg-gray-700 text-white' : '' %>">
+        <i class="fas fa-shield-alt w-5"></i>
+        <span class="ml-3">Code Protection</span>
+      </a>
+
+      <div class="border-t border-gray-700 my-2"></div>
+
+      <a href="/customer/profile" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'profile' ? 'bg-gray-700 text-white' : '' %>">
+        <i class="fas fa-user w-5"></i>
+        <span class="ml-3">My Profile</span>
+      </a>
+
+      <a href="/customer/logout" class="flex items-center px-4 py-3 text-gray-300 hover:bg-red-600 hover:text-white transition-colors">
+        <i class="fas fa-sign-out-alt w-5"></i>
+        <span class="ml-3">Logout</span>
+      </a>
+    </nav>
+
+    <!-- User Info -->
+    <div class="p-4 border-t border-gray-700">
+      <div class="flex items-center space-x-3">
+        <div class="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
+          <span class="text-sm font-semibold"><%= customer.name.charAt(0).toUpperCase() %></span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-white truncate"><%= customer.name %></p>
+          <p class="text-xs text-gray-400 truncate"><%= customer.email %></p>
+        </div>
+      </div>
+    </div>
+  </aside>

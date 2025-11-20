@@ -87,6 +87,9 @@ app.use(async (req, res, next) => {
 });
 
 // Routes
+const customerPortalRoutes = require('./routes/customerPortalRoutes');
+app.use('/customer', customerPortalRoutes);
+
 const routes = require('./routes');
 app.use('/', routes);
 
