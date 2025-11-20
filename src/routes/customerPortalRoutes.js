@@ -13,6 +13,12 @@ const {
 router.get('/login', redirectIfCustomerAuthenticated, customerPortalController.showLogin);
 router.post('/login', redirectIfCustomerAuthenticated, customerPortalController.login);
 
+// Forgot password routes
+router.get('/forgot-password', customerPortalController.showForgotPassword);
+router.post('/forgot-password', customerPortalController.forgotPassword);
+router.get('/reset-password', customerPortalController.showResetPassword);
+router.post('/reset-password', customerPortalController.resetPassword);
+
 // Protected routes (require authentication)
 router.get('/dashboard', requireCustomerAuth, checkPasswordChange, customerPortalController.showDashboard);
 router.get('/licenses', requireCustomerAuth, checkPasswordChange, customerPortalController.showLicenses);

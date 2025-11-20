@@ -105,6 +105,230 @@ class CustomerPortalController {
     }
   }
 
+  // Show forgot password page
+  async showForgotPassword(req, res) {
+    try {
+      res.render('customer-portal/forgot-password', {
+        error: null,
+        success: false
+      });
+    } catch (error) {
+      console.error('Error showing forgot password page:', error);
+      res.status(500).render('error', { error: 'Error loading page' });
+    }
+  }
+
+  // Handle forgot password request
+  async forgotPassword(req, res) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.render('customer-portal/forgot-password', {
+          error: 'Email is required',
+          success: false
+        });
+      }
+
+      // Find customer
+      const customer = await db.get(
+        'SELECT * FROM customers WHERE email = ? AND is_active = 1',
+        [email]
+      );
+
+      // Always show success message for security (don't reveal if email exists)
+      if (!customer) {
+        return res.render('customer-portal/forgot-password', {
+          error: null,
+          success: true
+        });
+      }
+
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      // Save reset token
+      await db.run(
+        `INSERT INTO password_reset_tokens (customer_id, token, expires_at, ip_address, user_agent)
+         VALUES (?, ?, ?, ?, ?)`,
+        [customer.id, resetToken, expiresAt.toISOString(), req.ip, req.get('user-agent')]
+      );
+
+      // Send password reset email
+      try {
+        await emailService.sendPasswordResetEmail(customer, resetToken);
+      } catch (emailError) {
+        console.error('Error sending password reset email:', emailError);
+        // Continue anyway - don't reveal email send failure
+      }
+
+      // Log activity
+      await ActivityLogger.log({
+        userId: customer.id,
+        action: 'password_reset_requested',
+        entityType: 'customer',
+        entityId: customer.id,
+        description: `Password reset requested for ${customer.email}`,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.render('customer-portal/forgot-password', {
+        error: null,
+        success: true
+      });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.render('customer-portal/forgot-password', {
+        error: 'An error occurred. Please try again later.',
+        success: false
+      });
+    }
+  }
+
+  // Show reset password page
+  async showResetPassword(req, res) {
+    try {
+      const { token } = req.query;
+
+      if (!token) {
+        return res.render('customer-portal/reset-password', {
+          error: 'Invalid or missing reset token',
+          success: false,
+          token: null
+        });
+      }
+
+      // Verify token exists and is not expired
+      const resetToken = await db.get(
+        `SELECT * FROM password_reset_tokens
+         WHERE token = ? AND used = 0 AND expires_at > datetime('now')`,
+        [token]
+      );
+
+      if (!resetToken) {
+        return res.render('customer-portal/reset-password', {
+          error: 'This password reset link is invalid or has expired',
+          success: false,
+          token: null
+        });
+      }
+
+      res.render('customer-portal/reset-password', {
+        error: null,
+        success: false,
+        token: token
+      });
+    } catch (error) {
+      console.error('Error showing reset password page:', error);
+      res.status(500).render('error', { error: 'Error loading page' });
+    }
+  }
+
+  // Handle reset password
+  async resetPassword(req, res) {
+    try {
+      const { token, password, confirmPassword } = req.body;
+
+      if (!token || !password || !confirmPassword) {
+        return res.render('customer-portal/reset-password', {
+          error: 'All fields are required',
+          success: false,
+          token: token
+        });
+      }
+
+      if (password !== confirmPassword) {
+        return res.render('customer-portal/reset-password', {
+          error: 'Passwords do not match',
+          success: false,
+          token: token
+        });
+      }
+
+      if (password.length < 8) {
+        return res.render('customer-portal/reset-password', {
+          error: 'Password must be at least 8 characters',
+          success: false,
+          token: token
+        });
+      }
+
+      // Verify token
+      const resetToken = await db.get(
+        `SELECT * FROM password_reset_tokens
+         WHERE token = ? AND used = 0 AND expires_at > datetime('now')`,
+        [token]
+      );
+
+      if (!resetToken) {
+        return res.render('customer-portal/reset-password', {
+          error: 'This password reset link is invalid or has expired',
+          success: false,
+          token: null
+        });
+      }
+
+      // Get customer
+      const customer = await db.get(
+        'SELECT * FROM customers WHERE id = ?',
+        [resetToken.customer_id]
+      );
+
+      if (!customer) {
+        return res.render('customer-portal/reset-password', {
+          error: 'Customer not found',
+          success: false,
+          token: null
+        });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Update password and clear must_change_password flag
+      await db.run(
+        `UPDATE customers
+         SET password = ?, must_change_password = 0, updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [hashedPassword, customer.id]
+      );
+
+      // Mark token as used
+      await db.run(
+        `UPDATE password_reset_tokens
+         SET used = 1, used_at = ?
+         WHERE id = ?`,
+        [new Date().toISOString(), resetToken.id]
+      );
+
+      // Log activity
+      await ActivityLogger.log({
+        userId: customer.id,
+        action: 'password_reset_completed',
+        entityType: 'customer',
+        entityId: customer.id,
+        description: `Password reset completed for ${customer.email}`,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.render('customer-portal/reset-password', {
+        error: null,
+        success: true,
+        token: null
+      });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      res.render('customer-portal/reset-password', {
+        error: 'An error occurred. Please try again later.',
+        success: false,
+        token: req.body.token
+      });
+    }
+  }
+
   // Show dashboard
   async showDashboard(req, res) {
     try {
