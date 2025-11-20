@@ -20,10 +20,11 @@ class CustomerPortalController {
   async login(req, res) {
     try {
       const { email, password } = req.body;
+      const basePath = req.isCustomerPortal ? '' : '/customer';
 
       // Validate input
       if (!email || !password) {
-        return res.redirect('/customer/login?error=Email and password are required');
+        return res.redirect(`${basePath}/login?error=Email and password are required`);
       }
 
       // Find customer
@@ -33,14 +34,19 @@ class CustomerPortalController {
       );
 
       if (!customer || !customer.password) {
-        return res.redirect('/customer/login?error=Invalid email or password');
+        console.log(`Login attempt failed for email: ${email} - Customer not found or no password`);
+        return res.redirect(`${basePath}/login?error=Invalid email or password`);
       }
 
       // Verify password
+      console.log(`Verifying password for customer: ${email}`);
       const passwordMatch = await bcrypt.compare(password, customer.password);
       if (!passwordMatch) {
-        return res.redirect('/customer/login?error=Invalid email or password');
+        console.log(`Password verification failed for customer: ${email}`);
+        return res.redirect(`${basePath}/login?error=Invalid email or password`);
       }
+
+      console.log(`Login successful for customer: ${email}`);
 
       // Update last login
       await db.run(
@@ -62,10 +68,11 @@ class CustomerPortalController {
       // Log activity
       await ActivityLogger.logLogin(customer.id, 'customer', email, req);
 
-      res.redirect('/customer/dashboard');
+      res.redirect(`${basePath}/dashboard`);
     } catch (error) {
       console.error('Customer login error:', error);
-      res.redirect('/customer/login?error=Login failed. Please try again');
+      const basePath = req.isCustomerPortal ? '' : '/customer';
+      res.redirect(`${basePath}/login?error=Login failed. Please try again`);
     }
   }
 
@@ -75,15 +82,24 @@ class CustomerPortalController {
       const customerId = req.session.customerId;
       const isImpersonation = req.session.isImpersonation;
       const adminUser = req.session.adminUser;
+      const basePath = req.isCustomerPortal ? '' : '/customer';
 
-      // Log logout time
-      await db.run(
-        `UPDATE customer_sessions
-         SET logout_time = ?
-         WHERE customer_id = ? AND logout_time IS NULL
-         ORDER BY login_time DESC LIMIT 1`,
-        [new Date().toISOString(), customerId]
-      );
+      // Log logout time (find the most recent session first)
+      if (customerId) {
+        const session = await db.get(
+          `SELECT id FROM customer_sessions
+           WHERE customer_id = ? AND logout_time IS NULL
+           ORDER BY login_time DESC LIMIT 1`,
+          [customerId]
+        );
+
+        if (session) {
+          await db.run(
+            'UPDATE customer_sessions SET logout_time = ? WHERE id = ?',
+            [new Date().toISOString(), session.id]
+          );
+        }
+      }
 
       req.session.destroy((err) => {
         if (err) {
@@ -97,11 +113,12 @@ class CustomerPortalController {
           return res.redirect('/customers');
         }
 
-        res.redirect('/customer/login');
+        res.redirect(`${basePath}/login`);
       });
     } catch (error) {
       console.error('Logout error:', error);
-      res.redirect('/customer/login');
+      const basePath = req.isCustomerPortal ? '' : '/customer';
+      res.redirect(`${basePath}/login`);
     }
   }
 
@@ -346,15 +363,11 @@ class CustomerPortalController {
         [customerId]
       );
 
-      // Get code protection statistics
-      const codeProtectionStats = await db.get(
-        `SELECT
-          COUNT(*) as total_protections,
-          SUM(CASE WHEN expires_at > datetime('now') OR expires_at IS NULL THEN 1 ELSE 0 END) as active_protections
-         FROM code_protection
-         WHERE customer_id = ?`,
-        [customerId]
-      );
+      // Get code protection statistics (for customer portal, use code_protection_used from customers table)
+      const codeProtectionStats = {
+        total_protections: req.customer.code_protection_used || 0,
+        active_protections: req.customer.code_protection_used || 0
+      };
 
       // Get recent licenses
       const recentLicenses = await db.all(
@@ -634,12 +647,9 @@ class CustomerPortalController {
     try {
       const customerId = req.customer.id;
 
-      const protections = await db.all(
-        `SELECT * FROM code_protection
-         WHERE customer_id = ?
-         ORDER BY created_at DESC`,
-        [customerId]
-      );
+      // For customer portal, code protection feature is not yet implemented
+      // Just show empty list for now
+      const protections = [];
 
       res.render('customer-portal/code-protection', {
         customer: req.customer,
@@ -660,47 +670,11 @@ class CustomerPortalController {
   // Generate code protection
   async generateCodeProtection(req, res) {
     try {
-      const customerId = req.customer.id;
-      const { code_input, duration_days } = req.body;
-
-      if (!code_input) {
-        return res.status(400).json({ success: false, error: 'Code input is required' });
-      }
-
-      // Generate protection code
-      const protectionCode = this.generateProtectionCode(code_input);
-
-      // Calculate expiry
-      let expiresAt = null;
-      if (duration_days && parseInt(duration_days) > 0) {
-        expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + parseInt(duration_days));
-      }
-
-      // Save to database
-      const result = await db.run(
-        `INSERT INTO code_protection (customer_id, original_code, protected_code, expires_at)
-         VALUES (?, ?, ?, ?)`,
-        [customerId, code_input, protectionCode, expiresAt ? expiresAt.toISOString() : null]
-      );
-
-      // Update customer code_protection_used count
-      await db.run(
-        'UPDATE customers SET code_protection_used = code_protection_used + 1 WHERE id = ?',
-        [customerId]
-      );
-
-      // Log activity
-      await ActivityLogger.logCreate(customerId, 'customer', 'code_protection', result.id, {}, req);
-
-      res.json({
-        success: true,
-        message: 'Code protection generated successfully!',
-        protection: {
-          id: result.id,
-          protected_code: protectionCode,
-          expires_at: expiresAt
-        }
+      // TODO: Code protection feature for customer portal not yet implemented
+      // Need to create code_protection table for customer portal first
+      return res.status(501).json({
+        success: false,
+        error: 'Code protection feature is not yet available for customer portal'
       });
     } catch (error) {
       console.error('Error generating code protection:', error);
