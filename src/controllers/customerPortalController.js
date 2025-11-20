@@ -560,6 +560,7 @@ class CustomerPortalController {
       const mustChange = req.query.mustChange === '1';
       res.render('customer-portal/profile', {
         customer: req.customer,
+        currentPage: 'profile',
         mustChange
       });
     } catch (error) {

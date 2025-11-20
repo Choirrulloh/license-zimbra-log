@@ -277,6 +277,8 @@
   <%- include('partials/toast') %>
 
   <script>
+    const basePath = '<%= typeof customerPortalBase !== "undefined" ? customerPortalBase : "/customer" %>';
+
     // Profile form
     document.getElementById('profileForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -294,7 +296,7 @@
           address: document.getElementById('address').value
         };
 
-        const response = await fetch('/customer/profile', {
+        const response = await fetch(`${basePath}/profile`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
@@ -345,7 +347,7 @@
           confirm_password: confirmPassword
         };
 
-        const response = await fetch('/customer/change-password', {
+        const response = await fetch(`${basePath}/change-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
@@ -359,7 +361,7 @@
 
           // If this was a forced password change, reload to remove warning
           <% if (mustChange) { %>
-            setTimeout(() => window.location.href = '/customer/dashboard', 1500);
+            setTimeout(() => window.location.href = `${basePath}/dashboard`, 1500);
           <% } %>
         } else {
           showToast(data.error || 'Failed to change password', 'error');
