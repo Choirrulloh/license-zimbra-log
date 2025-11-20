@@ -611,6 +611,12 @@ class CustomerPortalController {
         return res.status(400).json({ success: false, error: 'Current password is incorrect' });
       }
 
+      // Check if new password is same as current password
+      const isSamePassword = await bcrypt.compare(new_password, customer.password);
+      if (isSamePassword) {
+        return res.status(400).json({ success: false, error: 'New password must be different from current password' });
+      }
+
       // Hash new password
       const hashedPassword = await bcrypt.hash(new_password, 10);
 
@@ -657,14 +663,26 @@ class CustomerPortalController {
         reset_date: null // Customers don't have monthly reset, just total limit
       };
 
-      // Get recent obfuscations
-      const recentObfuscations = await db.all(
-        `SELECT * FROM code_obfuscations
-         WHERE customer_id = ? AND status = 'completed'
-         ORDER BY created_at DESC
-         LIMIT 3`,
-        [customerId]
-      );
+      // Get recent obfuscations - with error handling for missing column
+      let recentObfuscations = [];
+      try {
+        recentObfuscations = await db.all(
+          `SELECT * FROM code_obfuscations
+           WHERE customer_id = ? AND status = 'completed'
+           ORDER BY created_at DESC
+           LIMIT 3`,
+          [customerId]
+        );
+      } catch (error) {
+        // If customer_id column doesn't exist yet (migration not run), return empty array
+        if (error.code === 'SQLITE_ERROR' && error.message.includes('no such column: customer_id')) {
+          console.warn('⚠️  Code obfuscations table needs migration - customer_id column missing');
+          console.warn('   Please run: node src/database/migrations/016_add_customer_code_obfuscation.js');
+          recentObfuscations = [];
+        } else {
+          throw error; // Re-throw other errors
+        }
+      }
 
       // Get products for bash license injection
       const products = await db.all('SELECT id, name FROM products ORDER BY name');
