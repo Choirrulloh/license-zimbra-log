@@ -159,6 +159,7 @@ router.post('/code-protection/upload', requireAuth, upload.single('file'), codeP
 router.post('/code-protection/obfuscate', requireAuth, codeProtectionController.obfuscate);
 router.get('/code-protection/download/:id', requireAuth, codeProtectionController.download);
 router.get('/code-protection/quota', requireAuth, codeProtectionController.getQuota);
+router.delete('/code-protection/:id', requireAuth, codeProtectionController.delete);
 
 // Public API for license validation
 router.post('/api/validate', apiController.validateLicense);

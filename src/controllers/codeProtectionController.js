@@ -674,6 +674,61 @@ class CodeProtectionController {
   }
 
   /**
+   * Delete obfuscation record and file
+   * DELETE /code-protection/:id
+   */
+  async delete(req, res) {
+    try {
+      const { id } = req.params;
+      const userId = req.session.userId;
+
+      // Get obfuscation record
+      const obfuscation = await db.get(
+        'SELECT * FROM code_obfuscations WHERE id = ? AND user_id = ?',
+        [id, userId]
+      );
+
+      if (!obfuscation) {
+        return res.status(404).json({
+          success: false,
+          message: 'Obfuscation not found or access denied'
+        });
+      }
+
+      // Delete file from disk
+      const fs = require('fs');
+      if (obfuscation.obfuscated_file_path && fs.existsSync(obfuscation.obfuscated_file_path)) {
+        fs.unlinkSync(obfuscation.obfuscated_file_path);
+      }
+
+      // Delete from database
+      await db.run('DELETE FROM code_obfuscations WHERE id = ?', [id]);
+
+      // Log activity
+      await ActivityLogger.log({
+        userId: userId,
+        action: 'delete',
+        entityType: 'code_obfuscation',
+        entityId: id,
+        description: `Deleted obfuscation: ${obfuscation.original_filename}`,
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.headers?.['user-agent']
+      });
+
+      res.json({
+        success: true,
+        message: 'Obfuscation deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error deleting obfuscation:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error deleting obfuscation'
+      });
+    }
+  }
+
+  /**
    * Detect shell scripts in uploaded ZIP file
    */
   async detectShellScriptsInZip(zipPath) {
