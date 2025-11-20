@@ -48,7 +48,12 @@
                     <td class="px-6 py-4 text-sm text-gray-500"><%= c.company || '-' %></td>
                     <td class="px-6 py-4">
                       <span class="text-sm">
-                        <span class="font-medium text-green-600"><%= c.active_licenses %></span> / <%= c.total_licenses %>
+                        <span class="font-medium text-blue-600"><%= c.license_used || 0 %></span> /
+                        <% if (c.license_limit === 0) { %>
+                          <span class="text-green-600">∞</span>
+                        <% } else { %>
+                          <%= c.license_limit %>
+                        <% } %>
                       </span>
                     </td>
                     <td class="px-6 py-4 text-sm font-medium">Rp <%= new Intl.NumberFormat('id-ID').format(c.total_revenue || 0) %></td>

@@ -19,6 +19,10 @@ class CustomerController {
     try {
       const customers = await db.all(
         `SELECT c.*,
+                c.license_used,
+                c.license_limit,
+                c.code_protection_used,
+                c.code_protection_limit,
                 COUNT(DISTINCT l.id) as total_licenses,
                 COUNT(DISTINCT CASE WHEN l.status = 'active' THEN l.id END) as active_licenses,
                 COALESCE(SUM(t.amount), 0) as total_revenue
