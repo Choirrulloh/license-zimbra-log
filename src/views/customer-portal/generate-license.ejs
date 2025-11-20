@@ -104,8 +104,9 @@
                 >
                   <i class="fas fa-magic mr-2"></i> Generate License
                 </button>
+                <% const basePath = typeof customerPortalBase !== 'undefined' ? customerPortalBase : '/customer'; %>
                 <a
-                  href="/customer/licenses"
+                  href="<%= basePath %>/licenses"
                   class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 rounded-lg text-center transition-colors"
                 >
                   <i class="fas fa-times mr-2"></i> Cancel
@@ -208,6 +209,7 @@
 
   <script>
     let licenseTypesData = [];
+    const basePath = '<%= typeof customerPortalBase !== "undefined" ? customerPortalBase : "/customer" %>';
 
     async function loadLicenseTypes() {
       const productId = document.getElementById('product_id').value;
@@ -220,7 +222,7 @@
       }
 
       try {
-        const response = await fetch(`/customer/api/license-types/${productId}`);
+        const response = await fetch(`${basePath}/api/license-types/${productId}`);
         const data = await response.json();
 
         if (data.success) {
@@ -284,7 +286,7 @@
           license_type_id: document.getElementById('license_type_id').value
         };
 
-        const response = await fetch('/customer/generate-license', {
+        const response = await fetch(`${basePath}/generate-license`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
@@ -315,7 +317,7 @@
     }
 
     function viewLicenses() {
-      window.location.href = '/customer/licenses';
+      window.location.href = `${basePath}/licenses`;
     }
 
     function generateAnother() {

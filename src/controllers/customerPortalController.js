@@ -453,6 +453,7 @@ class CustomerPortalController {
 
       res.render('customer-portal/generate-license', {
         customer: req.customer,
+        currentPage: 'generate',
         products: productsCanGenerate,
         quotaInfo: {
           license_limit: req.customer.license_limit,
