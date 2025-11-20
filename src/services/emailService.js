@@ -207,7 +207,7 @@ class EmailService {
       user.name,
       {
         'reset.token': resetToken,
-        'reset.url': `${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`,
+        'reset.url': `${process.env.APP_URL || 'http://localhost:3000'}/customer/reset-password?token=${resetToken}`,
         'reset.expiry': '24 hours'
       },
       language
