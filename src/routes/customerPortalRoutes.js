@@ -16,6 +16,14 @@ router.use((req, res, next) => {
   next();
 });
 
+// Root route - redirect to login or dashboard
+router.get('/', (req, res) => {
+  if (req.session.customerId) {
+    return res.redirect('/dashboard');
+  }
+  res.redirect('/login');
+});
+
 // Public routes (not authenticated)
 router.get('/login', redirectIfCustomerAuthenticated, customerPortalController.showLogin);
 router.post('/login', redirectIfCustomerAuthenticated, customerPortalController.login);

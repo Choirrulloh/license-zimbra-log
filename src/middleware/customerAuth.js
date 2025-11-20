@@ -3,8 +3,10 @@ const db = require('../database/db');
 // Middleware to check if customer is authenticated
 const requireCustomerAuth = async (req, res, next) => {
   try {
+    const basePath = req.isCustomerPortal ? '' : '/customer';
+
     if (!req.session || !req.session.customerId) {
-      return res.redirect('/customer/login');
+      return res.redirect(`${basePath}/login`);
     }
 
     // Get customer data
@@ -15,7 +17,7 @@ const requireCustomerAuth = async (req, res, next) => {
 
     if (!customer) {
       req.session.destroy();
-      return res.redirect('/customer/login');
+      return res.redirect(`${basePath}/login`);
     }
 
     // Attach customer to request
@@ -29,14 +31,16 @@ const requireCustomerAuth = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Customer auth error:', error);
-    res.redirect('/customer/login');
+    const basePath = req.isCustomerPortal ? '' : '/customer';
+    res.redirect(`${basePath}/login`);
   }
 };
 
 // Middleware to redirect if already logged in
 const redirectIfCustomerAuthenticated = (req, res, next) => {
   if (req.session && req.session.customerId) {
-    return res.redirect('/customer/dashboard');
+    const basePath = req.isCustomerPortal ? '' : '/customer';
+    return res.redirect(`${basePath}/dashboard`);
   }
   next();
 };
@@ -44,12 +48,15 @@ const redirectIfCustomerAuthenticated = (req, res, next) => {
 // Middleware to check if customer must change password
 const checkPasswordChange = (req, res, next) => {
   if (req.customer && req.customer.must_change_password === 1) {
+    const basePath = req.isCustomerPortal ? '' : '/customer';
+
     // Allow access to profile/change password page
-    if (req.path === '/profile' || req.path === '/change-password') {
+    if (req.path === '/profile' || req.path === `${basePath}/profile` ||
+        req.path === '/change-password' || req.path === `${basePath}/change-password`) {
       return next();
     }
     // Redirect to profile to change password
-    return res.redirect('/customer/profile?mustChange=1');
+    return res.redirect(`${basePath}/profile?mustChange=1`);
   }
   next();
 };

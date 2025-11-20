@@ -16,39 +16,41 @@
 
     <!-- Navigation -->
     <nav class="flex-1 overflow-y-auto py-4">
-      <a href="/customer/dashboard" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'dashboard' ? 'bg-gray-700 text-white' : '' %>">
+      <% const basePath = typeof customerPortalBase !== 'undefined' ? customerPortalBase : '/customer'; %>
+
+      <a href="<%= basePath %>/dashboard" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'dashboard' ? 'bg-gray-700 text-white' : '' %>">
         <i class="fas fa-chart-line w-5"></i>
         <span class="ml-3">Dashboard</span>
       </a>
 
-      <a href="/customer/licenses" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'licenses' ? 'bg-gray-700 text-white' : '' %>">
+      <a href="<%= basePath %>/licenses" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'licenses' ? 'bg-gray-700 text-white' : '' %>">
         <i class="fas fa-key w-5"></i>
         <span class="ml-3">My Licenses</span>
       </a>
 
-      <a href="/customer/generate-license" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'generate' ? 'bg-gray-700 text-white' : '' %>">
+      <a href="<%= basePath %>/generate-license" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'generate' ? 'bg-gray-700 text-white' : '' %>">
         <i class="fas fa-plus-circle w-5"></i>
         <span class="ml-3">Generate License</span>
       </a>
 
-      <a href="/customer/products" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'products' ? 'bg-gray-700 text-white' : '' %>">
+      <a href="<%= basePath %>/products" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'products' ? 'bg-gray-700 text-white' : '' %>">
         <i class="fas fa-box w-5"></i>
         <span class="ml-3">Products</span>
       </a>
 
-      <a href="/customer/code-protection" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'code-protection' ? 'bg-gray-700 text-white' : '' %>">
+      <a href="<%= basePath %>/code-protection" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'code-protection' ? 'bg-gray-700 text-white' : '' %>">
         <i class="fas fa-shield-alt w-5"></i>
         <span class="ml-3">Code Protection</span>
       </a>
 
       <div class="border-t border-gray-700 my-2"></div>
 
-      <a href="/customer/profile" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'profile' ? 'bg-gray-700 text-white' : '' %>">
+      <a href="<%= basePath %>/profile" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors <%= typeof currentPage !== 'undefined' && currentPage === 'profile' ? 'bg-gray-700 text-white' : '' %>">
         <i class="fas fa-user w-5"></i>
         <span class="ml-3">My Profile</span>
       </a>
 
-      <a href="/customer/logout" class="flex items-center px-4 py-3 text-gray-300 hover:bg-red-600 hover:text-white transition-colors">
+      <a href="<%= basePath %>/logout" class="flex items-center px-4 py-3 text-gray-300 hover:bg-red-600 hover:text-white transition-colors">
         <i class="fas fa-sign-out-alt w-5"></i>
         <span class="ml-3">Logout</span>
       </a>

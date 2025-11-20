@@ -123,7 +123,8 @@ app.use((req, res, next) => {
   } else {
     // On admin subdomain or bare domain
     // Still support /customer path for backward compatibility
-    if (req.path.startsWith('/customer')) {
+    // Match /customer/ or /customer exactly, but not /customers
+    if (req.path === '/customer' || req.path.startsWith('/customer/')) {
       customerPortalRoutes(req, res, next);
     } else {
       routes(req, res, next);
