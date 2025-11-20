@@ -593,7 +593,12 @@ class CustomerPortalController {
       const customerId = req.customer.id;
       const { current_password, new_password, confirm_password } = req.body;
 
-      // Validate passwords
+      // Validate input
+      if (!current_password || !new_password || !confirm_password) {
+        return res.status(400).json({ success: false, error: 'All password fields are required' });
+      }
+
+      // Validate passwords match
       if (new_password !== confirm_password) {
         return res.status(400).json({ success: false, error: 'New passwords do not match' });
       }
@@ -603,16 +608,33 @@ class CustomerPortalController {
         return res.status(400).json({ success: false, error: 'Password must be at least 8 characters long' });
       }
 
-      // Verify current password
+      // Get customer with password
       const customer = await db.get('SELECT password FROM customers WHERE id = ?', [customerId]);
-      const passwordMatch = await bcrypt.compare(current_password, customer.password);
+
+      if (!customer || !customer.password) {
+        console.error('Change password error: Customer or password not found', { customerId, hasCustomer: !!customer });
+        return res.status(404).json({ success: false, error: 'Customer not found' });
+      }
+
+      // Log for debugging (remove in production after fix)
+      console.log('Change password debug:', {
+        customerId,
+        hasCurrentPassword: !!current_password,
+        currentPasswordType: typeof current_password,
+        hasStoredPassword: !!customer.password,
+        storedPasswordType: typeof customer.password,
+        storedPasswordLength: customer.password?.length
+      });
+
+      // Verify current password
+      const passwordMatch = await bcrypt.compare(String(current_password), String(customer.password));
 
       if (!passwordMatch) {
         return res.status(400).json({ success: false, error: 'Current password is incorrect' });
       }
 
       // Check if new password is same as current password
-      const isSamePassword = await bcrypt.compare(new_password, customer.password);
+      const isSamePassword = await bcrypt.compare(String(new_password), String(customer.password));
       if (isSamePassword) {
         return res.status(400).json({ success: false, error: 'New password must be different from current password' });
       }
