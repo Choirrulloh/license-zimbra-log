@@ -1,6 +1,6 @@
 const db = require('../database/db');
 const moment = require('moment');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const emailService = require('../services/emailService');
 const ActivityLogger = require('../utils/activityLogger');
@@ -299,6 +299,66 @@ class CustomerController {
       res.status(500).json({
         success: false,
         message: 'Error deleting customer'
+      });
+    }
+  }
+
+  async changeCustomerPassword(req, res) {
+    try {
+      const { id } = req.params;
+      const { newPassword } = req.body;
+
+      // Validate password
+      if (!newPassword || newPassword.length < 8) {
+        return res.status(400).json({
+          success: false,
+          error: 'Password must be at least 8 characters'
+        });
+      }
+
+      // Get customer
+      const customer = await db.get('SELECT * FROM customers WHERE id = ?', [id]);
+
+      if (!customer) {
+        return res.status(404).json({
+          success: false,
+          error: 'Customer not found'
+        });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password and set must_change_password flag
+      await db.run(
+        `UPDATE customers
+         SET password = ?,
+             must_change_password = 1,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [hashedPassword, id]
+      );
+
+      // Log activity
+      await ActivityLogger.log({
+        userId: req.session.userId,
+        action: 'update',
+        entityType: 'customer',
+        entityId: id,
+        description: `Admin changed password for customer: ${customer.email}`,
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.headers?.['user-agent']
+      });
+
+      res.json({
+        success: true,
+        message: 'Password changed successfully. Customer will be required to change password on next login.'
+      });
+    } catch (error) {
+      console.error('Error changing customer password:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error changing password'
       });
     }
   }

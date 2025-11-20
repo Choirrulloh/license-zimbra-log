@@ -77,6 +77,7 @@ router.get('/customers/:id/edit', requireAdmin, customerController.edit);
 router.post('/customers/:id/edit', requireAdmin, customerController.update);
 router.delete('/customers/:id', requireAdmin, customerController.delete);
 router.post('/customers/:id/login-as', requireAdmin, customerController.loginAsCustomer);
+router.post('/customers/:id/change-password', requireAdmin, customerController.changeCustomerPassword);
 
 // Users (Admin only for management, users can edit their own profile)
 router.get('/users', requireAdmin, userController.index);
