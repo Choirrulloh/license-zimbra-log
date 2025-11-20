@@ -1,5 +1,9 @@
 const db = require('../database/db');
 const moment = require('moment');
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const emailService = require('../services/emailService');
+const ActivityLogger = require('../utils/activityLogger');
 
 class CustomerController {
   constructor() {
@@ -94,18 +98,34 @@ class CustomerController {
 
   async create(req, res) {
     if (req.method === 'GET') {
+      // Get all active products for product access selection
+      const products = await db.all('SELECT * FROM products WHERE is_active = 1 ORDER BY name');
+
       return res.render('customers/create', {
         user: req.session,
+        products,
         error: null
       });
     }
 
     try {
-      const { name, email, company, phone, address } = req.body;
+      const {
+        name,
+        email,
+        company,
+        phone,
+        address,
+        license_limit,
+        code_protection_limit,
+        send_access_email,
+        product_access
+      } = req.body;
 
       if (!name || !email) {
+        const products = await db.all('SELECT * FROM products WHERE is_active = 1 ORDER BY name');
         return res.render('customers/create', {
           user: req.session,
+          products,
           error: 'Name and email are required'
         });
       }
@@ -114,22 +134,93 @@ class CustomerController {
       const existing = await db.get('SELECT id FROM customers WHERE email = ?', [email]);
 
       if (existing) {
+        const products = await db.all('SELECT * FROM products WHERE is_active = 1 ORDER BY name');
         return res.render('customers/create', {
           user: req.session,
+          products,
           error: 'Email already exists'
         });
       }
 
-      await db.run(
-        'INSERT INTO customers (name, email, company, phone, address) VALUES (?, ?, ?, ?, ?)',
-        [name, email, company || null, phone || null, address || null]
+      // Generate random password
+      const generatedPassword = crypto.randomBytes(8).toString('hex'); // 16 character password
+      const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
+      // Insert customer with quotas
+      const result = await db.run(
+        `INSERT INTO customers (
+          name, email, company, phone, address, password,
+          license_limit, code_protection_limit,
+          is_active, must_change_password
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 1)`,
+        [
+          name,
+          email,
+          company || null,
+          phone || null,
+          address || null,
+          hashedPassword,
+          parseInt(license_limit) || 0,
+          parseInt(code_protection_limit) || 0
+        ]
       );
 
-      res.redirect('/customers');
+      const customerId = result.id;
+
+      // Insert product access if any selected
+      if (product_access) {
+        const productIds = Array.isArray(product_access) ? product_access : [product_access];
+
+        for (const productId of productIds) {
+          await db.run(
+            `INSERT INTO customer_product_access (customer_id, product_id, can_generate_license)
+             VALUES (?, ?, 1)`,
+            [customerId, productId]
+          );
+        }
+      }
+
+      // Send welcome email if checkbox checked
+      if (send_access_email === 'on') {
+        try {
+          await emailService.sendEmail(
+            'customer_access',
+            email,
+            name,
+            {
+              'customer.name': name,
+              'customer.email': email,
+              'customer.password': generatedPassword,
+              'customer.login_url': `${process.env.APP_URL || 'http://localhost:3000'}/customer/login`,
+              'customer.license_limit': parseInt(license_limit) || 0,
+              'customer.code_protection_limit': parseInt(code_protection_limit) || 0
+            },
+            'en',
+            1
+          );
+        } catch (emailError) {
+          console.error('Error sending welcome email:', emailError);
+          // Don't fail the customer creation if email fails
+        }
+      }
+
+      // Log activity
+      await ActivityLogger.logCreate(
+        req.session.userId,
+        'user',
+        'customer',
+        customerId,
+        { name, email, license_limit, code_protection_limit },
+        req
+      );
+
+      res.redirect('/customers?success=Customer created successfully');
     } catch (error) {
       console.error('Error creating customer:', error);
+      const products = await db.all('SELECT * FROM products WHERE is_active = 1 ORDER BY name');
       res.render('customers/create', {
         user: req.session,
+        products,
         error: 'Error creating customer'
       });
     }
@@ -208,6 +299,72 @@ class CustomerController {
       res.status(500).json({
         success: false,
         message: 'Error deleting customer'
+      });
+    }
+  }
+
+  async loginAsCustomer(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Get customer
+      const customer = await db.get(
+        'SELECT * FROM customers WHERE id = ? AND is_active = 1',
+        [id]
+      );
+
+      if (!customer) {
+        return res.status(404).json({
+          success: false,
+          error: 'Customer not found or inactive'
+        });
+      }
+
+      // Check if customer has password set
+      if (!customer.password) {
+        return res.status(400).json({
+          success: false,
+          error: 'Customer does not have a password set. Cannot login as this customer.'
+        });
+      }
+
+      // Get current admin user
+      const adminUser = await db.get('SELECT id, name, email FROM users WHERE id = ?', [req.session.userId]);
+
+      // Log impersonation session
+      await db.run(
+        `INSERT INTO customer_sessions (customer_id, admin_id, is_impersonation, ip_address, user_agent)
+         VALUES (?, ?, 1, ?, ?)`,
+        [customer.id, adminUser.id, req.ip, req.get('user-agent')]
+      );
+
+      // Log activity
+      await ActivityLogger.log(
+        adminUser.id,
+        'user',
+        'login_as_customer',
+        customer.id,
+        'customer',
+        { customer_email: customer.email },
+        req
+      );
+
+      // Save admin session data
+      req.session.adminUser = adminUser;
+      req.session.isImpersonation = true;
+
+      // Set customer session
+      req.session.customerId = customer.id;
+
+      res.json({
+        success: true,
+        redirect: '/customer/dashboard'
+      });
+    } catch (error) {
+      console.error('Error login as customer:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error logging in as customer'
       });
     }
   }

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Products - Customer Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+  <%- include('partials/sidebar', { currentPage: 'products' }) %>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <%- include('partials/header', { title: 'Products', subtitle: 'Browse available products' }) %>
+
+    <main class="flex-1 overflow-y-auto p-6">
+      <div class="mb-6">
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+          <div class="flex items-center">
+            <i class="fas fa-info-circle text-blue-600 mr-3"></i>
+            <div>
+              <p class="text-sm text-blue-700">
+                This is a read-only product catalog. To generate licenses, you need specific product permissions from your administrator.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <% if (products.length > 0) { %>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <% products.forEach(product => { %>
+            <div class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
+              <div class="p-6">
+                <!-- Product Icon -->
+                <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                  <i class="fas fa-box text-blue-600 text-2xl"></i>
+                </div>
+
+                <!-- Product Info -->
+                <h3 class="text-xl font-bold text-gray-800 mb-2"><%= product.name %></h3>
+
+                <% if (product.description) { %>
+                  <p class="text-gray-600 text-sm mb-4 line-clamp-3"><%= product.description %></p>
+                <% } else { %>
+                  <p class="text-gray-400 text-sm mb-4 italic">No description available</p>
+                <% } %>
+
+                <!-- Product Details -->
+                <div class="space-y-2 mb-4">
+                  <% if (product.version) { %>
+                    <div class="flex items-center text-sm">
+                      <i class="fas fa-code-branch text-gray-400 w-5"></i>
+                      <span class="text-gray-600">Version: <span class="font-medium"><%= product.version %></span></span>
+                    </div>
+                  <% } %>
+
+                  <div class="flex items-center text-sm">
+                    <i class="fas fa-tag text-gray-400 w-5"></i>
+                    <span class="text-gray-600">License Types: <span class="font-medium"><%= product.license_type_count %></span></span>
+                  </div>
+
+                  <div class="flex items-center text-sm">
+                    <i class="fas <%= product.is_active ? 'fa-check-circle text-green-600' : 'fa-times-circle text-red-600' %> w-5"></i>
+                    <span class="text-gray-600">Status:
+                      <span class="font-medium <%= product.is_active ? 'text-green-600' : 'text-red-600' %>">
+                        <%= product.is_active ? 'Active' : 'Inactive' %>
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="pt-4 border-t">
+                  <button
+                    onclick="viewProductDetails(<%= product.id %>, '<%= product.name.replace(/'/g, "\\'") %>', '<%= product.description ? product.description.replace(/'/g, "\\'") : '' %>', '<%= product.version || '' %>', <%= product.license_type_count %>)"
+                    class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <i class="fas fa-info-circle mr-2"></i> View Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="bg-white rounded-lg shadow p-12 text-center">
+          <i class="fas fa-box-open text-6xl text-gray-300 mb-4"></i>
+          <h3 class="text-xl font-semibold text-gray-800 mb-2">No Products Available</h3>
+          <p class="text-gray-600">There are no active products at the moment.</p>
+        </div>
+      <% } %>
+    </main>
+  </div>
+
+  <%- include('partials/toast') %>
+
+  <!-- Product Details Modal -->
+  <div id="detailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-2xl font-bold text-gray-800" id="modalTitle"></h3>
+          <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+
+        <div class="space-y-4" id="modalContent">
+          <!-- Content will be populated via JavaScript -->
+        </div>
+
+        <div class="mt-6 pt-6 border-t flex space-x-3">
+          <a href="/customer/generate-license" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-center">
+            <i class="fas fa-key mr-2"></i> Generate License
+          </a>
+          <button onclick="closeModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-lg">
+            <i class="fas fa-times mr-2"></i> Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function viewProductDetails(id, name, description, version, licenseTypeCount) {
+      document.getElementById('modalTitle').textContent = name;
+
+      const content = `
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h4 class="font-semibold text-gray-800 mb-3">Product Information</h4>
+          <div class="space-y-3">
+            ${description ? `
+              <div>
+                <p class="text-sm text-gray-600 mb-1">Description:</p>
+                <p class="text-gray-800">${description}</p>
+              </div>
+            ` : ''}
+            ${version ? `
+              <div class="flex justify-between items-center py-2 border-t">
+                <span class="text-sm text-gray-600">Version:</span>
+                <span class="font-medium text-gray-800">${version}</span>
+              </div>
+            ` : ''}
+            <div class="flex justify-between items-center py-2 border-t">
+              <span class="text-sm text-gray-600">Available License Types:</span>
+              <span class="font-medium text-gray-800">${licenseTypeCount}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+          <div class="flex items-start">
+            <i class="fas fa-info-circle text-blue-600 mr-3 mt-1"></i>
+            <div class="text-sm">
+              <p class="text-blue-700 font-medium mb-1">Need to generate a license?</p>
+              <p class="text-blue-600">Make sure you have permission to generate licenses for this product. Contact your administrator if you need access.</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('modalContent').innerHTML = content;
+      document.getElementById('detailsModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('detailsModal').classList.add('hidden');
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+
+    // Close modal on outside click
+    document.getElementById('detailsModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeModal();
+      }
+    });
+  </script>
+</body>
+</html>

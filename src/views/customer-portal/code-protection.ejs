@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Code Protection - Customer Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+  <%- include('partials/sidebar', { currentPage: 'code-protection' }) %>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <%- include('partials/header', { title: 'Code Protection', subtitle: 'Generate and manage code protection' }) %>
+
+    <main class="flex-1 overflow-y-auto p-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left: Generate Form -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Quota Card -->
+          <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-purple-700 font-medium">Code Protection Quota</p>
+                <p class="text-2xl font-bold text-purple-900">
+                  <%= quotaInfo.code_protection_used %>/<%= quotaInfo.code_protection_limit === 0 ? '∞' : quotaInfo.code_protection_limit %>
+                </p>
+              </div>
+              <div class="text-right">
+                <p class="text-sm text-purple-700">Remaining</p>
+                <p class="text-xl font-semibold text-purple-900">
+                  <%= quotaInfo.code_protection_remaining === 'Unlimited' ? '∞' : quotaInfo.code_protection_remaining %>
+                </p>
+              </div>
+            </div>
+            <% if (quotaInfo.code_protection_limit > 0) { %>
+              <div class="w-full bg-purple-200 rounded-full h-2 mt-3">
+                <div class="bg-purple-600 h-2 rounded-full" style="width: <%= (quotaInfo.code_protection_used / quotaInfo.code_protection_limit * 100) %>%"></div>
+              </div>
+            <% } %>
+          </div>
+
+          <!-- Generate Form -->
+          <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+              <i class="fas fa-shield-alt text-purple-600 mr-2"></i> Generate Protection Code
+            </h3>
+
+            <% if (quotaInfo.code_protection_limit > 0 && quotaInfo.code_protection_used >= quotaInfo.code_protection_limit) { %>
+              <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+                <div class="flex items-center">
+                  <i class="fas fa-exclamation-circle mr-3"></i>
+                  <div>
+                    <p class="font-semibold">Quota Exceeded!</p>
+                    <p class="text-sm">You have used all <%= quotaInfo.code_protection_limit %> code protections. Contact administrator to increase your limit.</p>
+                  </div>
+                </div>
+              </div>
+            <% } else { %>
+              <form id="generateForm" class="space-y-4">
+                <div>
+                  <label class="block text-gray-700 text-sm font-medium mb-2">
+                    <i class="fas fa-code mr-1"></i> Code to Protect *
+                  </label>
+                  <textarea
+                    id="code_input"
+                    name="code_input"
+                    required
+                    rows="4"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm"
+                    placeholder="Enter your code here..."
+                  ></textarea>
+                  <p class="text-xs text-gray-500 mt-1">
+                    <i class="fas fa-info-circle"></i> Enter any text, code, or string you want to protect
+                  </p>
+                </div>
+
+                <div>
+                  <label class="block text-gray-700 text-sm font-medium mb-2">
+                    <i class="fas fa-clock mr-1"></i> Expiration (optional)
+                  </label>
+                  <select
+                    id="duration_days"
+                    name="duration_days"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="">Never expires</option>
+                    <option value="7">7 days</option>
+                    <option value="30">30 days</option>
+                    <option value="90">90 days</option>
+                    <option value="180">180 days</option>
+                    <option value="365">1 year</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  id="generateBtn"
+                  class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition-colors"
+                >
+                  <i class="fas fa-shield-alt mr-2"></i> Generate Protection Code
+                </button>
+              </form>
+            <% } %>
+          </div>
+
+          <!-- Protection History -->
+          <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b">
+              <h3 class="text-lg font-semibold text-gray-800">
+                <i class="fas fa-history mr-2"></i> Protection History
+              </h3>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Protected Code</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Original</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expires</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <% if (protections.length > 0) { %>
+                    <% protections.forEach(protection => { %>
+                      <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                          <div class="flex items-center">
+                            <code class="text-sm bg-purple-50 px-2 py-1 rounded font-mono text-purple-800">
+                              <%= protection.protected_code.substring(0, 16) %>...
+                            </code>
+                            <button onclick="copyCode('<%= protection.protected_code %>')" class="ml-2 text-gray-400 hover:text-gray-600">
+                              <i class="fas fa-copy"></i>
+                            </button>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4">
+                          <code class="text-xs text-gray-600 truncate block max-w-xs">
+                            <%= protection.original_code.substring(0, 30) %><%= protection.original_code.length > 30 ? '...' : '' %>
+                          </code>
+                        </td>
+                        <td class="px-6 py-4">
+                          <%
+                            const isExpired = protection.expires_at && new Date(protection.expires_at) < new Date();
+                            const isActive = !protection.expires_at || !isExpired;
+                          %>
+                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full <%= isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                            <i class="fas <%= isActive ? 'fa-check-circle' : 'fa-times-circle' %> mr-1"></i>
+                            <%= isActive ? 'Active' : 'Expired' %>
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                          <% if (protection.expires_at) { %>
+                            <%= moment(protection.expires_at).tz(timezone).format('MMM D, YYYY') %>
+                          <% } else { %>
+                            <span class="text-green-600">Never</span>
+                          <% } %>
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                          <button onclick="viewDetails('<%= protection.protected_code %>', '<%= protection.original_code.replace(/'/g, "\\'") %>')" class="text-blue-600 hover:text-blue-900">
+                            <i class="fas fa-eye"></i> View
+                          </button>
+                        </td>
+                      </tr>
+                    <% }) %>
+                  <% } else { %>
+                    <tr>
+                      <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                        No code protections yet. Generate your first one above.
+                      </td>
+                    </tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Info -->
+        <div class="space-y-6">
+          <!-- How it works -->
+          <div class="bg-white rounded-lg shadow p-6">
+            <h4 class="font-semibold text-gray-800 mb-3">
+              <i class="fas fa-info-circle text-purple-600 mr-2"></i> How it works
+            </h4>
+            <ul class="space-y-2 text-sm text-gray-600">
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span>Enter any code or text you want to protect</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span>System generates a unique protection hash</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span>Use the protected code in your applications</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span>Set optional expiration date</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Security Note -->
+          <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+            <div class="flex items-start">
+              <i class="fas fa-shield-alt text-yellow-600 mr-3 mt-1"></i>
+              <div class="text-sm">
+                <p class="text-yellow-800 font-medium mb-1">Security Note</p>
+                <p class="text-yellow-700">Protected codes are hashed using SHA-256. Keep your original code safe.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <%- include('partials/toast') %>
+
+  <!-- Details Modal -->
+  <div id="detailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-bold text-gray-800">Code Protection Details</h3>
+          <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="text-sm text-gray-600 block mb-1">Original Code:</label>
+            <div class="bg-gray-50 p-3 rounded font-mono text-sm break-all" id="modalOriginal"></div>
+          </div>
+
+          <div>
+            <label class="text-sm text-gray-600 block mb-1">Protected Code:</label>
+            <div class="bg-purple-50 p-3 rounded font-mono text-sm break-all text-purple-800 flex items-center justify-between" id="modalProtected">
+              <span id="protectedCodeText"></span>
+              <button onclick="copyModalCode()" class="text-purple-600 hover:text-purple-800 ml-2">
+                <i class="fas fa-copy"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+          <button onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('generateForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const btn = document.getElementById('generateBtn');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating...';
+
+      try {
+        const formData = {
+          code_input: document.getElementById('code_input').value,
+          duration_days: document.getElementById('duration_days').value
+        };
+
+        const response = await fetch('/customer/code-protection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showToast('Code protection generated successfully!', 'success');
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          showToast(data.error || 'Failed to generate code protection', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to generate code protection', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    });
+
+    function copyCode(code) {
+      navigator.clipboard.writeText(code).then(() => {
+        showToast('Protected code copied to clipboard!', 'success');
+      }).catch(() => {
+        showToast('Failed to copy code', 'error');
+      });
+    }
+
+    function viewDetails(protectedCode, originalCode) {
+      document.getElementById('modalOriginal').textContent = originalCode;
+      document.getElementById('protectedCodeText').textContent = protectedCode;
+      document.getElementById('detailsModal').classList.remove('hidden');
+    }
+
+    function copyModalCode() {
+      const code = document.getElementById('protectedCodeText').textContent;
+      copyCode(code);
+    }
+
+    function closeModal() {
+      document.getElementById('detailsModal').classList.add('hidden');
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeModal();
+    });
+  </script>
+</body>
+</html>
