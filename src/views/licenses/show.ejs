@@ -12,7 +12,7 @@
       <header class="bg-white shadow-sm">
         <div class="flex items-center justify-between p-4">
           <h2 class="text-xl font-semibold text-gray-800">License Details</h2>
-          <span class="text-sm text-gray-600"><%= moment().format('dddd, MMMM D, YYYY') %></span>
+          <span class="text-sm text-gray-600"><%= moment().tz(timezone).format('dddd, MMMM D, YYYY') %></span>
         </div>
       </header>
       <main class="flex-1 overflow-y-auto p-6">
@@ -66,12 +66,12 @@
             </div>
             <div>
               <p class="text-sm text-gray-500">Issue Date</p>
-              <p class="font-medium"><%= moment(license.issue_date).format('MMM D, YYYY HH:mm') %></p>
+              <p class="font-medium"><%= moment(license.issue_date).tz(timezone).format('MMM D, YYYY HH:mm') %></p>
             </div>
             <div>
               <p class="text-sm text-gray-500">Expiry Date</p>
               <p class="font-medium <%= license.expiry_date && moment(license.expiry_date).isBefore(moment()) ? 'text-red-600' : '' %>">
-                <%= license.expiry_date ? moment(license.expiry_date).format('MMM D, YYYY HH:mm') : 'Never' %>
+                <%= license.expiry_date ? moment(license.expiry_date).tz(timezone).format('MMM D, YYYY HH:mm') : 'Never' %>
               </p>
             </div>
             <div>
@@ -91,6 +91,38 @@
             <p class="text-sm text-gray-500 mb-2">Offline Validation Code</p>
             <code class="bg-gray-100 px-4 py-2 rounded font-mono text-lg"><%= offlineCode %></code>
           </div>
+        </div>
+
+        <!-- License Features -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+          <h3 class="text-lg font-semibold mb-4">License Features (<%= features.length %>)</h3>
+          <% if (features.length > 0) { %>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <% features.forEach(feature => { %>
+                <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-all">
+                  <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                      <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-check text-blue-600"></i>
+                      </div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <h4 class="font-semibold text-gray-800 mb-1"><%= feature.name %></h4>
+                      <code class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded"><%= feature.feature_key %></code>
+                      <% if (feature.description) { %>
+                        <p class="text-sm text-gray-600 mt-2"><%= feature.description %></p>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div class="text-center py-8 text-gray-500">
+              <i class="fas fa-inbox text-4xl mb-3 opacity-50"></i>
+              <p>No features assigned to this license type</p>
+            </div>
+          <% } %>
         </div>
 
         <!-- Hardware Activations -->
@@ -115,8 +147,8 @@
                       <td class="px-6 py-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded"><%= a.hardware_id.substring(0, 16) %>...</code></td>
                       <td class="px-6 py-4 text-sm"><%= a.hostname || '-' %></td>
                       <td class="px-6 py-4 text-sm"><%= a.ip_address || '-' %></td>
-                      <td class="px-6 py-4 text-sm"><%= moment(a.activated_at).format('MMM D, YYYY HH:mm') %></td>
-                      <td class="px-6 py-4 text-sm"><%= moment(a.last_check).format('MMM D, YYYY HH:mm') %></td>
+                      <td class="px-6 py-4 text-sm"><%= moment(a.activated_at).tz(timezone).format('MMM D, YYYY HH:mm') %></td>
+                      <td class="px-6 py-4 text-sm"><%= moment(a.last_check).tz(timezone).format('MMM D, YYYY HH:mm') %></td>
                       <td class="px-6 py-4">
                         <span class="px-2 py-1 rounded-full text-xs font-semibold <%= a.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' %>">
                           <%= a.is_active ? 'Active' : 'Inactive' %>
@@ -148,7 +180,7 @@
                     <p class="font-medium text-gray-900"><%= h.action.replace(/_/g, ' ').toUpperCase() %></p>
                     <p class="text-sm text-gray-600"><%= h.description || '-' %></p>
                     <p class="text-xs text-gray-400 mt-1">
-                      <%= moment(h.created_at).format('MMM D, YYYY HH:mm') %>
+                      <%= moment(h.created_at).tz(timezone).format('MMM D, YYYY HH:mm') %>
                       <% if (h.user_name) { %>by <%= h.user_name %><% } %>
                     </p>
                   </div>

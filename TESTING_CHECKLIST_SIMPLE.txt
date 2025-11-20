@@ -1,0 +1,1416 @@
+===============================================================================
+                    CHECKLIST TESTING - SAAS LICENSE MANAGEMENT SYSTEM
+===============================================================================
+
+Total Items: 300+
+Format: [ ] = Belum dicek, [X] = Sudah dicek & OK, [!] = Ada masalah
+
+===============================================================================
+SECTION 1: AUTHENTICATION & LOGIN
+===============================================================================
+
+ADMIN LOGIN
+1.  [ ] Akses halaman /login
+2.  [ ] Form login muncul dengan field email dan password
+3.  [ ] Login dengan admin@example.com / admin123 berhasil
+4.  [ ] Redirect ke /dashboard setelah login
+5.  [ ] Login dengan email salah muncul error
+6.  [ ] Login dengan password salah muncul error
+7.  [ ] Login dengan email kosong muncul error
+8.  [ ] Login dengan password kosong muncul error
+9.  [ ] Session tersimpan setelah login
+10. [ ] Refresh page tetap login (session persisten)
+11. [ ] Logout berhasil dan redirect ke /login
+12. [ ] Setelah logout tidak bisa akses /dashboard
+13. [ ] Auto redirect ke /dashboard jika sudah login dan akses /login
+
+CUSTOMER LOGIN
+14. [ ] Akses halaman /customer/login
+15. [ ] Form login muncul dengan design berbeda dari admin
+16. [ ] Login dengan customer@example.com / customer123 berhasil
+17. [ ] Redirect ke /customer/dashboard setelah login
+18. [ ] Login dengan email salah muncul error
+19. [ ] Login dengan password salah muncul error
+20. [ ] Login dengan customer inactive muncul error
+21. [ ] Login dengan customer tanpa password muncul error
+22. [ ] Session tersimpan setelah login
+23. [ ] Refresh page tetap login
+24. [ ] Logout berhasil dan redirect ke /customer/login
+25. [ ] Setelah logout tidak bisa akses customer portal
+26. [ ] Auto redirect ke /customer/dashboard jika sudah login
+
+ADMIN & CUSTOMER SESSION ISOLATION
+27. [ ] Admin tidak bisa akses /customer/* routes
+28. [ ] Customer tidak bisa akses admin routes
+29. [ ] Login admin tidak mengganggu session customer
+30. [ ] Login customer tidak mengganggu session admin
+
+===============================================================================
+SECTION 2: ADMIN DASHBOARD
+===============================================================================
+
+DASHBOARD OVERVIEW
+31. [ ] Dashboard muncul setelah login admin
+32. [ ] Header menampilkan nama admin
+33. [ ] Sidebar muncul dengan semua menu
+34. [ ] Logo aplikasi muncul di sidebar
+
+STATISTICS CARDS
+35. [ ] Card Total Products muncul dengan angka yang benar
+36. [ ] Card Total Customers muncul dengan angka yang benar
+37. [ ] Card Total Licenses muncul dengan angka yang benar
+38. [ ] Card Active Licenses muncul dengan angka yang benar
+39. [ ] Card Total Revenue muncul dengan angka yang benar
+40. [ ] Icon di setiap card muncul dengan benar
+41. [ ] Angka statistics update real-time
+
+CHARTS & GRAPHS
+42. [ ] License Status Distribution chart muncul
+43. [ ] Chart menampilkan data active/expired/suspended/revoked
+44. [ ] Revenue Over Time chart muncul (jika ada data)
+45. [ ] Chart dapat di-interact (hover untuk detail)
+46. [ ] Warna chart sesuai dengan status
+
+RECENT ACTIVITY
+47. [ ] Recent Licenses table muncul
+48. [ ] Menampilkan 5-10 license terbaru
+49. [ ] Kolom: License Key, Product, Customer, Status, Date
+50. [ ] Status badge muncul dengan warna yang sesuai
+51. [ ] Link ke detail license berfungsi
+52. [ ] Jika tidak ada data, muncul "No licenses yet"
+
+QUICK ACTIONS
+53. [ ] Button "Create License" berfungsi
+54. [ ] Button "Create Customer" berfungsi
+55. [ ] Button "Create Product" berfungsi
+56. [ ] Button "View Reports" berfungsi
+
+SIDEBAR NAVIGATION
+57. [ ] Menu Dashboard aktif dan highlight
+58. [ ] Menu Products muncul
+59. [ ] Menu Customers muncul
+60. [ ] Menu Licenses muncul
+61. [ ] Menu Users muncul
+62. [ ] Menu Roles muncul (jika admin)
+63. [ ] Menu Permissions muncul (jika admin)
+64. [ ] Menu Code Protection muncul
+65. [ ] Menu Reports muncul
+66. [ ] Menu Settings muncul (jika admin)
+67. [ ] Menu Docs muncul
+68. [ ] Menu Logout muncul
+69. [ ] Semua menu dapat diklik dan navigate dengan benar
+
+===============================================================================
+SECTION 3: PRODUCTS MANAGEMENT (ADMIN)
+===============================================================================
+
+PRODUCT LIST
+70. [ ] Akses /products berhasil
+71. [ ] Table products muncul dengan semua data
+72. [ ] Kolom: Name, Version, License Types, Status, Actions
+73. [ ] Search box berfungsi untuk cari product
+74. [ ] Filter by status berfungsi (Active/Inactive)
+75. [ ] Sorting by name berfungsi
+76. [ ] Click product name masuk ke detail page
+77. [ ] Badge "Active" atau "Inactive" muncul
+78. [ ] Button "Create Product" muncul untuk admin
+
+CREATE PRODUCT
+79. [ ] Click "Create Product" masuk ke form
+80. [ ] Form muncul dengan field: Name, Description, Version
+81. [ ] Field Name wajib diisi (validation)
+82. [ ] Field Version wajib diisi
+83. [ ] Checkbox "Active" default checked
+84. [ ] Button "Create" dan "Cancel" muncul
+85. [ ] Submit form berhasil membuat product
+86. [ ] Redirect ke /products dengan success message
+87. [ ] Product baru muncul di list
+88. [ ] Submit dengan name kosong muncul error
+89. [ ] Submit dengan version kosong muncul error
+
+PRODUCT DETAILS
+90. [ ] Akses /products/:id berhasil
+91. [ ] Product info muncul lengkap
+92. [ ] Section "License Types" muncul
+93. [ ] Table license types muncul
+94. [ ] Kolom: Name, Type, Duration, Price, Max Activations
+95. [ ] Button "Add License Type" muncul untuk admin
+96. [ ] Button "Edit Product" muncul untuk admin
+97. [ ] Button "Delete Product" muncul untuk admin
+98. [ ] Section "Features" muncul
+99. [ ] Features dapat ditambah inline
+100. [ ] Features dapat dihapus
+
+ADD LICENSE TYPE
+101. [ ] Click "Add License Type" muncul modal/form
+102. [ ] Form fields: Name, Type, Duration Days, Price, Max Activations
+103. [ ] Dropdown Type muncul (trial, standard, premium, enterprise)
+104. [ ] Field Duration Days (number input)
+105. [ ] Field Price (decimal)
+106. [ ] Field Max Activations default 1
+107. [ ] Submit form berhasil
+108. [ ] License type baru muncul di table
+109. [ ] Validation bekerja (required fields)
+
+ADD FEATURES
+110. [ ] Form add features muncul di product detail
+111. [ ] Dapat add multiple features sekaligus
+112. [ ] Format: nama feature per baris
+113. [ ] Button "Add Features" berfungsi
+114. [ ] Features baru muncul di list
+115. [ ] Features dapat di-assign ke license type
+
+EDIT PRODUCT
+116. [ ] Click "Edit" masuk ke edit form
+117. [ ] Form ter-populate dengan data existing
+118. [ ] Update name berhasil
+119. [ ] Update version berhasil
+120. [ ] Update description berhasil
+121. [ ] Toggle active/inactive berhasil
+122. [ ] Redirect ke detail page dengan success message
+
+DELETE PRODUCT
+123. [ ] Click "Delete" muncul confirmation
+124. [ ] Confirm delete berhasil hapus product
+125. [ ] Redirect ke /products
+126. [ ] Product hilang dari list
+127. [ ] Licenses yang terkait juga terhapus (cascade)
+
+===============================================================================
+SECTION 4: CUSTOMERS MANAGEMENT (ADMIN)
+===============================================================================
+
+CUSTOMER LIST
+128. [ ] Akses /customers berhasil
+129. [ ] Table customers muncul
+130. [ ] Kolom: Name, Email, Company, Licenses, Revenue, Actions
+131. [ ] Search by name/email berfungsi
+132. [ ] Filter by status (active/inactive) berfungsi
+133. [ ] Sorting berfungsi
+134. [ ] Click customer name masuk ke detail
+135. [ ] Button "Create Customer" muncul
+136. [ ] Total licenses per customer benar
+137. [ ] Total revenue per customer benar
+
+CREATE CUSTOMER
+138. [ ] Click "Create Customer" masuk ke form
+139. [ ] Form basic info muncul: Name, Email, Company, Phone, Address
+140. [ ] Form Customer Portal Settings muncul
+141. [ ] Field License Limit (default 0 = unlimited)
+142. [ ] Field Code Protection Limit (default 0)
+143. [ ] Checkbox list products untuk access
+144. [ ] Checkbox "Send Access Email" (default checked)
+145. [ ] Help text muncul: "Set to 0 for unlimited"
+146. [ ] Submit form berhasil
+147. [ ] Auto-generate password
+148. [ ] Email terkirim ke customer (jika SMTP configured)
+149. [ ] Redirect dengan success message
+150. [ ] Customer baru muncul di list
+151. [ ] Validation: email wajib diisi
+152. [ ] Validation: name wajib diisi
+153. [ ] Validation: email format harus valid
+154. [ ] Validation: email tidak boleh duplikat
+
+CUSTOMER DETAILS
+155. [ ] Akses /customers/:id berhasil
+156. [ ] Customer basic info muncul
+157. [ ] Section "Customer Portal Access" muncul
+158. [ ] License Quota progress bar muncul
+159. [ ] Code Protection Quota progress bar muncul
+160. [ ] Progress bar warna berubah (blue < 70%, yellow 70-90%, red > 90%)
+161. [ ] Remaining count benar
+162. [ ] Portal Status muncul (Active/Not Configured)
+163. [ ] Last Login timestamp muncul
+164. [ ] Button "Login as Customer" muncul (jika customer punya password)
+165. [ ] Button "Edit Customer" muncul
+166. [ ] Button "Delete Customer" muncul
+167. [ ] Section "Account Status" muncul
+168. [ ] Section "Statistics" muncul
+169. [ ] Total Licenses benar
+170. [ ] Active Licenses benar
+171. [ ] Total Spent benar
+172. [ ] Section "Licenses" muncul
+173. [ ] Table licenses customer muncul
+174. [ ] Link ke detail license berfungsi
+
+EDIT CUSTOMER
+175. [ ] Click "Edit" masuk ke form
+176. [ ] Form ter-populate dengan data existing
+177. [ ] Update name berhasil
+178. [ ] Update email berhasil
+179. [ ] Update company berhasil
+180. [ ] Update phone berhasil
+181. [ ] Update address berhasil
+182. [ ] Update license limit berhasil
+183. [ ] Update code protection limit berhasil
+184. [ ] Update product access berhasil
+185. [ ] Toggle active/inactive berhasil
+186. [ ] Redirect dengan success message
+
+DELETE CUSTOMER
+187. [ ] Click "Delete" muncul confirmation
+188. [ ] Confirm delete berhasil
+189. [ ] Customer hilang dari list
+190. [ ] Licenses terkait juga terhapus (cascade)
+
+LOGIN AS CUSTOMER (IMPERSONATION)
+191. [ ] Click "Login as Customer" muncul confirmation
+192. [ ] Confirm masuk ke customer portal
+193. [ ] Redirect ke /customer/dashboard
+194. [ ] Yellow banner impersonation muncul di top
+195. [ ] Banner menampilkan: "Viewing as: [Customer Name]"
+196. [ ] Banner menampilkan: "Admin: [Admin Email]"
+197. [ ] Button "Exit Customer View" muncul di banner
+198. [ ] Sidebar customer portal muncul (bukan admin sidebar)
+199. [ ] Semua fitur customer portal dapat diakses
+200. [ ] Action dilakukan tercatat sebagai impersonation
+201. [ ] Click "Exit Customer View" kembali ke admin
+202. [ ] Redirect ke /customers
+203. [ ] Admin session masih aktif
+204. [ ] Kembali ke admin sidebar
+
+===============================================================================
+SECTION 5: LICENSES MANAGEMENT (ADMIN)
+===============================================================================
+
+LICENSE LIST
+205. [ ] Akses /licenses berhasil
+206. [ ] Table licenses muncul
+207. [ ] Kolom: License Key, Product, Customer, Type, Status, Expiry, Actions
+208. [ ] Search by license key berfungsi
+209. [ ] Filter by status berfungsi (all/active/expired/suspended/revoked)
+210. [ ] Filter by product berfungsi
+211. [ ] Filter by customer berfungsi
+212. [ ] Sorting by expiry date berfungsi
+213. [ ] Badge status dengan warna yang sesuai
+214. [ ] Click license key masuk ke detail
+215. [ ] Button "Create License" muncul
+216. [ ] Pagination muncul jika data > 50 (jika sudah diimplementasi)
+
+CREATE LICENSE
+217. [ ] Click "Create License" masuk ke form
+218. [ ] Dropdown Customer muncul
+219. [ ] Dropdown Product muncul
+220. [ ] Setelah pilih product, dropdown License Type muncul
+221. [ ] License type sesuai dengan product yang dipilih
+222. [ ] License type info muncul (duration, price, max activations)
+223. [ ] Field Notes (optional)
+224. [ ] Button "Generate License" muncul
+225. [ ] Submit form berhasil
+226. [ ] License key ter-generate otomatis
+227. [ ] Format: XXXX-XXXX-XXXX-XXXX
+228. [ ] Expiry date ter-calculate otomatis
+229. [ ] Redirect ke detail license dengan success message
+230. [ ] License baru muncul di list
+231. [ ] Validation: customer wajib dipilih
+232. [ ] Validation: product wajib dipilih
+233. [ ] Validation: license type wajib dipilih
+
+LICENSE DETAILS
+234. [ ] Akses /licenses/:id berhasil
+235. [ ] License key muncul dengan copy button
+236. [ ] Click copy button berhasil copy ke clipboard
+237. [ ] Product info muncul
+238. [ ] Customer info muncul dengan link
+239. [ ] License type info muncul
+240. [ ] Status badge muncul
+241. [ ] Issue date muncul
+242. [ ] Expiry date muncul
+243. [ ] Activation info muncul (current/max)
+244. [ ] Progress bar activations muncul
+245. [ ] Notes muncul (jika ada)
+246. [ ] Section "Actions" muncul
+247. [ ] Button "Renew" muncul (jika expired)
+248. [ ] Button "Suspend" muncul (jika active)
+249. [ ] Button "Activate" muncul (jika suspended)
+250. [ ] Button "Revoke" muncul
+251. [ ] Button "Download" muncul
+252. [ ] Button "Delete" muncul (admin only)
+253. [ ] Section "Activations" muncul
+254. [ ] Table activations muncul
+255. [ ] Kolom: Hardware ID, IP Address, Hostname, Activated At, Last Check
+256. [ ] Section "History" muncul
+257. [ ] Table history muncul dengan all changes
+258. [ ] Section "Features" muncul
+259. [ ] List features dari license type muncul
+
+LICENSE ACTIONS
+260. [ ] Click "Renew" muncul dialog
+261. [ ] Input extension days
+262. [ ] Confirm renew berhasil
+263. [ ] Expiry date ter-update
+264. [ ] Status berubah ke active
+265. [ ] History tercatat
+266. [ ] Click "Suspend" muncul confirmation
+267. [ ] Confirm suspend berhasil
+268. [ ] Status berubah ke suspended
+269. [ ] History tercatat
+270. [ ] Click "Activate" berhasil
+271. [ ] Status berubah ke active
+272. [ ] Click "Revoke" muncul confirmation
+273. [ ] Confirm revoke berhasil
+274. [ ] Status berubah ke revoked
+275. [ ] Tidak bisa di-activate lagi
+276. [ ] Click "Download" download file .txt
+277. [ ] File berisi license key dan info
+278. [ ] Click "Delete" muncul confirmation (admin only)
+279. [ ] Confirm delete berhasil hapus license
+
+===============================================================================
+SECTION 6: USERS MANAGEMENT (ADMIN)
+===============================================================================
+
+USER LIST
+280. [ ] Akses /users berhasil (admin only)
+281. [ ] Table users muncul
+282. [ ] Kolom: Name, Email, Role, Created At, Actions
+283. [ ] Search by name/email berfungsi
+284. [ ] Filter by role berfungsi
+285. [ ] Button "Create User" muncul
+286. [ ] Click user name masuk ke detail
+
+CREATE USER
+287. [ ] Click "Create User" masuk ke form
+288. [ ] Field Name, Email, Password, Confirm Password
+289. [ ] Dropdown Role muncul
+290. [ ] Submit berhasil
+291. [ ] Password di-hash dengan bcrypt
+292. [ ] User baru muncul di list
+293. [ ] Validation: semua field wajib
+294. [ ] Validation: email format valid
+295. [ ] Validation: password min 8 chars
+296. [ ] Validation: password match
+
+USER DETAILS
+297. [ ] Akses /users/:id berhasil
+298. [ ] User info muncul
+299. [ ] Role muncul
+300. [ ] Created date muncul
+301. [ ] Button "Edit" muncul (self or admin)
+302. [ ] Button "Delete" muncul (admin only, tidak bisa hapus diri sendiri)
+303. [ ] Section "Change Password" muncul
+
+EDIT USER
+304. [ ] Click "Edit" masuk ke form
+305. [ ] Form ter-populate
+306. [ ] Update name berhasil
+307. [ ] Update email berhasil
+308. [ ] Update role berhasil (admin only)
+309. [ ] Non-admin hanya bisa edit data sendiri
+310. [ ] Redirect dengan success message
+
+CHANGE PASSWORD
+311. [ ] Form change password muncul
+312. [ ] Field: Current Password, New Password, Confirm Password
+313. [ ] Submit berhasil
+314. [ ] Password ter-update
+315. [ ] Validation: current password harus benar
+316. [ ] Validation: new password min 8 chars
+317. [ ] Validation: confirm password match
+318. [ ] Logout otomatis setelah change password (optional)
+
+DELETE USER
+319. [ ] Click "Delete" muncul confirmation
+320. [ ] Tidak bisa delete diri sendiri
+321. [ ] Confirm delete berhasil
+322. [ ] User hilang dari list
+
+===============================================================================
+SECTION 7: ROLES & PERMISSIONS (ADMIN)
+===============================================================================
+
+ROLES LIST
+323. [ ] Akses /roles berhasil (admin only)
+324. [ ] Table roles muncul
+325. [ ] Kolom: Name, Description, Users Count, Actions
+326. [ ] Button "Create Role" muncul
+327. [ ] Click role name masuk ke detail
+
+CREATE ROLE
+328. [ ] Click "Create Role" masuk ke form
+329. [ ] Field Name, Description
+330. [ ] Checkboxes permissions muncul
+331. [ ] Permissions dikelompokkan per module
+332. [ ] Submit berhasil
+333. [ ] Role baru muncul
+334. [ ] Validation: name wajib
+
+ROLE DETAILS
+335. [ ] Akses /roles/:id berhasil
+336. [ ] Role info muncul
+337. [ ] List permissions muncul
+338. [ ] List users dengan role ini muncul
+339. [ ] Button "Edit" dan "Delete" muncul
+
+EDIT ROLE
+340. [ ] Click "Edit" masuk ke form
+341. [ ] Form ter-populate
+342. [ ] Update name berhasil
+343. [ ] Update permissions berhasil
+344. [ ] Redirect dengan success message
+
+DELETE ROLE
+345. [ ] Click "Delete" muncul confirmation
+346. [ ] Tidak bisa delete default roles (admin, user)
+347. [ ] Confirm delete berhasil
+348. [ ] Role hilang dari list
+
+PERMISSIONS LIST
+349. [ ] Akses /permissions berhasil
+350. [ ] Table permissions muncul
+351. [ ] Kolom: Name, Key, Module, Description
+352. [ ] Button "Create Permission" muncul
+353. [ ] Grouped by module
+
+CREATE PERMISSION
+354. [ ] Click "Create Permission" masuk ke form
+355. [ ] Field Name, Key, Module, Description
+356. [ ] Submit berhasil
+357. [ ] Permission baru muncul
+
+===============================================================================
+SECTION 8: CODE PROTECTION (ADMIN & USERS)
+===============================================================================
+
+CODE PROTECTION PAGE
+358. [ ] Akses /code-protection berhasil
+359. [ ] Tab "Obfuscate" muncul
+360. [ ] Tab "History" muncul
+361. [ ] Form upload file muncul
+362. [ ] Atau textarea untuk paste code
+363. [ ] Dropdown obfuscation level (low, medium, high)
+364. [ ] Checkbox options muncul
+
+OBFUSCATE CODE
+365. [ ] Upload file .js berhasil
+366. [ ] File size < 50MB
+367. [ ] Submit obfuscate berhasil
+368. [ ] Loading indicator muncul
+369. [ ] Download button muncul setelah selesai
+370. [ ] Download file berhasil
+371. [ ] File ter-obfuscate dengan benar
+372. [ ] Original code tidak terlihat
+373. [ ] Code masih executable
+
+OBFUSCATE INLINE
+374. [ ] Paste code di textarea
+375. [ ] Submit berhasil
+376. [ ] Result muncul di bawah
+377. [ ] Copy button berfungsi
+378. [ ] Download button berfungsi
+
+BASH LICENSE INJECTION
+379. [ ] Tab "Bash License Injection" muncul
+380. [ ] Upload bash script
+381. [ ] Pilih product untuk license validation
+382. [ ] Submit berhasil
+383. [ ] Download script dengan license validation
+384. [ ] Script berfungsi dengan benar
+
+HISTORY
+385. [ ] Tab "History" menampilkan list
+386. [ ] Table: Filename, Type, Status, Created At, Actions
+387. [ ] Button "Download" per item berfungsi
+388. [ ] Button "Delete" berfungsi
+389. [ ] Filter by date range berfungsi
+
+===============================================================================
+SECTION 9: REPORTS (ADMIN)
+===============================================================================
+
+REPORTS PAGE
+390. [ ] Akses /reports berhasil
+391. [ ] Section "License Reports" muncul
+392. [ ] Section "Customer Reports" muncul
+393. [ ] Section "Revenue Reports" muncul
+394. [ ] Date range picker muncul
+
+LICENSE REPORTS
+395. [ ] Filter by date range
+396. [ ] Filter by status
+397. [ ] Filter by product
+398. [ ] Button "Export CSV" muncul
+399. [ ] Button "Export PDF" muncul
+400. [ ] Click "Export CSV" download file
+401. [ ] File CSV format benar
+402. [ ] Data di CSV sesuai filter
+403. [ ] Click "Export PDF" download file
+404. [ ] File PDF format benar
+405. [ ] PDF berisi chart dan table
+
+CUSTOMER REPORTS
+406. [ ] Filter by date range
+407. [ ] Button "Export CSV" muncul
+408. [ ] Export CSV berhasil
+409. [ ] Data customer lengkap di CSV
+
+REVENUE REPORTS
+410. [ ] Filter by date range
+411. [ ] Chart revenue muncul
+412. [ ] Table breakdown per product
+413. [ ] Table breakdown per customer
+414. [ ] Export CSV berhasil
+415. [ ] Total revenue benar
+
+INDIVIDUAL LICENSE REPORT
+416. [ ] Dari detail license, click "Generate Report"
+417. [ ] Download PDF berhasil
+418. [ ] PDF berisi: License info, Customer info, QR code, Activations
+
+===============================================================================
+SECTION 10: SETTINGS (ADMIN)
+===============================================================================
+
+SETTINGS PAGE
+420. [ ] Akses /settings berhasil (admin only)
+421. [ ] Tab "General" aktif
+422. [ ] Tab "Email" muncul
+423. [ ] Tab "Email Templates" muncul
+424. [ ] Tab "Advanced" muncul (jika ada)
+
+GENERAL SETTINGS
+425. [ ] Field App Name
+426. [ ] Field App URL
+427. [ ] Field Company Name
+428. [ ] Field Support Email
+429. [ ] Button "Save Settings" muncul
+430. [ ] Submit berhasil
+431. [ ] Success message muncul
+432. [ ] Settings ter-update
+
+EMAIL SETTINGS
+433. [ ] Tab "Email" menampilkan form
+434. [ ] Field SMTP Host
+435. [ ] Field SMTP Port
+436. [ ] Field SMTP Username
+437. [ ] Field SMTP Password (masked)
+438. [ ] Field From Email
+439. [ ] Field From Name
+440. [ ] Checkbox "Enable TLS"
+441. [ ] Button "Test Email" muncul
+442. [ ] Button "Save Email Settings" muncul
+443. [ ] Click "Test Email" muncul dialog
+444. [ ] Input test email address
+445. [ ] Send test email berhasil
+446. [ ] Email diterima di inbox
+447. [ ] Save settings berhasil
+
+EMAIL TEMPLATES
+448. [ ] Akses /settings/email-templates
+449. [ ] Table templates muncul
+450. [ ] Kolom: Name, Type, Language, Variation, Active, Actions
+451. [ ] Filter by type (license, customer, system)
+452. [ ] Filter by language
+453. [ ] Button "Create Template" muncul
+454. [ ] Click template name masuk ke edit
+
+CREATE EMAIL TEMPLATE
+455. [ ] Click "Create Template" masuk ke form
+456. [ ] Field Name
+457. [ ] Dropdown Type (license, customer, system)
+458. [ ] Dropdown Language (en, id)
+459. [ ] Field Design Variation (1, 2, 3)
+460. [ ] Field Subject (support variables)
+461. [ ] WYSIWYG editor atau HTML editor
+462. [ ] List available variables muncul
+463. [ ] Preview button muncul
+464. [ ] Submit berhasil
+465. [ ] Template baru muncul
+
+EDIT EMAIL TEMPLATE
+466. [ ] Form ter-populate dengan data existing
+467. [ ] Update subject berhasil
+468. [ ] Update body berhasil
+469. [ ] Insert variables ke editor
+470. [ ] Preview muncul dengan sample data
+471. [ ] Toggle active/inactive
+472. [ ] Save berhasil
+
+SET DEFAULT TEMPLATE
+473. [ ] Button "Set as Default" muncul
+474. [ ] Click set as default berhasil
+475. [ ] Badge "Default" muncul di template
+
+EMAIL TEMPLATE LOGS
+476. [ ] Akses /settings/email-templates/logs
+477. [ ] Table logs muncul
+478. [ ] Kolom: Template, Recipient, Status, Sent At
+479. [ ] Filter by status (sent, failed)
+480. [ ] Filter by date range
+481. [ ] View error message jika failed
+
+===============================================================================
+SECTION 11: DOCUMENTATION
+===============================================================================
+
+DOCS PAGE
+482. [ ] Akses /docs berhasil
+483. [ ] Documentation muncul
+484. [ ] Section "API Documentation" ada
+485. [ ] Section "License Validation" ada
+486. [ ] Section "Integration Guide" ada
+487. [ ] Code examples muncul
+488. [ ] Copy code button berfungsi
+
+===============================================================================
+SECTION 12: CUSTOMER PORTAL - FULL FEATURES
+===============================================================================
+
+CUSTOMER DASHBOARD
+489. [ ] Login sebagai customer berhasil
+490. [ ] Redirect ke /customer/dashboard
+491. [ ] Header customer portal muncul
+492. [ ] Sidebar customer muncul
+493. [ ] Welcome message muncul: "Welcome, [Customer Name]"
+494. [ ] Customer email muncul di header
+
+QUOTA CARDS
+495. [ ] Card "License Quota" muncul
+496. [ ] Menampilkan used/limit yang benar
+497. [ ] Jika limit 0, tampil ∞ (unlimited)
+498. [ ] Progress bar muncul
+499. [ ] Progress bar warna: blue (<70%), yellow (70-90%), red (>90%)
+500. [ ] Remaining count benar
+501. [ ] Card "Code Protection Quota" muncul
+502. [ ] Menampilkan used/limit yang benar
+503. [ ] Progress bar muncul dengan warna yang sesuai
+504. [ ] Remaining count benar
+
+STATISTICS CARDS
+505. [ ] Card "Total Licenses" muncul dengan angka benar
+506. [ ] Card "Active Licenses" muncul dengan angka benar
+507. [ ] Card "Expired Licenses" muncul dengan angka benar
+508. [ ] Card "Code Protections" muncul dengan angka benar
+509. [ ] Icon di setiap card muncul
+
+RECENT LICENSES
+510. [ ] Section "Recent Licenses" muncul
+511. [ ] Table 5 licenses terbaru muncul
+512. [ ] Kolom: License Key, Product, Type, Status, Expires
+513. [ ] Jika tidak ada license: "No licenses yet" dengan link
+
+PASSWORD CHANGE WARNING
+514. [ ] Jika must_change_password = 1, red banner muncul
+515. [ ] Banner: "You must change your password"
+516. [ ] Link to profile page
+517. [ ] Banner hilang setelah change password
+
+CUSTOMER SIDEBAR MENU
+518. [ ] Menu Dashboard (icon home)
+519. [ ] Menu My Licenses (icon key)
+520. [ ] Menu Generate License (icon plus)
+521. [ ] Menu Products (icon box)
+522. [ ] Menu Code Protection (icon shield)
+523. [ ] Menu My Profile (icon user)
+524. [ ] Menu Logout (icon logout)
+525. [ ] Active menu ter-highlight
+
+MY LICENSES PAGE (CUSTOMER)
+526. [ ] Akses /customer/licenses berhasil
+527. [ ] Table licenses muncul
+528. [ ] Kolom: License Key, Product, Type, Status, Activations, Expires, Actions
+529. [ ] License key dengan copy button
+530. [ ] Click copy berhasil copy ke clipboard
+531. [ ] Toast "Copied!" muncul
+532. [ ] Status badge dengan warna sesuai
+533. [ ] Activations: current/max
+534. [ ] Expiry date format benar
+535. [ ] Button "Download" per row
+536. [ ] Click download berhasil
+537. [ ] File .txt berisi license key dan info
+538. [ ] Jika tidak ada license: "No Licenses Yet" dengan button "Generate License"
+
+GENERATE LICENSE PAGE (CUSTOMER)
+539. [ ] Akses /customer/generate-license berhasil
+540. [ ] Quota Status Card muncul di top
+541. [ ] Card warna blue (jika quota OK) atau red (jika habis)
+542. [ ] Menampilkan used/limit
+543. [ ] Menampilkan remaining
+544. [ ] Form generate muncul
+545. [ ] Dropdown Product
+546. [ ] Dropdown hanya menampilkan products yang customer punya access
+547. [ ] Setelah pilih product, dropdown License Type muncul
+548. [ ] License types sesuai product
+549. [ ] License type details muncul setelah dipilih
+550. [ ] Details: Duration, Max Activations
+551. [ ] Button "Generate License" muncul
+552. [ ] Button "Cancel" muncul
+
+GENERATE LICENSE - NORMAL FLOW
+553. [ ] Pilih product
+554. [ ] Pilih license type
+555. [ ] Click "Generate License"
+556. [ ] Button berubah "Generating..." dengan loading spinner
+557. [ ] Success modal muncul
+558. [ ] Modal header: green checkmark icon
+559. [ ] Modal title: "License Generated Successfully!"
+560. [ ] License key muncul di modal
+561. [ ] Copy button di modal berfungsi
+562. [ ] Button "View All Licenses" di modal
+563. [ ] Button "Generate Another" di modal
+564. [ ] Click "View All Licenses" redirect ke /customer/licenses
+565. [ ] Click "Generate Another" close modal dan reset form
+566. [ ] License quota berkurang
+567. [ ] Refresh page, quota update benar
+
+GENERATE LICENSE - QUOTA EXCEEDED
+568. [ ] Generate license sampai quota limit
+569. [ ] Try generate lagi saat quota habis
+570. [ ] Error banner merah muncul: "License quota exceeded!"
+571. [ ] Error message detail muncul
+572. [ ] Form disabled atau button disabled
+573. [ ] Tidak bisa submit form
+
+GENERATE LICENSE - NO ACCESS
+574. [ ] Customer tidak punya access ke product tertentu
+575. [ ] Product tidak muncul di dropdown
+576. [ ] Try manual POST request dengan product ID
+577. [ ] Error 403 Forbidden
+578. [ ] Error message: "No access to this product"
+
+PRODUCTS PAGE (CUSTOMER - READ ONLY)
+579. [ ] Akses /customer/products berhasil
+580. [ ] Blue info banner muncul
+581. [ ] Banner: "This is read-only. You can only generate licenses for assigned products."
+582. [ ] Grid cards products muncul
+583. [ ] Semua products muncul (tidak hanya yang punya access)
+584. [ ] Setiap card: Icon, Name, Description, Version
+585. [ ] Card: License Types count
+586. [ ] Card: Status badge (Active/Inactive)
+587. [ ] Button "View Details" per card
+588. [ ] Card untuk product dengan access ada indicator (badge/icon)
+
+PRODUCT DETAILS MODAL (CUSTOMER)
+589. [ ] Click "View Details" muncul modal
+590. [ ] Modal header: Product name
+591. [ ] Product description
+592. [ ] Product version
+593. [ ] Available license types count
+594. [ ] Info banner: "You can generate licenses for this product" (jika punya access)
+595. [ ] Atau: "You don't have access to generate licenses" (jika tidak punya)
+596. [ ] Button "Generate License" (jika punya access)
+597. [ ] Click "Generate License" redirect ke generate page
+598. [ ] Button "Close" modal
+599. [ ] Click outside modal, modal close
+600. [ ] Press Escape, modal close
+
+CODE PROTECTION PAGE (CUSTOMER)
+601. [ ] Akses /customer/code-protection berhasil
+602. [ ] Quota Status Card muncul (purple card)
+603. [ ] Card menampilkan used/limit
+604. [ ] Progress bar muncul
+605. [ ] Remaining count
+606. [ ] Form generate code protection muncul
+607. [ ] Textarea "Code Input"
+608. [ ] Placeholder di textarea
+609. [ ] Dropdown "Expiration"
+610. [ ] Options: Never, 7 days, 30 days, 60 days, 90 days, 180 days, 1 year
+611. [ ] Button "Generate Protection Code"
+612. [ ] Section "Protection History" muncul di bawah
+
+GENERATE CODE PROTECTION - NORMAL
+613. [ ] Isi code di textarea: "console.log('test');"
+614. [ ] Pilih expiration: "30 days"
+615. [ ] Click "Generate Protection Code"
+616. [ ] Button berubah "Generating..." dengan loading
+617. [ ] Success toast muncul: "Code protection generated!"
+618. [ ] Page reload
+619. [ ] Code protection baru muncul di history table
+620. [ ] Quota berkurang
+621. [ ] Form reset
+
+GENERATE CODE PROTECTION - QUOTA EXCEEDED
+622. [ ] Generate sampai quota limit
+623. [ ] Try generate lagi
+624. [ ] Red error banner: "Code protection quota exceeded!"
+625. [ ] Form disabled
+626. [ ] Button disabled
+
+PROTECTION HISTORY TABLE
+627. [ ] Table muncul dengan kolom: Protected Code (hash), Original (truncated), Status, Expires, Actions
+628. [ ] Hash dengan copy button
+629. [ ] Click copy berhasil
+630. [ ] Original code ter-truncate (max 50 chars)
+631. [ ] Status badge: Active (green) / Expired (red)
+632. [ ] Expiry date format benar
+633. [ ] Button "View" per row
+
+VIEW CODE PROTECTION MODAL
+634. [ ] Click "View" muncul modal
+635. [ ] Modal header: "Code Protection Details"
+636. [ ] Original code muncul lengkap
+637. [ ] Protected code (hash) muncul
+638. [ ] Copy button untuk hash
+639. [ ] Expiration date
+640. [ ] Status
+641. [ ] Button "Close"
+
+MY PROFILE PAGE (CUSTOMER)
+642. [ ] Akses /customer/profile berhasil
+643. [ ] Section "Profile Information" muncul
+644. [ ] Form ter-populate dengan data customer
+645. [ ] Field Name (editable)
+646. [ ] Field Email (readonly/disabled)
+647. [ ] Field Company (editable)
+648. [ ] Field Phone (editable)
+649. [ ] Field Address (textarea, editable)
+650. [ ] Button "Save Changes"
+
+UPDATE PROFILE
+651. [ ] Update name: "New Customer Name"
+652. [ ] Update company: "New Company Inc"
+653. [ ] Update phone: "+621234567890"
+654. [ ] Update address: "New Address 123"
+655. [ ] Click "Save Changes"
+656. [ ] Success toast: "Profile updated successfully"
+657. [ ] Data tersimpan
+658. [ ] Refresh page, data tetap updated
+
+CHANGE PASSWORD SECTION
+659. [ ] Section "Change Password" muncul di profile
+660. [ ] Field "Current Password" (password type)
+661. [ ] Field "New Password" (password type)
+662. [ ] Field "Confirm Password" (password type)
+663. [ ] Help text: "Password must be at least 8 characters"
+664. [ ] Button "Change Password"
+
+CHANGE PASSWORD - SUCCESS
+665. [ ] Isi Current Password: (password lama)
+666. [ ] Isi New Password: "newpassword123"
+667. [ ] Isi Confirm Password: "newpassword123"
+668. [ ] Click "Change Password"
+669. [ ] Success toast: "Password changed successfully"
+670. [ ] Form password clear
+671. [ ] Logout dan login dengan password baru berhasil
+
+CHANGE PASSWORD - VALIDATION ERRORS
+672. [ ] New password < 8 chars → Error: "Password must be at least 8 characters"
+673. [ ] New password ≠ Confirm password → Error: "Passwords do not match"
+674. [ ] Wrong current password → Error: "Current password is incorrect"
+675. [ ] Empty current password → Error: "Current password is required"
+676. [ ] Empty new password → Error: "New password is required"
+
+FORCED PASSWORD CHANGE
+677. [ ] Set customer must_change_password = 1 di database
+678. [ ] Login customer
+679. [ ] Red warning banner muncul di semua pages
+680. [ ] Try access /customer/dashboard → Redirect ke /customer/profile
+681. [ ] Warning message: "You must change your password before continuing"
+682. [ ] Change password berhasil
+683. [ ] Warning banner hilang
+684. [ ] Bisa access semua pages
+
+ACCOUNT STATUS CARD (SIDEBAR - CUSTOMER)
+685. [ ] Card "Account Status" muncul di profile page
+686. [ ] Status: Active (green badge)
+687. [ ] Customer ID muncul
+688. [ ] Last Login timestamp
+689. [ ] Member Since date
+690. [ ] Format tanggal benar
+
+QUOTAS SUMMARY CARD (CUSTOMER)
+691. [ ] Card "Quotas Summary" muncul di profile
+692. [ ] License Quota progress bar
+693. [ ] Menampilkan used/limit
+694. [ ] Code Protection Quota progress bar
+695. [ ] Menampilkan used/limit
+696. [ ] Progress bar colors benar
+
+CUSTOMER LOGOUT
+697. [ ] Click "Logout" di sidebar
+698. [ ] Redirect ke /customer/login
+699. [ ] Session cleared
+700. [ ] Try access /customer/dashboard → Redirect ke login
+
+===============================================================================
+SECTION 13: API ENDPOINTS (PUBLIC)
+===============================================================================
+
+API - VALIDATE LICENSE
+701. [ ] Endpoint POST /api/validate tersedia
+702. [ ] Request body: { "license_key": "XXXX-XXXX-XXXX-XXXX" }
+703. [ ] Response success: { "valid": true, "license": {...} }
+704. [ ] Response invalid key: { "valid": false, "error": "Invalid license key" }
+705. [ ] Response expired: { "valid": false, "message": "License expired" }
+706. [ ] Response suspended: { "valid": false, "message": "License is suspended" }
+707. [ ] Response revoked: { "valid": false, "message": "License is revoked" }
+708. [ ] Hardware binding check berfungsi
+709. [ ] Auto create activation jika hardware_id baru
+710. [ ] Max activations check berfungsi
+711. [ ] Response max activation: { "valid": false, "error": "Maximum activations reached" }
+712. [ ] Update last_check timestamp
+713. [ ] Features included di response
+
+API - DEACTIVATE LICENSE
+714. [ ] Endpoint POST /api/deactivate tersedia
+715. [ ] Request: { "license_key": "...", "hardware_id": "..." }
+716. [ ] Response success: { "success": true }
+717. [ ] Activation di-set is_active = 0
+718. [ ] Current activations count berkurang
+719. [ ] History tercatat
+
+API - GET LICENSE INFO
+720. [ ] Endpoint GET /api/license/:key tersedia
+721. [ ] Response berisi license info lengkap
+722. [ ] Product info included
+723. [ ] Customer info included
+724. [ ] Features included
+725. [ ] Activations info included
+
+API - GET LICENSE TYPE FEATURES
+726. [ ] Endpoint GET /api/license-types/:id/features tersedia
+727. [ ] Response: { "success": true, "features": [...] }
+728. [ ] Features list benar
+
+===============================================================================
+SECTION 14: SECURITY & AUTHORIZATION
+===============================================================================
+
+AUTHENTICATION
+729. [ ] Access protected route tanpa login → Redirect ke login
+730. [ ] Access customer route tanpa login → Redirect ke customer login
+731. [ ] Session timeout works (test dengan expired session)
+732. [ ] Session persists after browser refresh
+733. [ ] Logout clears session completely
+
+AUTHORIZATION - ADMIN
+734. [ ] Admin bisa akses semua admin routes
+735. [ ] Admin bisa CRUD products
+736. [ ] Admin bisa CRUD customers
+737. [ ] Admin bisa CRUD licenses
+738. [ ] Admin bisa manage users
+739. [ ] Admin bisa manage roles & permissions
+740. [ ] Admin bisa access settings
+741. [ ] Admin bisa view reports
+742. [ ] Admin tidak bisa access customer portal routes (kecuali via impersonation)
+
+AUTHORIZATION - USER (NON-ADMIN)
+743. [ ] User bisa akses dashboard
+744. [ ] User bisa view products (read-only)
+745. [ ] User bisa view customers (read-only)
+746. [ ] User bisa view licenses (read-only)
+747. [ ] User tidak bisa create/edit/delete products
+748. [ ] User tidak bisa create/edit/delete customers
+749. [ ] User tidak bisa create/edit/delete licenses
+750. [ ] User tidak bisa access /users
+751. [ ] User tidak bisa access /roles
+752. [ ] User tidak bisa access /settings
+753. [ ] User bisa edit profile sendiri
+754. [ ] User tidak bisa edit profile user lain
+
+AUTHORIZATION - CUSTOMER
+755. [ ] Customer hanya bisa view licenses sendiri
+756. [ ] Customer tidak bisa view licenses customer lain
+757. [ ] Customer hanya bisa generate license untuk products yang di-assign
+758. [ ] Customer tidak bisa akses admin routes
+759. [ ] Customer bisa view semua products (read-only)
+760. [ ] Customer bisa update profile sendiri
+761. [ ] Customer bisa change password sendiri
+
+DATA ISOLATION
+762. [ ] Customer A tidak bisa lihat data customer B
+763. [ ] Query licenses by customer_id benar
+764. [ ] URL manipulation tidak bisa bypass authorization
+765. [ ] Try akses /customer/licenses dengan customer lain → Forbidden atau empty
+
+PASSWORD SECURITY
+766. [ ] Password tidak pernah muncul di response
+767. [ ] Password di database ter-hash (bcrypt)
+768. [ ] Password tidak ter-log di console
+769. [ ] Password field type="password" di form
+
+===============================================================================
+SECTION 15: EDGE CASES & ERROR HANDLING
+===============================================================================
+
+EDGE CASES - QUOTAS
+770. [ ] Customer dengan license_limit = 0 → Unlimited, bisa generate tanpa batas
+771. [ ] Customer dengan license_limit = 5, used = 5 → Tidak bisa generate
+772. [ ] Customer dengan code_protection_limit = 0 → Unlimited
+773. [ ] Generate license saat exactly at limit → Error
+774. [ ] Race condition: 2 requests simultaneous → Hanya 1 succeed (test manual)
+
+EDGE CASES - LICENSES
+775. [ ] License dengan expiry_date null → Tidak expire
+776. [ ] License expired otomatis ter-update status saat validate
+777. [ ] License dengan max_activations = 0 → Unlimited activations
+778. [ ] License suspended tidak bisa di-validate
+779. [ ] License revoked tidak bisa di-activate lagi
+
+EDGE CASES - DATA
+780. [ ] Customer dengan 0 licenses → UI handle gracefully, muncul empty state
+781. [ ] Customer dengan 0 quotas → Muncul 0/∞
+782. [ ] Product dengan 0 license types → Error atau warning saat create license
+783. [ ] License key dengan special chars → Tidak allowed
+784. [ ] License key case sensitive atau insensitive? (test)
+
+ERROR HANDLING
+785. [ ] Network error saat generate license → Error toast muncul
+786. [ ] Database error → User-friendly message, tidak expose stack trace
+787. [ ] Invalid input → Validation error muncul
+788. [ ] 404 page muncul untuk route tidak ada
+789. [ ] 403 page muncul untuk unauthorized access
+790. [ ] 500 error page muncul untuk server error
+791. [ ] Error di console tidak expose sensitive data
+
+FORM VALIDATION
+792. [ ] Required fields ditandai dengan * atau label
+793. [ ] Submit form kosong → Validation errors muncul
+794. [ ] Email format salah → "Invalid email format"
+795. [ ] Number field dengan huruf → Validation error
+796. [ ] Negative number di quota → Tidak allowed atau error
+797. [ ] Special characters di license key → Tidak allowed
+
+===============================================================================
+SECTION 16: UI/UX & RESPONSIVE
+===============================================================================
+
+RESPONSIVE DESIGN
+798. [ ] Desktop (1920px): Semua layout rapi
+799. [ ] Laptop (1366px): Semua layout rapi
+800. [ ] Tablet (768px): Sidebar collapse atau responsive
+801. [ ] Mobile (375px): Table scroll horizontal, cards stack vertical
+802. [ ] Mobile: Form inputs full width
+803. [ ] Mobile: Buttons stack vertical
+804. [ ] Mobile: Navbar hamburger menu muncul
+
+TOAST NOTIFICATIONS
+805. [ ] Success toast muncul hijau
+806. [ ] Error toast muncul merah
+807. [ ] Info toast muncul biru
+808. [ ] Warning toast muncul kuning
+809. [ ] Toast auto-dismiss setelah 5 detik
+810. [ ] Toast bisa di-close manual dengan X button
+811. [ ] Multiple toasts stack dengan benar
+
+LOADING STATES
+812. [ ] Button shows loading spinner saat submit
+813. [ ] Button disabled saat loading
+814. [ ] Text button berubah "Loading..." atau "Generating..."
+815. [ ] Page loader muncul saat transition
+816. [ ] Table skeleton muncul saat load data (optional)
+
+MODALS
+817. [ ] Modal muncul center screen
+818. [ ] Modal overlay darkens background
+819. [ ] Click outside modal → Modal close
+820. [ ] Press Escape → Modal close
+821. [ ] Modal body scrollable jika content panjang
+822. [ ] Multiple modals stack dengan benar (z-index)
+
+EMPTY STATES
+823. [ ] No licenses: "No licenses yet" dengan icon dan CTA button
+824. [ ] No customers: "No customers yet" dengan button "Create Customer"
+825. [ ] No products: Empty state dengan CTA
+826. [ ] No data di table: "No data available" message
+827. [ ] Search no results: "No results found" message
+
+ICONS & BADGES
+828. [ ] Icons muncul dengan benar (Font Awesome atau lainnya)
+829. [ ] Status badge warna benar:
+830. [ ]   - Active: Green
+831. [ ]   - Expired: Red
+832. [ ]   - Suspended: Yellow/Orange
+833. [ ]   - Revoked: Gray/Dark
+834. [ ] Badge rounded corners
+835. [ ] Icons aligned dengan text
+
+BUTTONS
+836. [ ] Primary button: Blue/Brand color
+837. [ ] Secondary button: Gray
+838. [ ] Danger button: Red
+839. [ ] Success button: Green
+840. [ ] Button hover effect
+841. [ ] Button active/focus state
+842. [ ] Button disabled state (grayed out, cursor not-allowed)
+
+===============================================================================
+SECTION 17: PERFORMANCE
+===============================================================================
+
+PAGE LOAD
+843. [ ] Dashboard load < 2 seconds
+844. [ ] License list load < 3 seconds
+845. [ ] Customer list load < 3 seconds
+846. [ ] Product list load < 2 seconds
+847. [ ] No excessive database queries (check console/logs)
+
+DATABASE
+848. [ ] No N+1 query problems (check logs)
+849. [ ] Indexes berfungsi (check query plans)
+850. [ ] Large lists ter-paginate (jika sudah diimplementasi)
+851. [ ] Queries optimized (JOIN instead of multiple queries)
+
+ASSETS
+852. [ ] CSS minified
+853. [ ] JS minified
+854. [ ] Images optimized
+855. [ ] No console errors
+856. [ ] No console warnings yang critical
+
+===============================================================================
+SECTION 18: EMAIL INTEGRATION (IF SMTP CONFIGURED)
+===============================================================================
+
+EMAIL - CUSTOMER ACCESS
+857. [ ] Create customer dengan "Send Access Email" checked
+858. [ ] Email terkirim ke customer email
+859. [ ] Email subject: "Welcome to Customer Portal..."
+860. [ ] Email body HTML format benar
+861. [ ] Email berisi: Name, Email, Password (auto-generated)
+862. [ ] Email berisi: License Limit, Code Protection Limit
+863. [ ] Email berisi: Login URL button
+864. [ ] Email berisi: Security warning "Change password after first login"
+865. [ ] Click login button di email → Redirect ke /customer/login
+866. [ ] Password di email bisa digunakan untuk login
+
+EMAIL - LICENSE CREATED (IF CONFIGURED)
+867. [ ] Create license
+868. [ ] Email terkirim ke customer
+869. [ ] Email subject benar
+870. [ ] Email berisi license key
+871. [ ] Email berisi product info
+872. [ ] Email berisi expiry date
+
+EMAIL LOGS
+873. [ ] Akses /settings/email-templates/logs
+874. [ ] Email sent ter-log dengan status "sent"
+875. [ ] Jika SMTP error, ter-log dengan status "failed"
+876. [ ] Error message muncul jika failed
+
+===============================================================================
+SECTION 19: ACTIVITY LOGGING & AUDIT TRAIL
+===============================================================================
+
+ACTIVITY LOGS
+877. [ ] Customer login ter-log di activity_logs
+878. [ ] Admin login ter-log
+879. [ ] License generate ter-log
+880. [ ] License status change ter-log
+881. [ ] Customer create ter-log
+882. [ ] Product create ter-log
+883. [ ] User create ter-log
+884. [ ] Settings update ter-log
+885. [ ] Code protection generation ter-log
+
+LICENSE HISTORY
+886. [ ] License create ter-log di license_history
+887. [ ] License renew ter-log
+888. [ ] License suspend ter-log
+889. [ ] License activate ter-log
+890. [ ] License revoke ter-log
+891. [ ] Device activation ter-log
+892. [ ] Device deactivation ter-log
+893. [ ] History menampilkan: Action, Old Status, New Status, Description, Date
+
+CUSTOMER SESSIONS
+894. [ ] Customer login ter-log di customer_sessions
+895. [ ] Admin impersonation ter-log dengan admin_id
+896. [ ] is_impersonation = 1 untuk impersonation
+897. [ ] IP address ter-record
+898. [ ] User agent ter-record
+899. [ ] Logout ter-update logout_time
+
+===============================================================================
+SECTION 20: DATABASE INTEGRITY
+===============================================================================
+
+FOREIGN KEYS
+900. [ ] Delete product → Related licenses terhapus (cascade)
+901. [ ] Delete customer → Related licenses terhapus (cascade)
+902. [ ] Delete license → Related activations terhapus (cascade)
+903. [ ] Delete license → Related history terhapus (cascade)
+904. [ ] Delete license type → Related licenses update atau prevent delete
+
+UNIQUE CONSTRAINTS
+905. [ ] Customer email harus unique
+906. [ ] User email harus unique
+907. [ ] License key harus unique
+908. [ ] Try create duplicate email → Error
+909. [ ] Try create duplicate license key → Error (auto-generate harus unique)
+
+DATA VALIDATION
+910. [ ] Status values hanya: active, expired, suspended, revoked
+911. [ ] Boolean fields hanya: 0 atau 1
+912. [ ] Dates format benar (YYYY-MM-DD HH:MM:SS)
+913. [ ] Numbers tidak negative (untuk quotas)
+914. [ ] Current activations <= Max activations
+
+===============================================================================
+SECTION 21: MIGRATION & SEEDING
+===============================================================================
+
+DATABASE SETUP
+915. [ ] Run pnpm db:setup → Database created
+916. [ ] All tables created
+917. [ ] Indexes created
+918. [ ] No errors
+
+DATABASE MIGRATION
+919. [ ] Run pnpm db:migrate → All migrations run
+920. [ ] Migration 001: activity_logs table created
+921. [ ] Migration 002: users table updated
+922. [ ] Migration 003: settings table created
+923. [ ] Migration 004: app_url updated
+924. [ ] Migration 005: roles & permissions created
+925. [ ] Migration 006: email_templates created
+926. [ ] Migration 007: email_template_defaults created
+927. [ ] Migration 008: code_obfuscations created
+928. [ ] Migration 009: bash_license_injection created
+929. [ ] Migration 010: features refactor
+930. [ ] Migration 011: features simplify
+931. [ ] Migration 012: remove license_type column
+932. [ ] Migration 013: customer_portal tables created
+933. [ ] No errors during migration
+
+DATABASE SEEDING
+934. [ ] Run pnpm db:seed
+935. [ ] Admin user created: admin@example.com / admin123
+936. [ ] Sample products created
+937. [ ] Sample license types created
+938. [ ] Sample customer created: customer@example.com / customer123
+939. [ ] Sample features created
+940. [ ] Sample licenses created
+941. [ ] Email templates created
+942. [ ] Customer portal access created
+943. [ ] Console menampilkan credentials
+944. [ ] No errors during seeding
+
+DATABASE REBUILD
+945. [ ] Run pnpm db:rebuild
+946. [ ] Old database deleted
+947. [ ] Fresh database created
+948. [ ] All migrations run
+949. [ ] Seeding completed
+950. [ ] Can login dengan seeded credentials
+
+===============================================================================
+SECTION 22: SECURITY TESTING
+===============================================================================
+
+SQL INJECTION TESTING
+951. [ ] Try inject di license key search: ' OR '1'='1
+952. [ ] Try inject di customer email: admin'--
+953. [ ] Try inject di product name: '; DROP TABLE products;--
+954. [ ] Semua inputs ter-sanitize, tidak bisa inject
+
+XSS TESTING
+955. [ ] Try input script tag di customer name: <script>alert('XSS')</script>
+956. [ ] Try input di product description: <img src=x onerror=alert('XSS')>
+957. [ ] Try input di notes field
+958. [ ] All inputs ter-escape di output, tidak execute script
+
+AUTHORIZATION BYPASS
+959. [ ] Try akses /users sebagai non-admin → 403 Forbidden
+960. [ ] Try akses /settings sebagai non-admin → 403
+961. [ ] Try akses admin route dengan customer session → Redirect atau 403
+962. [ ] Try edit user lain sebagai non-admin → 403
+963. [ ] Try delete license sebagai non-admin → 403
+
+SESSION HIJACKING
+964. [ ] Copy session cookie ke browser lain → Session berfungsi (expected)
+965. [ ] Logout → Session cookie deleted
+966. [ ] Old session cookie tidak bisa digunakan lagi
+
+CSRF TESTING
+967. [ ] Try POST request tanpa session → Unauthorized
+968. [ ] Try POST from external domain → Blocked (jika CORS configured)
+
+PASSWORD SECURITY
+969. [ ] View page source → Password tidak terlihat
+970. [ ] Network tab → Password tidak ter-log plain text (check POST body)
+971. [ ] Database → Password ter-hash bcrypt
+972. [ ] Weak password rejected (jika validation ketat)
+
+===============================================================================
+SECTION 23: BROWSER COMPATIBILITY
+===============================================================================
+
+CHROME
+973. [ ] All features work di Chrome latest
+974. [ ] No console errors
+975. [ ] UI render benar
+
+FIREFOX
+976. [ ] All features work di Firefox latest
+977. [ ] No console errors
+978. [ ] UI render benar
+
+SAFARI
+979. [ ] All features work di Safari (Mac)
+980. [ ] No console errors
+981. [ ] UI render benar
+
+EDGE
+982. [ ] All features work di Edge latest
+983. [ ] No console errors
+984. [ ] UI render benar
+
+MOBILE BROWSERS
+985. [ ] Test di Chrome Mobile (Android)
+986. [ ] Test di Safari Mobile (iOS)
+987. [ ] Touch interactions work
+988. [ ] Forms dapat diisi dengan mobile keyboard
+
+===============================================================================
+SECTION 24: FINAL CHECKS
+===============================================================================
+
+PRODUCTION READINESS
+989. [ ] Environment variables configured (.env)
+990. [ ] SESSION_SECRET is strong random string
+991. [ ] Database path configured
+992. [ ] SMTP settings configured (if using email)
+993. [ ] APP_URL configured correctly
+994. [ ] NODE_ENV set to production
+995. [ ] Debug logging disabled
+996. [ ] Error messages tidak expose stack traces
+997. [ ] Default credentials changed
+998. [ ] HTTPS enabled (deployment)
+999. [ ] CORS configured properly
+1000. [ ] Rate limiting implemented (recommended)
+
+BACKUP & RECOVERY
+1001. [ ] Database backup strategy ada
+1002. [ ] Test restore database dari backup
+1003. [ ] Backup automated (recommended)
+
+DOCUMENTATION
+1004. [ ] README.md lengkap
+1005. [ ] API documentation ada
+1006. [ ] Deployment guide ada
+1007. [ ] User manual ada
+
+===============================================================================
+                                    END OF CHECKLIST
+===============================================================================
+
+Total Checklist Items: 1007
+
+Status Summary:
+[ ] Not Tested: ____
+[X] Passed: ____
+[!] Failed: ____
+
+Tested By: ________________
+Date: ________________
+Environment: Development / Staging / Production
+Version: 1.0.0
+
+Notes:
+________________________________________________________________________________
+________________________________________________________________________________
+________________________________________________________________________________
+________________________________________________________________________________
+
+Critical Issues Found:
+________________________________________________________________________________
+________________________________________________________________________________
+________________________________________________________________________________
+
+Recommendations:
+________________________________________________________________________________
+________________________________________________________________________________
+________________________________________________________________________________
+
+===============================================================================

@@ -13,7 +13,7 @@
       <header class="bg-white shadow-sm">
         <div class="flex items-center justify-between p-4">
           <h2 class="text-xl font-semibold text-gray-800">Code Protection History</h2>
-          <span class="text-sm text-gray-600"><%= moment().format('dddd, MMMM D, YYYY') %></span>
+          <span class="text-sm text-gray-600"><%= moment().tz(timezone).format('dddd, MMMM D, YYYY') %></span>
         </div>
       </header>
 
@@ -96,10 +96,10 @@
                     <tr class="hover:bg-gray-50">
                       <td class="px-6 py-4 whitespace-nowrap">
                         <div class="text-sm text-gray-800 font-medium">
-                          <%= moment(obf.created_at).format('MMM DD, YYYY') %>
+                          <%= moment(obf.created_at).tz(timezone).format('MMM DD, YYYY') %>
                         </div>
                         <div class="text-xs text-gray-500">
-                          <%= moment(obf.created_at).format('h:mm A') %>
+                          <%= moment(obf.created_at).tz(timezone).format('h:mm A') %>
                         </div>
                       </td>
                       <td class="px-6 py-4">

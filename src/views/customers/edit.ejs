@@ -12,7 +12,7 @@
       <header class="bg-white shadow-sm">
         <div class="flex items-center justify-between p-4">
           <h2 class="text-xl font-semibold text-gray-800">Edit Customer</h2>
-          <span class="text-sm text-gray-600"><%= moment().format('dddd, MMMM D, YYYY') %></span>
+          <span class="text-sm text-gray-600"><%= moment().tz(timezone).format('dddd, MMMM D, YYYY') %></span>
         </div>
       </header>
       <main class="flex-1 overflow-y-auto p-6">
@@ -49,6 +49,84 @@
               <label class="block text-gray-700 font-medium mb-2">Address</label>
               <textarea name="address" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"><%= customer.address || '' %></textarea>
             </div>
+
+            <!-- Customer Portal Settings -->
+            <div class="border-t border-gray-200 pt-6 mb-6">
+              <h4 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fas fa-cog text-blue-500 mr-2"></i>
+                Customer Portal Settings
+              </h4>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class="block text-gray-700 font-medium mb-2">
+                    License Limit
+                    <span class="text-xs text-gray-500 ml-1">(0 = unlimited)</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="license_limit"
+                    value="<%= customer.license_limit || 0 %>"
+                    min="0"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    placeholder="0">
+                  <p class="text-xs text-gray-500 mt-1">Maximum number of licenses this customer can generate</p>
+                </div>
+
+                <div>
+                  <label class="block text-gray-700 font-medium mb-2">
+                    Code Protection Limit
+                    <span class="text-xs text-gray-500 ml-1">(0 = unlimited)</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="code_protection_limit"
+                    value="<%= customer.code_protection_limit || 0 %>"
+                    min="0"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    placeholder="0">
+                  <p class="text-xs text-gray-500 mt-1">Maximum number of code protections this customer can generate</p>
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <label class="block text-gray-700 font-medium mb-2">
+                  <i class="fas fa-box-open mr-1"></i>
+                  Product Access
+                </label>
+                <p class="text-sm text-gray-600 mb-3">Select which products this customer can generate licenses for:</p>
+
+                <div class="border border-gray-300 rounded-lg p-4 max-h-48 overflow-y-auto bg-gray-50">
+                  <% if (products && products.length > 0) { %>
+                    <div class="space-y-2">
+                      <% products.forEach(product => { %>
+                        <label class="flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            name="product_access"
+                            value="<%= product.id %>"
+                            <%= accessedProductIds.includes(product.id) ? 'checked' : '' %>
+                            class="form-checkbox h-5 w-5 text-blue-600">
+                          <div class="ml-3">
+                            <span class="text-gray-800 font-medium"><%= product.name %></span>
+                            <% if (product.description) { %>
+                              <p class="text-xs text-gray-500"><%= product.description %></p>
+                            <% } %>
+                          </div>
+                        </label>
+                      <% }) %>
+                    </div>
+                  <% } else { %>
+                    <p class="text-gray-500 text-sm">No products available. Please create products first.</p>
+                  <% } %>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">
+                  <i class="fas fa-info-circle"></i>
+                  Customer will only be able to generate licenses for selected products
+                </p>
+              </div>
+            </div>
+
             <div class="mb-6">
               <label class="flex items-center">
                 <input type="checkbox" name="is_active" <%= customer.is_active ? 'checked' : '' %> class="form-checkbox h-5 w-5 text-blue-600">

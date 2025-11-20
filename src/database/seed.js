@@ -50,42 +50,42 @@ async function seed() {
 
     // Create license types for Product A (prices in IDR/Rupiah)
     const licenseTypesA = [
-      ['Trial', 'trial', 30, 1, 0, ['Basic features', 'Email support']],
-      ['Basic', 'basic', 365, 1, 1500000, ['All basic features', 'Email support', '5 users']],
-      ['Pro', 'pro', 365, 3, 4500000, ['All features', 'Priority support', '25 users', 'API access']],
-      ['Enterprise', 'enterprise', 365, 10, 15000000, ['Unlimited features', '24/7 support', 'Unlimited users', 'Custom integration']]
+      ['Trial Plan', 30, 1, 0, ['Basic features', 'Email support']],
+      ['Basic Plan', 365, 1, 1500000, ['All basic features', 'Email support', '5 users']],
+      ['Pro Plan', 365, 3, 4500000, ['All features', 'Priority support', '25 users', 'API access']],
+      ['Enterprise Plan', 365, 10, 15000000, ['Unlimited features', '24/7 support', 'Unlimited users', 'Custom integration']]
     ];
 
-    for (const [name, type, duration, maxAct, price, features] of licenseTypesA) {
+    for (const [name, duration, maxAct, price, features] of licenseTypesA) {
       const existing = await db.get(
         'SELECT id FROM license_types WHERE product_id = ? AND name = ?',
         [product1.id, name]
       );
       if (!existing) {
         await db.run(
-          `INSERT INTO license_types (product_id, name, type, duration_days, max_activations, price, features)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [product1.id, name, type, duration, maxAct, price, JSON.stringify(features)]
+          `INSERT INTO license_types (product_id, name, duration_days, max_activations, price, features)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [product1.id, name, duration, maxAct, price, JSON.stringify(features)]
         );
       }
     }
 
     // Create license types for Product B (prices in IDR/Rupiah)
     const licenseTypesB = [
-      ['Trial', 'trial', 14, 1, 0, ['10GB storage', 'Basic features']],
-      ['Standard', 'basic', 365, 2, 2250000, ['100GB storage', 'File sharing', 'Mobile app']]
+      ['Trial Plan', 14, 1, 0, ['10GB storage', 'Basic features']],
+      ['Standard Plan', 365, 2, 2250000, ['100GB storage', 'File sharing', 'Mobile app']]
     ];
 
-    for (const [name, type, duration, maxAct, price, features] of licenseTypesB) {
+    for (const [name, duration, maxAct, price, features] of licenseTypesB) {
       const existing = await db.get(
         'SELECT id FROM license_types WHERE product_id = ? AND name = ?',
         [product2.id, name]
       );
       if (!existing) {
         await db.run(
-          `INSERT INTO license_types (product_id, name, type, duration_days, max_activations, price, features)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [product2.id, name, type, duration, maxAct, price, JSON.stringify(features)]
+          `INSERT INTO license_types (product_id, name, duration_days, max_activations, price, features)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [product2.id, name, duration, maxAct, price, JSON.stringify(features)]
         );
       }
     }
@@ -259,10 +259,170 @@ async function seed() {
       console.log('✓ Updated admin user with role_id');
     }
 
+    // Create sample customer for customer portal (skip if exists)
+    const existingCustomer = await db.get('SELECT id FROM customers WHERE email = ?', ['customer@example.com']);
+    let customerId;
+
+    if (existingCustomer) {
+      customerId = existingCustomer.id;
+      console.log('Sample customer already exists, skipping...');
+    } else {
+      const customerPassword = await bcrypt.hash('customer123', 10);
+      const customerResult = await db.run(
+        `INSERT INTO customers (
+          name, email, company, phone, address,
+          password, is_active, must_change_password,
+          license_limit, license_used,
+          code_protection_limit, code_protection_used
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          'John Doe',
+          'customer@example.com',
+          'ABC Corporation',
+          '+1234567890',
+          '123 Main Street, City, Country',
+          customerPassword,
+          1,
+          0, // Password already changed
+          10, // License limit
+          0,  // License used
+          5,  // Code protection limit
+          0   // Code protection used
+        ]
+      );
+      customerId = customerResult.id;
+      console.log('✓ Sample customer created');
+
+      // Grant product access to sample customer
+      await db.run(
+        'INSERT INTO customer_product_access (customer_id, product_id, can_generate_license) VALUES (?, ?, 1)',
+        [customerId, product1.id]
+      );
+      await db.run(
+        'INSERT INTO customer_product_access (customer_id, product_id, can_generate_license) VALUES (?, ?, 1)',
+        [customerId, product2.id]
+      );
+      console.log('✓ Customer product access granted');
+    }
+
+    // Create customer_access email template (skip if exists)
+    const existingTemplate = await db.get(
+      'SELECT id FROM email_templates WHERE name = ? AND language = ? AND design_variation = ?',
+      ['customer_access', 'en', 1]
+    );
+
+    if (existingTemplate) {
+      console.log('Customer access email template already exists, skipping...');
+    } else {
+      await db.run(
+        `INSERT INTO email_templates (
+          name, type, language, design_variation, subject, body_html, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          'customer_access',
+          'customer',
+          'en',
+          1,
+          'Welcome to Customer Portal - Your Access Details',
+          `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+    .credentials { background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin: 20px 0; }
+    .quota { background: white; padding: 15px; border-radius: 8px; margin: 10px 0; }
+    .button { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎉 Welcome to Customer Portal!</h1>
+      <p>Your account has been created successfully</p>
+    </div>
+
+    <div class="content">
+      <p>Hi <strong>{{customer.name}}</strong>,</p>
+
+      <p>Your customer portal account has been created! You can now manage your licenses, generate new ones, and use code protection features.</p>
+
+      <div class="credentials">
+        <h3 style="margin-top: 0;">🔐 Login Credentials</h3>
+        <table style="width: 100%;">
+          <tr>
+            <td style="padding: 8px 0;"><strong>Email:</strong></td>
+            <td style="padding: 8px 0;">{{customer.email}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0;"><strong>Password:</strong></td>
+            <td style="padding: 8px 0;"><code style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px;">{{customer.password}}</code></td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0;"><strong>Login URL:</strong></td>
+            <td style="padding: 8px 0;"><a href="{{customer.login_url}}">{{customer.login_url}}</a></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="warning">
+        <strong>⚠️ Security Notice:</strong> For your security, please change your password after first login.
+      </div>
+
+      <h3>📊 Your Quotas</h3>
+
+      <div class="quota">
+        <strong>🔑 License Limit:</strong> {{customer.license_limit}}
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #6b7280;">You can generate up to {{customer.license_limit}} licenses</p>
+      </div>
+
+      <div class="quota">
+        <strong>🛡️ Code Protection Limit:</strong> {{customer.code_protection_limit}}
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #6b7280;">You can create up to {{customer.code_protection_limit}} code protections</p>
+      </div>
+
+      <h3>✨ What You Can Do</h3>
+      <ul>
+        <li>View all your licenses and their status</li>
+        <li>Generate new licenses (within your quota)</li>
+        <li>Create code protections for your software</li>
+        <li>Browse available products</li>
+        <li>Manage your profile and settings</li>
+      </ul>
+
+      <center>
+        <a href="{{customer.login_url}}" class="button">Login to Customer Portal →</a>
+      </center>
+
+      <p style="margin-top: 30px;">If you have any questions or need assistance, please contact your administrator.</p>
+    </div>
+
+    <div class="footer">
+      <p>© 2024 SaaS Licensing System. All rights reserved.</p>
+      <p>This is an automated email. Please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>`,
+          1
+        ]
+      );
+      console.log('✓ Customer access email template created');
+    }
+
     console.log('\n✅ Database seeding completed successfully!');
     console.log('\nDefault admin credentials:');
     console.log('Email:', process.env.ADMIN_EMAIL || 'admin@example.com');
     console.log('Password:', process.env.ADMIN_PASSWORD || 'admin123');
+    console.log('\nSample customer credentials:');
+    console.log('Email: customer@example.com');
+    console.log('Password: customer123');
+    console.log('Login URL: /customer/login');
 
     await db.close();
   } catch (error) {

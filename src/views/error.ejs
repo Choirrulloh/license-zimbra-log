@@ -13,15 +13,15 @@
       </div>
 
       <h1 class="text-3xl font-bold text-gray-800 mb-4">
-        <%= error || 'Error' %>
+        <%= typeof error !== 'undefined' ? error : 'Error' %>
       </h1>
 
       <p class="text-gray-600 mb-6">
-        <%= message || 'An error occurred. Please try again later.' %>
+        <%= typeof message !== 'undefined' ? message : 'An error occurred. Please try again later.' %>
       </p>
 
       <div class="flex space-x-3 justify-center">
-        <% if (typeof user !== 'undefined' && user.userId) { %>
+        <% if (typeof user !== 'undefined' && user && user.userId) { %>
           <a href="/dashboard" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg inline-flex items-center">
             <i class="fas fa-home mr-2"></i>
             Go to Dashboard

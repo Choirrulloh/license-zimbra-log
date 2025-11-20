@@ -41,6 +41,15 @@ const codeProtectionController = require('../controllers/codeProtectionControlle
 
 // Public routes
 router.get('/', (req, res) => {
+  // If customer subdomain, redirect to customer login
+  if (req.isCustomerPortal) {
+    if (req.session.customerId) {
+      return res.redirect('/customer/dashboard');
+    }
+    return res.redirect('/customer/login');
+  }
+
+  // Admin portal (default)
   if (req.session.userId) {
     return res.redirect('/dashboard');
   }
@@ -76,6 +85,8 @@ router.get('/customers/:id', requireAuth, customerController.show);
 router.get('/customers/:id/edit', requireAdmin, customerController.edit);
 router.post('/customers/:id/edit', requireAdmin, customerController.update);
 router.delete('/customers/:id', requireAdmin, customerController.delete);
+router.post('/customers/:id/login-as', requireAdmin, customerController.loginAsCustomer);
+router.post('/customers/:id/change-password', requireAdmin, customerController.changeCustomerPassword);
 
 // Users (Admin only for management, users can edit their own profile)
 router.get('/users', requireAdmin, userController.index);
@@ -87,8 +98,10 @@ router.post('/users/:id/edit', requireSelfOrAdmin('id'), userController.update);
 router.delete('/users/:id', requireAdmin, userController.delete);
 router.post('/users/:id/change-password', requireSelfOrAdmin('id'), userController.changePassword);
 
-// Features
-router.get('/features', requireAuth, featuresController.index);
+// Features - Inline management (Admin only)
+router.post('/products/:productId/features/batch', requireAdmin, featuresController.createFeaturesBatch);
+router.post('/products/:productId/features', requireAdmin, featuresController.createFeature);
+router.delete('/features/:id', requireAdmin, featuresController.deleteFeature);
 
 // Licenses (Admin only for create/modify/delete)
 router.get('/licenses', requireAuth, licenseController.index);
@@ -156,10 +169,12 @@ router.post('/code-protection/upload', requireAuth, upload.single('file'), codeP
 router.post('/code-protection/obfuscate', requireAuth, codeProtectionController.obfuscate);
 router.get('/code-protection/download/:id', requireAuth, codeProtectionController.download);
 router.get('/code-protection/quota', requireAuth, codeProtectionController.getQuota);
+router.delete('/code-protection/:id', requireAuth, codeProtectionController.delete);
 
 // Public API for license validation
 router.post('/api/validate', apiController.validateLicense);
 router.post('/api/deactivate', apiController.deactivateLicense);
 router.get('/api/license/:key', apiController.getLicenseInfo);
+router.get('/api/license-types/:id/features', apiController.getLicenseTypeFeatures);
 
 module.exports = router;

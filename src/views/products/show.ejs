@@ -12,7 +12,7 @@
       <header class="bg-white shadow-sm">
         <div class="flex items-center justify-between p-4">
           <h2 class="text-xl font-semibold text-gray-800"><%= product.name %></h2>
-          <span class="text-sm text-gray-600"><%= moment().format('dddd, MMMM D, YYYY') %></span>
+          <span class="text-sm text-gray-600"><%= moment().tz(timezone).format('dddd, MMMM D, YYYY') %></span>
         </div>
       </header>
       <main class="flex-1 overflow-y-auto p-6">
@@ -45,12 +45,72 @@
             </div>
             <div>
               <p class="text-sm text-gray-500">Created</p>
-              <p class="font-medium"><%= moment(product.created_at).format('MMM D, YYYY') %></p>
+              <p class="font-medium"><%= moment(product.created_at).tz(timezone).format('MMM D, YYYY') %></p>
             </div>
             <div class="md:col-span-2">
               <p class="text-sm text-gray-500">Description</p>
               <p class="font-medium"><%= product.description || '-' %></p>
             </div>
+          </div>
+        </div>
+
+        <!-- Product Features -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Product Features</h3>
+            <button onclick="toggleFeatureForm()" id="addFeatureBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
+              <i class="fas fa-plus"></i> Add Feature
+            </button>
+          </div>
+
+          <!-- Add Feature Form (Hidden by default) -->
+          <div id="featureForm" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+            <h4 class="font-semibold mb-3">Add Features</h4>
+            <form id="createFeatureForm" onsubmit="submitCreateFeatures(event)">
+              <div id="featureRows" class="space-y-3 mb-3">
+                <!-- Feature rows will be added here dynamically -->
+              </div>
+              <div class="flex space-x-2">
+                <button type="button" onclick="addFeatureRow()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm">
+                  <i class="fas fa-plus"></i> Add Another Row
+                </button>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
+                  <i class="fas fa-save"></i> Save All Features
+                </button>
+                <button type="button" onclick="toggleFeatureForm()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg text-sm">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Features List -->
+          <div id="featuresList">
+            <% if (features.length === 0) { %>
+              <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-inbox text-4xl mb-3 opacity-50"></i>
+                <p>No features defined yet. Click "Add Feature" to create one.</p>
+              </div>
+            <% } else { %>
+              <div class="space-y-2">
+                <% features.forEach(feature => { %>
+                  <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <div class="flex-1">
+                      <div class="flex items-center space-x-3">
+                        <i class="fas fa-check-circle text-blue-500"></i>
+                        <div>
+                          <span class="font-medium text-gray-800"><%= feature.name %></span>
+                          <code class="ml-2 text-xs bg-gray-100 px-2 py-1 rounded text-gray-600"><%= feature.feature_key %></code>
+                        </div>
+                      </div>
+                    </div>
+                    <button onclick="deleteFeature(<%= feature.id %>, '<%= feature.name %>')" class="text-red-500 hover:text-red-600 px-3 py-1">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                <% }); %>
+              </div>
+            <% } %>
           </div>
         </div>
 
@@ -67,7 +127,6 @@
               <thead class="bg-gray-50">
                 <tr>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Max Activations</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
@@ -78,30 +137,22 @@
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <% if (licenseTypes.length > 0) { %>
-                  <% licenseTypes.forEach(lt => {
-                    let features = [];
-                    try {
-                      features = lt.features ? JSON.parse(lt.features) : [];
-                    } catch (e) {
-                      features = [];
-                    }
-                  %>
+                  <% licenseTypes.forEach(lt => { %>
                     <tr>
                       <td class="px-6 py-4 text-sm font-medium"><%= lt.name %></td>
-                      <td class="px-6 py-4 text-sm"><%= lt.type %></td>
                       <td class="px-6 py-4 text-sm"><%= lt.duration_days %> days</td>
                       <td class="px-6 py-4 text-sm"><%= lt.max_activations %></td>
                       <td class="px-6 py-4 text-sm font-medium">Rp <%= new Intl.NumberFormat('id-ID').format(lt.price) %></td>
                       <td class="px-6 py-4 text-sm">
-                        <% if (features.length === 0) { %>
+                        <% if (!lt.assignedFeatures || lt.assignedFeatures.length === 0) { %>
                           <span class="text-gray-400 italic">No features</span>
-                        <% } else if (features.length <= 2) { %>
-                          <% features.forEach((f, i) => { %>
-                            <div class="text-xs"><i class="fas fa-check text-green-500"></i> <%= f %></div>
+                        <% } else if (lt.assignedFeatures.length <= 2) { %>
+                          <% lt.assignedFeatures.forEach((f, i) => { %>
+                            <div class="text-xs"><i class="fas fa-check text-green-500"></i> <%= f.name %></div>
                           <% }); %>
                         <% } else { %>
-                          <div class="text-xs"><i class="fas fa-check text-green-500"></i> <%= features[0] %></div>
-                          <div class="text-xs text-gray-500">+<%= features.length - 1 %> more</div>
+                          <div class="text-xs"><i class="fas fa-check text-green-500"></i> <%= lt.assignedFeatures[0].name %></div>
+                          <div class="text-xs text-gray-500">+<%= lt.assignedFeatures.length - 1 %> more</div>
                         <% } %>
                       </td>
                       <td class="px-6 py-4">
@@ -158,7 +209,7 @@
                         </span>
                       </td>
                       <td class="px-6 py-4 text-sm">
-                        <%= l.expiry_date ? moment(l.expiry_date).format('MMM D, YYYY') : 'Never' %>
+                        <%= l.expiry_date ? moment(l.expiry_date).tz(timezone).format('MMM D, YYYY') : 'Never' %>
                       </td>
                     </tr>
                   <% }); %>
@@ -188,15 +239,7 @@
         <div class="mb-3">
           <label class="block text-gray-700 text-sm font-medium mb-1">Name *</label>
           <input type="text" name="name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-        </div>
-        <div class="mb-3">
-          <label class="block text-gray-700 text-sm font-medium mb-1">Type *</label>
-          <select name="type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-            <option value="trial">Trial</option>
-            <option value="basic">Basic</option>
-            <option value="pro">Pro</option>
-            <option value="enterprise">Enterprise</option>
-          </select>
+          <p class="text-xs text-gray-500 mt-1">Contoh: Startup Plan, Business Pro, Enterprise Package</p>
         </div>
         <div class="mb-3">
           <label class="block text-gray-700 text-sm font-medium mb-1">Duration (days) *</label>
@@ -213,8 +256,24 @@
         </div>
         <div class="mb-3">
           <label class="block text-gray-700 text-sm font-medium mb-1">Features</label>
-          <textarea id="create_features" name="features" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Enter features, one per line&#10;e.g.:&#10;Advanced Reporting&#10;API Access&#10;Priority Support"></textarea>
-          <p class="text-xs text-gray-500 mt-1">Enter one feature per line</p>
+          <div class="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto">
+            <% if (features.length === 0) { %>
+              <p class="text-sm text-gray-500 italic">No features available. <a href="/features/create?product_id=<%= product.id %>" class="text-blue-500 hover:text-blue-600">Create features first</a></p>
+            <% } else { %>
+              <% features.forEach(feature => { %>
+                <label class="flex items-center mb-2 hover:bg-gray-50 p-2 rounded cursor-pointer">
+                  <input type="checkbox" name="feature_ids[]" value="<%= feature.id %>" class="form-checkbox h-4 w-4 text-blue-600">
+                  <div class="ml-3 flex-1">
+                    <span class="text-sm font-medium text-gray-700"><%= feature.name %></span>
+                    <% if (feature.description) { %>
+                      <p class="text-xs text-gray-500"><%= feature.description %></p>
+                    <% } %>
+                  </div>
+                </label>
+              <% }); %>
+            <% } %>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">Select features to include in this license type</p>
         </div>
         <div class="flex space-x-2">
           <button type="submit" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
@@ -242,15 +301,7 @@
         <div class="mb-3">
           <label class="block text-gray-700 text-sm font-medium mb-1">Name *</label>
           <input type="text" id="edit_name" name="name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-        </div>
-        <div class="mb-3">
-          <label class="block text-gray-700 text-sm font-medium mb-1">Type *</label>
-          <select id="edit_type" name="type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-            <option value="trial">Trial</option>
-            <option value="basic">Basic</option>
-            <option value="pro">Pro</option>
-            <option value="enterprise">Enterprise</option>
-          </select>
+          <p class="text-xs text-gray-500 mt-1">Contoh: Startup Plan, Business Pro, Enterprise Package</p>
         </div>
         <div class="mb-3">
           <label class="block text-gray-700 text-sm font-medium mb-1">Duration (days) *</label>
@@ -267,8 +318,24 @@
         </div>
         <div class="mb-3">
           <label class="block text-gray-700 text-sm font-medium mb-1">Features</label>
-          <textarea id="edit_features" name="features" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Enter features, one per line&#10;e.g.:&#10;Advanced Reporting&#10;API Access&#10;Priority Support"></textarea>
-          <p class="text-xs text-gray-500 mt-1">Enter one feature per line</p>
+          <div id="edit_features_container" class="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto">
+            <% if (features.length === 0) { %>
+              <p class="text-sm text-gray-500 italic">No features available. <a href="/features/create?product_id=<%= product.id %>" class="text-blue-500 hover:text-blue-600">Create features first</a></p>
+            <% } else { %>
+              <% features.forEach(feature => { %>
+                <label class="flex items-center mb-2 hover:bg-gray-50 p-2 rounded cursor-pointer">
+                  <input type="checkbox" name="feature_ids[]" value="<%= feature.id %>" class="edit-feature-checkbox form-checkbox h-4 w-4 text-blue-600" data-feature-id="<%= feature.id %>">
+                  <div class="ml-3 flex-1">
+                    <span class="text-sm font-medium text-gray-700"><%= feature.name %></span>
+                    <% if (feature.description) { %>
+                      <p class="text-xs text-gray-500"><%= feature.description %></p>
+                    <% } %>
+                  </div>
+                </label>
+              <% }); %>
+            <% } %>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">Select features to include in this license type</p>
         </div>
         <div class="mb-3">
           <label class="flex items-center">
@@ -338,27 +405,36 @@
       document.getElementById('editLicenseTypeForm').reset();
     }
 
-    function editLicenseType(lt) {
+    async function editLicenseType(lt) {
       document.getElementById('edit_id').value = lt.id;
       document.getElementById('edit_name').value = lt.name;
-      document.getElementById('edit_type').value = lt.type;
       document.getElementById('edit_duration_days').value = lt.duration_days;
       document.getElementById('edit_max_activations').value = lt.max_activations;
       document.getElementById('edit_price').value = lt.price;
       document.getElementById('edit_price_display').value = formatNumber(lt.price);
       document.getElementById('edit_is_active').checked = lt.is_active;
 
-      // Handle features - convert JSON array to multiline text
-      let featuresText = '';
-      if (lt.features) {
-        try {
-          const featuresArray = typeof lt.features === 'string' ? JSON.parse(lt.features) : lt.features;
-          featuresText = Array.isArray(featuresArray) ? featuresArray.join('\n') : '';
-        } catch (e) {
-          featuresText = '';
+      // Uncheck all features first
+      document.querySelectorAll('.edit-feature-checkbox').forEach(cb => cb.checked = false);
+
+      // Fetch currently assigned features for this license type
+      try {
+        const res = await fetch(`/api/license-types/${lt.id}/features`, {
+          credentials: 'include'
+        });
+        if (res.ok) {
+          const result = await res.json();
+          const assignedFeatureIds = result.features.map(f => f.id);
+
+          // Check the assigned features
+          assignedFeatureIds.forEach(featureId => {
+            const checkbox = document.querySelector(`.edit-feature-checkbox[data-feature-id="${featureId}"]`);
+            if (checkbox) checkbox.checked = true;
+          });
         }
+      } catch (err) {
+        console.error('Error loading features:', err);
       }
-      document.getElementById('edit_features').value = featuresText;
 
       document.getElementById('editLicenseTypeModal').classList.remove('hidden');
     }
@@ -369,21 +445,20 @@
       const data = Object.fromEntries(formData);
       data.product_id = <%= product.id %>;
 
-      // Convert features from multiline text to JSON array
-      if (data.features) {
-        const featuresArray = data.features.split('\n')
-          .map(f => f.trim())
-          .filter(f => f.length > 0);
-        data.features = JSON.stringify(featuresArray);
-      } else {
-        data.features = JSON.stringify([]);
-      }
+      // Collect selected feature IDs from checkboxes
+      const selectedFeatures = Array.from(document.querySelectorAll('#createLicenseTypeForm input[name="feature_ids[]"]:checked'))
+        .map(cb => parseInt(cb.value));
+      data.feature_ids = selectedFeatures;
+
+      // Keep backward compatibility with old features field (empty for now)
+      data.features = JSON.stringify([]);
 
       try {
         const res = await fetch('/license-types', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          body: JSON.stringify(data),
+          credentials: 'include'
         });
         const result = await res.json();
         if (result.success) {
@@ -405,21 +480,20 @@
       delete data.id;
       data.is_active = data.is_active === 'on' ? 1 : 0;
 
-      // Convert features from multiline text to JSON array
-      if (data.features) {
-        const featuresArray = data.features.split('\n')
-          .map(f => f.trim())
-          .filter(f => f.length > 0);
-        data.features = JSON.stringify(featuresArray);
-      } else {
-        data.features = JSON.stringify([]);
-      }
+      // Collect selected feature IDs from checkboxes
+      const selectedFeatures = Array.from(document.querySelectorAll('#editLicenseTypeForm input[name="feature_ids[]"]:checked'))
+        .map(cb => parseInt(cb.value));
+      data.feature_ids = selectedFeatures;
+
+      // Keep backward compatibility with old features field (empty for now)
+      data.features = JSON.stringify([]);
 
       try {
         const res = await fetch(`/license-types/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          body: JSON.stringify(data),
+          credentials: 'include'
         });
         const result = await res.json();
         if (result.success) {
@@ -492,6 +566,153 @@
         toast.style.transform = 'translateX(100%)';
         setTimeout(() => toast.remove(), 300);
       }, 5000);
+    }
+
+    // Feature Management Functions
+    let featureRowCounter = 0;
+
+    function toggleFeatureForm() {
+      const form = document.getElementById('featureForm');
+      const btn = document.getElementById('addFeatureBtn');
+      if (form.classList.contains('hidden')) {
+        form.classList.remove('hidden');
+        btn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+        // Add first row when opening
+        document.getElementById('featureRows').innerHTML = '';
+        featureRowCounter = 0;
+        addFeatureRow();
+      } else {
+        form.classList.add('hidden');
+        btn.innerHTML = '<i class="fas fa-plus"></i> Add Feature';
+        document.getElementById('featureRows').innerHTML = '';
+      }
+    }
+
+    function generateFeatureKey(name) {
+      return name.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, '_');
+    }
+
+    function addFeatureRow() {
+      const container = document.getElementById('featureRows');
+      const rowId = featureRowCounter++;
+
+      const row = document.createElement('div');
+      row.className = 'flex gap-2 items-start';
+      row.id = `feature-row-${rowId}`;
+      row.innerHTML = `
+        <div class="flex-1 grid grid-cols-2 gap-2">
+          <div>
+            <input
+              type="text"
+              name="feature_names[]"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder="Feature Name"
+              onInput="updateFeatureKey(${rowId})"
+            >
+          </div>
+          <div>
+            <input
+              type="text"
+              name="feature_keys[]"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-gray-100"
+              placeholder="auto_generated"
+              readonly
+            >
+          </div>
+        </div>
+        <button type="button" onclick="removeFeatureRow(${rowId})" class="text-red-500 hover:text-red-600 px-3 py-2 mt-0">
+          <i class="fas fa-trash"></i>
+        </button>
+      `;
+
+      container.appendChild(row);
+    }
+
+    function updateFeatureKey(rowId) {
+      const row = document.getElementById(`feature-row-${rowId}`);
+      const nameInput = row.querySelector('input[name="feature_names[]"]');
+      const keyInput = row.querySelector('input[name="feature_keys[]"]');
+      keyInput.value = generateFeatureKey(nameInput.value);
+    }
+
+    function removeFeatureRow(rowId) {
+      const row = document.getElementById(`feature-row-${rowId}`);
+      if (row) row.remove();
+
+      // Ensure at least one row exists
+      const container = document.getElementById('featureRows');
+      if (container.children.length === 0) {
+        addFeatureRow();
+      }
+    }
+
+    async function submitCreateFeatures(e) {
+      e.preventDefault();
+
+      const names = Array.from(document.querySelectorAll('input[name="feature_names[]"]'))
+        .map(input => input.value.trim())
+        .filter(name => name.length > 0);
+
+      const keys = Array.from(document.querySelectorAll('input[name="feature_keys[]"]'))
+        .map(input => input.value.trim())
+        .filter(key => key.length > 0);
+
+      if (names.length === 0) {
+        showToast('Please add at least one feature', 'error');
+        return;
+      }
+
+      const features = names.map((name, index) => ({
+        name: name,
+        feature_key: keys[index]
+      }));
+
+      try {
+        const res = await fetch('/products/<%= product.id %>/features/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ features }),
+          credentials: 'include'
+        });
+        const result = await res.json();
+        if (result.success) {
+          showToast(`${result.count} feature(s) added successfully!`, 'success');
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast('Error: ' + result.message, 'error');
+        }
+      } catch (err) {
+        showToast('Error adding features', 'error');
+      }
+    }
+
+    async function deleteFeature(id, name) {
+      const confirmed = await showConfirm(
+        `Are you sure you want to delete feature "${name}"? This will remove it from all license types.`,
+        'Confirm Deletion',
+        { type: 'delete', confirmText: 'Delete' }
+      );
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(`/features/${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        const result = await res.json();
+        if (result.success) {
+          showToast('Feature deleted successfully!', 'success');
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast('Error: ' + result.message, 'error');
+        }
+      } catch (err) {
+        showToast('Error deleting feature', 'error');
+      }
     }
 
     function createToastContainer() {

@@ -31,7 +31,7 @@
       <header class="bg-white shadow-sm">
         <div class="flex items-center justify-between p-4">
           <h2 class="text-xl font-semibold text-gray-800">Code Protection</h2>
-          <span class="text-sm text-gray-600"><%= moment().format('dddd, MMMM D, YYYY') %></span>
+          <span class="text-sm text-gray-600"><%= moment().tz(timezone).format('dddd, MMMM D, YYYY') %></span>
         </div>
       </header>
 
@@ -47,6 +47,37 @@
           </div>
         </div>
 
+        <!-- Usage Information -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h4 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+            Usage Information
+          </h4>
+          <div class="flex items-center justify-between">
+            <div>
+              <% if (quota.monthly_limit === -1) { %>
+                <p class="text-sm text-gray-600">
+                  <i class="fas fa-infinity text-green-500 mr-2"></i>
+                  Your Quota: <span class="font-semibold text-green-600">Unlimited</span>
+                </p>
+                <p class="text-xs text-gray-500 mt-1">
+                  <i class="fas fa-crown text-yellow-500 mr-1"></i>
+                  Admin privilege - No quota limits
+                </p>
+              <% } else { %>
+                <p class="text-sm text-gray-600">
+                  <i class="fas fa-chart-bar text-blue-500 mr-2"></i>
+                  Your Quota: <span class="font-semibold"><%= quota.monthly_limit - quota.used_this_month %> of <%= quota.monthly_limit %></span> remaining this month
+                </p>
+                <p class="text-xs text-gray-500 mt-1">
+                  <i class="fas fa-calendar text-gray-400 mr-2"></i>
+                  Resets on: <%= moment(quota.reset_date).tz(timezone).format('MMMM D, YYYY') %>
+                </p>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
         <!-- Step 1: Upload Files -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
           <h4 class="text-lg font-semibold text-gray-800 mb-4">
@@ -54,13 +85,14 @@
             Step 1: Upload Files
           </h4>
 
-          <div id="uploadZone" class="upload-zone rounded-lg p-8 text-center mb-4">
+          <div id="uploadZone" class="upload-zone rounded-lg p-8 text-center mb-4 cursor-pointer">
             <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 mb-3"></i>
             <p class="text-lg text-gray-600 mb-2">Drag & Drop Files Here</p>
             <p class="text-sm text-gray-500 mb-4">or click to browse your computer</p>
             <p class="text-xs text-gray-400">Supported: .js, .sh, .zip | Max size: <%= quota.max_file_size_mb %>MB</p>
-            <input type="file" id="fileInput" accept=".js,.sh,.zip" class="hidden">
           </div>
+
+          <input type="file" id="fileInput" accept=".js,.sh,.zip" style="display: none !important;" multiple>
 
           <div id="uploadedFiles" class="hidden mb-4">
             <div class="bg-gray-50 rounded-lg p-4">
@@ -77,7 +109,7 @@
             </div>
           </div>
 
-          <button onclick="document.getElementById('fileInput').click()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+          <button id="selectFilesBtn" type="button" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors cursor-pointer">
             <i class="fas fa-plus mr-2"></i>Select Files
           </button>
         </div>
@@ -117,34 +149,72 @@
               <span class="text-sm font-medium text-gray-700">Show Advanced Options</span>
             </label>
 
-            <div id="advancedOptions" class="hidden mt-4 bg-gray-50 rounded-lg p-4 space-y-2">
-              <label class="flex items-center">
-                <input type="checkbox" id="optCompact" class="mr-2" checked>
-                <span class="text-sm text-gray-700">Compact code (remove whitespace)</span>
-              </label>
-              <label class="flex items-center">
-                <input type="checkbox" id="optRenameVars" class="mr-2" checked>
-                <span class="text-sm text-gray-700">Rename variables and functions</span>
-              </label>
-              <label class="flex items-center">
-                <input type="checkbox" id="optStringEnc" class="mr-2" checked>
-                <span class="text-sm text-gray-700">String array encoding</span>
-              </label>
-              <label class="flex items-center">
-                <input type="checkbox" id="optControlFlow" class="mr-2">
-                <span class="text-sm text-gray-700">Control flow flattening (slower)</span>
-              </label>
-              <label class="flex items-center">
-                <input type="checkbox" id="optDeadCode" class="mr-2">
-                <span class="text-sm text-gray-700">Dead code injection</span>
-              </label>
-              <label class="flex items-center">
-                <input type="checkbox" id="optDisableConsole" class="mr-2">
-                <span class="text-sm text-gray-700">Disable console output</span>
-              </label>
-              <button onclick="resetAdvanced()" class="mt-2 text-sm text-blue-600 hover:text-blue-700">
-                Reset to Default
-              </button>
+            <div id="advancedOptions" class="hidden mt-4">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Options Column -->
+                <div class="md:col-span-2 bg-gray-50 rounded-lg p-4 space-y-2">
+                  <label class="flex items-center">
+                    <input type="checkbox" id="optCompact" class="mr-2" checked>
+                    <span class="text-sm text-gray-700">Compact code (remove whitespace)</span>
+                  </label>
+                  <label class="flex items-center">
+                    <input type="checkbox" id="optRenameVars" class="mr-2" checked>
+                    <span class="text-sm text-gray-700">Rename variables and functions</span>
+                  </label>
+                  <label class="flex items-center">
+                    <input type="checkbox" id="optStringEnc" class="mr-2" checked>
+                    <span class="text-sm text-gray-700">String array encoding</span>
+                  </label>
+                  <label class="flex items-center">
+                    <input type="checkbox" id="optControlFlow" class="mr-2">
+                    <span class="text-sm text-gray-700">Control flow flattening (slower)</span>
+                  </label>
+                  <label class="flex items-center">
+                    <input type="checkbox" id="optDeadCode" class="mr-2">
+                    <span class="text-sm text-gray-700">Dead code injection</span>
+                  </label>
+                  <label class="flex items-center">
+                    <input type="checkbox" id="optDisableConsole" class="mr-2">
+                    <span class="text-sm text-gray-700">Disable console output</span>
+                  </label>
+                  <button onclick="resetAdvanced()" class="mt-2 text-sm text-blue-600 hover:text-blue-700">
+                    <i class="fas fa-redo mr-1"></i>Reset to Default
+                  </button>
+                </div>
+
+                <!-- Legend Column -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h5 class="text-sm font-semibold text-blue-800 mb-3">
+                    <i class="fas fa-info-circle mr-1"></i>Options Guide
+                  </h5>
+                  <div class="space-y-2 text-xs text-gray-700">
+                    <div>
+                      <p class="font-medium text-blue-700">Compact Code</p>
+                      <p class="text-gray-600">Removes whitespace & newlines to reduce file size</p>
+                    </div>
+                    <div>
+                      <p class="font-medium text-blue-700">Rename Variables</p>
+                      <p class="text-gray-600">Changes variable names to short random strings</p>
+                    </div>
+                    <div>
+                      <p class="font-medium text-blue-700">String Encoding</p>
+                      <p class="text-gray-600">Encrypts strings to hide text content</p>
+                    </div>
+                    <div>
+                      <p class="font-medium text-blue-700">Control Flow</p>
+                      <p class="text-gray-600">Makes code logic harder to follow (slow)</p>
+                    </div>
+                    <div>
+                      <p class="font-medium text-blue-700">Dead Code</p>
+                      <p class="text-gray-600">Adds fake code to confuse analysis</p>
+                    </div>
+                    <div>
+                      <p class="font-medium text-blue-700">Disable Console</p>
+                      <p class="text-gray-600">Blocks console.log output</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -229,37 +299,6 @@
           </div>
         </div>
 
-        <!-- Usage Information -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h4 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-            Usage Information
-          </h4>
-          <div class="flex items-center justify-between">
-            <div>
-              <% if (quota.monthly_limit === -1) { %>
-                <p class="text-sm text-gray-600">
-                  <i class="fas fa-infinity text-green-500 mr-2"></i>
-                  Your Quota: <span class="font-semibold text-green-600">Unlimited</span>
-                </p>
-                <p class="text-xs text-gray-500 mt-1">
-                  <i class="fas fa-crown text-yellow-500 mr-1"></i>
-                  Admin privilege - No quota limits
-                </p>
-              <% } else { %>
-                <p class="text-sm text-gray-600">
-                  <i class="fas fa-chart-bar text-blue-500 mr-2"></i>
-                  Your Quota: <span class="font-semibold"><%= quota.monthly_limit - quota.used_this_month %> of <%= quota.monthly_limit %></span> remaining this month
-                </p>
-                <p class="text-xs text-gray-500 mt-1">
-                  <i class="fas fa-calendar text-gray-400 mr-2"></i>
-                  Resets on: <%= moment(quota.reset_date).format('MMMM D, YYYY') %>
-                </p>
-              <% } %>
-            </div>
-          </div>
-        </div>
-
         <!-- Action Button -->
         <div class="flex justify-center mb-6">
           <button id="obfuscateBtn" onclick="startObfuscation()" disabled class="bg-gray-400 text-white px-8 py-3 rounded-lg text-lg font-semibold cursor-not-allowed">
@@ -290,7 +329,7 @@
                   <% recentObfuscations.forEach(obf => { %>
                     <tr>
                       <td class="px-4 py-3 text-sm text-gray-800">
-                        <%= moment(obf.created_at).format('MMM DD, h:mm A') %>
+                        <%= moment(obf.created_at).tz(timezone).format('MMM DD, h:mm A') %>
                       </td>
                       <td class="px-4 py-3 text-sm text-gray-800"><%= obf.original_filename %></td>
                       <td class="px-4 py-3">
@@ -302,9 +341,14 @@
                         <%= (obf.obfuscated_size / 1024).toFixed(0) %> KB
                       </td>
                       <td class="px-4 py-3">
-                        <a href="/code-protection/download/<%= obf.id %>" class="text-blue-600 hover:text-blue-700 text-sm">
-                          <i class="fas fa-download mr-1"></i>Download
-                        </a>
+                        <div class="flex space-x-3">
+                          <a href="/code-protection/download/<%= obf.id %>" class="text-blue-600 hover:text-blue-700 text-sm">
+                            <i class="fas fa-download mr-1"></i>Download
+                          </a>
+                          <button onclick="deleteObfuscation(<%= obf.id %>)" class="text-red-600 hover:text-red-700 text-sm">
+                            <i class="fas fa-trash mr-1"></i>Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   <% }) %>
@@ -415,32 +459,61 @@
     let uploadedFileData = null; // Store upload response data
     let currentObfuscationId = null;
 
-    // Drag & Drop
-    const uploadZone = document.getElementById('uploadZone');
-    const fileInput = document.getElementById('fileInput');
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      // Drag & Drop
+      const uploadZone = document.getElementById('uploadZone');
+      const fileInput = document.getElementById('fileInput');
+      const selectFilesBtn = document.getElementById('selectFilesBtn');
 
-    uploadZone.addEventListener('click', () => fileInput.click());
-
-    uploadZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadZone.classList.add('drag-over');
-    });
-
-    uploadZone.addEventListener('dragleave', () => {
-      uploadZone.classList.remove('drag-over');
-    });
-
-    uploadZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadZone.classList.remove('drag-over');
-      if (e.dataTransfer.files.length > 0) {
-        handleFileSelect(e.dataTransfer.files[0]);
+      // Select Files button click handler
+      if (selectFilesBtn) {
+        selectFilesBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('Select Files button clicked');
+          if (fileInput) {
+            fileInput.click();
+          } else {
+            console.error('File input not found');
+          }
+        });
       }
-    });
 
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) {
-        handleFileSelect(e.target.files[0]);
+      // Upload zone click handler
+      if (uploadZone) {
+        uploadZone.addEventListener('click', function(e) {
+          console.log('Upload zone clicked');
+          if (fileInput) {
+            fileInput.click();
+          }
+        });
+
+        uploadZone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+          uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          uploadZone.classList.remove('drag-over');
+          if (e.dataTransfer.files.length > 0) {
+            handleFileSelect(e.dataTransfer.files[0]);
+          }
+        });
+      }
+
+      // File input change handler
+      if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+          console.log('File selected:', e.target.files);
+          if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+          }
+        });
       }
     });
 
@@ -751,6 +824,31 @@
 
     function closeErrorModal() {
       document.getElementById('errorModal').classList.add('hidden');
+    }
+
+    async function deleteObfuscation(id) {
+      if (!confirm('Are you sure you want to delete this obfuscation? This action cannot be undone.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/code-protection/${id}`, {
+          method: 'DELETE',
+          credentials: 'same-origin'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showToast('Obfuscation deleted successfully', 'success');
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast(data.message || 'Failed to delete obfuscation', 'error');
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        showToast('Error deleting obfuscation', 'error');
+      }
     }
   </script>
 </body>

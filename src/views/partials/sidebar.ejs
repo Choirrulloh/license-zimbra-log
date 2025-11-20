@@ -11,35 +11,22 @@
         <span>Dashboard</span>
       </a>
 
-      <!-- Management Group -->
-      <div class="menu-group <%= typeof currentPage !== 'undefined' && ['products', 'customers', 'licenses'].includes(currentPage) ? 'open' : '' %>">
-        <div class="menu-header flex items-center justify-between p-3 rounded hover:bg-gray-700 cursor-pointer" onclick="toggleMenu(this.parentElement)">
-          <div class="flex items-center space-x-3">
-            <i class="fas fa-folder w-5"></i>
-            <span>Management</span>
-          </div>
-          <i class="fas fa-chevron-down chevron text-sm"></i>
-        </div>
-        <div class="submenu pl-4 space-y-1">
-          <a href="/products" class="flex items-center space-x-3 p-2 pl-8 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'products' ? 'bg-gray-700' : '' %>">
-            <i class="fas fa-box w-4 text-sm"></i>
-            <span class="text-sm">Products</span>
-          </a>
-          <a href="/customers" class="flex items-center space-x-3 p-2 pl-8 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'customers' ? 'bg-gray-700' : '' %>">
-            <i class="fas fa-users w-4 text-sm"></i>
-            <span class="text-sm">Customers</span>
-          </a>
-          <a href="/licenses" class="flex items-center space-x-3 p-2 pl-8 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'licenses' ? 'bg-gray-700' : '' %>">
-            <i class="fas fa-certificate w-4 text-sm"></i>
-            <span class="text-sm">Licenses</span>
-          </a>
-        </div>
-      </div>
+      <!-- Products -->
+      <a href="/products" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'products' ? 'bg-gray-700' : '' %>">
+        <i class="fas fa-box w-5"></i>
+        <span>Products</span>
+      </a>
 
-      <!-- Features -->
-      <a href="/features" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'features' ? 'bg-gray-700' : '' %>">
-        <i class="fas fa-puzzle-piece w-5"></i>
-        <span>Features</span>
+      <!-- Customers -->
+      <a href="/customers" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'customers' ? 'bg-gray-700' : '' %>">
+        <i class="fas fa-users w-5"></i>
+        <span>Customers</span>
+      </a>
+
+      <!-- Licenses -->
+      <a href="/licenses" class="flex items-center space-x-3 p-3 rounded hover:bg-gray-700 <%= typeof currentPage !== 'undefined' && currentPage === 'licenses' ? 'bg-gray-700' : '' %>">
+        <i class="fas fa-certificate w-5"></i>
+        <span>Licenses</span>
       </a>
 
       <!-- Access Control Group -->

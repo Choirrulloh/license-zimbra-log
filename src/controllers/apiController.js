@@ -6,6 +6,7 @@ class ApiController {
     this.validateLicense = this.validateLicense.bind(this);
     this.deactivateLicense = this.deactivateLicense.bind(this);
     this.getLicenseInfo = this.getLicenseInfo.bind(this);
+    this.getLicenseTypeFeatures = this.getLicenseTypeFeatures.bind(this);
   }
 
   /**
@@ -149,13 +150,15 @@ class ApiController {
         }
       }
 
-      // Parse features
-      let features = [];
-      try {
-        features = license.features ? JSON.parse(license.features) : [];
-      } catch (e) {
-        features = [];
-      }
+      // Fetch features from normalized database (pivot table)
+      const features = await db.all(
+        `SELECT f.id, f.name, f.feature_key, f.description
+         FROM features f
+         INNER JOIN license_type_features ltf ON f.id = ltf.feature_id
+         WHERE ltf.license_type_id = ?
+         ORDER BY f.name`,
+        [license.license_type_id]
+      );
 
       // Log bash script validation if applicable
       if (productId) {
@@ -299,13 +302,15 @@ class ApiController {
         });
       }
 
-      // Parse features
-      let features = [];
-      try {
-        features = license.features ? JSON.parse(license.features) : [];
-      } catch (e) {
-        features = [];
-      }
+      // Fetch features from normalized database (pivot table)
+      const features = await db.all(
+        `SELECT f.id, f.name, f.feature_key, f.description
+         FROM features f
+         INNER JOIN license_type_features ltf ON f.id = ltf.feature_id
+         WHERE ltf.license_type_id = ?
+         ORDER BY f.name`,
+        [license.license_type_id]
+      );
 
       res.json({
         license_key: license.license_key,
@@ -332,6 +337,37 @@ class ApiController {
     } catch (error) {
       console.error('Error fetching license info:', error);
       res.status(500).json({
+        error: 'Internal server error'
+      });
+    }
+  }
+
+  /**
+   * Get features for a license type
+   * GET /api/license-types/:id/features
+   */
+  async getLicenseTypeFeatures(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Fetch features assigned to this license type from pivot table
+      const features = await db.all(
+        `SELECT f.id, f.name, f.feature_key, f.description
+         FROM features f
+         INNER JOIN license_type_features ltf ON f.id = ltf.feature_id
+         WHERE ltf.license_type_id = ?
+         ORDER BY f.name`,
+        [id]
+      );
+
+      res.json({
+        success: true,
+        features
+      });
+    } catch (error) {
+      console.error('Error fetching license type features:', error);
+      res.status(500).json({
+        success: false,
         error: 'Internal server error'
       });
     }

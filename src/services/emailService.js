@@ -8,10 +8,9 @@ class EmailService {
   }
 
   // Initialize email transporter
-  initializeTransporter() {
+  async initializeTransporter() {
     try {
-      // Get email settings from database or environment
-      const emailSettings = {
+      let emailSettings = {
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
         port: parseInt(process.env.SMTP_PORT || '587'),
         secure: process.env.SMTP_SECURE === 'true',
@@ -21,7 +20,31 @@ class EmailService {
         }
       };
 
-      // If no credentials, use test account (for development)
+      // Try to get settings from database first
+      try {
+        const settingsRows = await db.all('SELECT * FROM settings');
+        const dbSettings = {};
+        settingsRows.forEach(row => {
+          dbSettings[row.key] = row.value;
+        });
+
+        if (dbSettings.smtp_host && dbSettings.smtp_user && dbSettings.smtp_password) {
+          emailSettings = {
+            host: dbSettings.smtp_host,
+            port: parseInt(dbSettings.smtp_port || '587'),
+            secure: dbSettings.smtp_secure === 'true' || dbSettings.smtp_secure === true,
+            auth: {
+              user: dbSettings.smtp_user,
+              pass: dbSettings.smtp_password
+            }
+          };
+          console.log(`📧 Using SMTP settings from database: ${emailSettings.host}:${emailSettings.port}`);
+        }
+      } catch (dbError) {
+        console.log('⚠️  Could not read SMTP settings from database, using environment variables');
+      }
+
+      // If no credentials, use simulated mode (for development)
       if (!emailSettings.auth.user || !emailSettings.auth.pass) {
         console.log('⚠️  No SMTP credentials found. Email sending will be simulated.');
         this.transporter = null;
@@ -33,16 +56,23 @@ class EmailService {
       // Verify connection
       this.transporter.verify((error, success) => {
         if (error) {
-          console.error('Email transporter verification failed:', error);
+          console.error('📧 Email transporter verification failed:', error.message);
           this.transporter = null;
         } else {
-          console.log('✓ Email service ready');
+          console.log('✓ Email service ready and verified');
         }
       });
     } catch (error) {
       console.error('Error initializing email transporter:', error);
       this.transporter = null;
     }
+  }
+
+  // Reload SMTP configuration from database (call after settings updated)
+  async reloadConfig() {
+    console.log('🔄 Reloading email service configuration...');
+    await this.initializeTransporter();
+    return { success: this.transporter !== null };
   }
 
   // Replace variables in template
@@ -171,13 +201,24 @@ class EmailService {
 
   // Send password reset email
   async sendPasswordResetEmail(user, resetToken, language = 'en') {
+    // Use CUSTOMER_PORTAL_URL if set, otherwise construct from APP_URL
+    let resetUrl;
+    if (process.env.CUSTOMER_PORTAL_URL) {
+      resetUrl = `${process.env.CUSTOMER_PORTAL_URL}/reset-password?token=${resetToken}`;
+    } else {
+      const appUrl = process.env.APP_URL || 'http://localhost:3000';
+      // Try to convert to customer subdomain (admin.domain.com -> customer.domain.com)
+      const customerUrl = appUrl.replace(/^(https?:\/\/)(?:admin\.|app\.)?/, '$1customer.');
+      resetUrl = `${customerUrl}/reset-password?token=${resetToken}`;
+    }
+
     return await this.sendEmail(
       'password_reset',
       user.email,
       user.name,
       {
         'reset.token': resetToken,
-        'reset.url': `${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`,
+        'reset.url': resetUrl,
         'reset.expiry': '24 hours'
       },
       language
@@ -277,6 +318,49 @@ class EmailService {
       },
       language
     );
+  }
+
+  // Test SMTP connection (verify only, no email sent)
+  async testConnection(settings) {
+    try {
+      // Create transporter with provided settings
+      const testTransporter = nodemailer.createTransport({
+        host: settings.smtp_host,
+        port: parseInt(settings.smtp_port),
+        secure: settings.smtp_secure === true || settings.smtp_secure === 'true',
+        auth: {
+          user: settings.smtp_user,
+          pass: settings.smtp_password
+        }
+      });
+
+      // Verify connection
+      await testTransporter.verify();
+
+      return {
+        success: true,
+        message: `SMTP connection successful! Connected to ${settings.smtp_host}:${settings.smtp_port} using ${settings.smtp_secure ? 'SSL/TLS' : 'STARTTLS'}.`
+      };
+    } catch (error) {
+      console.error('SMTP connection test failed:', error);
+
+      let errorMessage = 'Failed to connect to SMTP server';
+      if (error.code === 'EAUTH') {
+        errorMessage = 'Authentication failed. Please check your SMTP username and password.';
+      } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
+        errorMessage = 'Connection failed. Please check your SMTP host and port settings.';
+      } else if (error.code === 'ESOCKET') {
+        errorMessage = 'Socket error. Please verify your SMTP server settings and check if SSL/TLS is configured correctly for the port.';
+      } else {
+        errorMessage = `SMTP Error: ${error.message}`;
+      }
+
+      return {
+        success: false,
+        message: errorMessage,
+        error: error.message
+      };
+    }
   }
 
   // Send test email

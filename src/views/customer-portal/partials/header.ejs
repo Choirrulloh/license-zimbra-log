@@ -1,0 +1,18 @@
+<header class="bg-white shadow-sm">
+  <div class="flex items-center justify-between p-4">
+    <div>
+      <h2 class="text-xl font-semibold text-gray-800"><%= title %></h2>
+      <% if (typeof subtitle !== 'undefined') { %>
+        <p class="text-sm text-gray-600"><%= subtitle %></p>
+      <% } %>
+    </div>
+    <div class="flex items-center space-x-4">
+      <% if (typeof customer !== 'undefined') { %>
+        <div class="text-right">
+          <p class="text-sm font-medium text-gray-700"><%= customer.name %></p>
+          <p class="text-xs text-gray-500"><%= customer.company || 'Customer' %></p>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</header>

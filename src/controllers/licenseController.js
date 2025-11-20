@@ -21,7 +21,7 @@ class LicenseController {
 
       let query = `
         SELECT l.*, p.name as product_name, c.name as customer_name, c.email as customer_email,
-               lt.name as license_type_name, lt.type as license_type
+               lt.name as license_type_name
         FROM licenses l
         JOIN products p ON l.product_id = p.id
         JOIN customers c ON l.customer_id = c.id
@@ -74,7 +74,7 @@ class LicenseController {
       const license = await db.get(
         `SELECT l.*, p.name as product_name, p.version as product_version,
                 c.name as customer_name, c.email as customer_email, c.company as customer_company,
-                lt.name as license_type_name, lt.type as license_type, lt.features
+                lt.name as license_type_name, lt.features
          FROM licenses l
          JOIN products p ON l.product_id = p.id
          JOIN customers c ON l.customer_id = c.id
@@ -101,6 +101,16 @@ class LicenseController {
         [id]
       );
 
+      // Fetch features from normalized database (pivot table)
+      const features = await db.all(
+        `SELECT f.id, f.name, f.feature_key, f.description
+         FROM features f
+         INNER JOIN license_type_features ltf ON f.id = ltf.feature_id
+         WHERE ltf.license_type_id = ?
+         ORDER BY f.name`,
+        [license.license_type_id]
+      );
+
       // Generate offline validation code
       const offlineCode = licenseGenerator.generateOfflineCode(
         license.license_key,
@@ -112,6 +122,7 @@ class LicenseController {
         license,
         activations,
         history,
+        features,
         offlineCode,
         moment
       });

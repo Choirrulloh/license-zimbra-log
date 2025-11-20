@@ -83,7 +83,7 @@
               </div>
               <div>
                 <p class="text-xs text-gray-500 uppercase mb-1">Last Updated</p>
-                <p class="text-sm"><%= moment(template.updated_at).format('MMM D, YYYY HH:mm') %></p>
+                <p class="text-sm"><%= moment(template.updated_at).tz(timezone).format('MMM D, YYYY HH:mm') %></p>
               </div>
             </div>
           </div>
