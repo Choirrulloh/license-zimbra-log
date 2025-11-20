@@ -94,7 +94,7 @@
                             <%= template.subject %>
                           </p>
                           <p class="text-xs text-gray-500">
-                            <i class="fas fa-clock"></i> Updated <%= moment(template.updated_at).tz('Asia/Jakarta').fromNow() %>
+                            <i class="fas fa-clock"></i> Updated <%= moment(template.updated_at).tz(timezone).fromNow() %>
                           </p>
                         </div>
 

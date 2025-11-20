@@ -12,7 +12,7 @@
       <header class="bg-white shadow-sm">
         <div class="flex items-center justify-between p-4">
           <h2 class="text-xl font-semibold text-gray-800"><%= customer.name %></h2>
-          <span class="text-sm text-gray-600"><%= moment().format('dddd, MMMM D, YYYY') %></span>
+          <span class="text-sm text-gray-600"><%= moment().tz(timezone).format('dddd, MMMM D, YYYY') %></span>
         </div>
       </header>
       <main class="flex-1 overflow-y-auto p-6">
@@ -92,7 +92,7 @@
             </div>
             <div>
               <p class="text-sm text-gray-500">Member Since</p>
-              <p class="font-medium"><%= moment(customer.created_at).tz('Asia/Jakarta').format('MMM D, YYYY') %></p>
+              <p class="font-medium"><%= moment(customer.created_at).tz(timezone).format('MMM D, YYYY') %></p>
             </div>
           </div>
         </div>
@@ -123,7 +123,7 @@
                           <%= l.status %>
                         </span>
                       </td>
-                      <td class="px-6 py-4 text-sm"><%= l.expiry_date ? moment(l.expiry_date).tz('Asia/Jakarta').format('MMM D, YYYY') : 'Never' %></td>
+                      <td class="px-6 py-4 text-sm"><%= l.expiry_date ? moment(l.expiry_date).tz(timezone).format('MMM D, YYYY') : 'Never' %></td>
                     </tr>
                   <% }); %>
                 <% } else { %>
@@ -152,7 +152,7 @@
                 <% if (transactions.length > 0) { %>
                   <% transactions.forEach(t => { %>
                     <tr>
-                      <td class="px-6 py-4 text-sm"><%= moment(t.transaction_date).tz('Asia/Jakarta').format('MMM D, YYYY') %></td>
+                      <td class="px-6 py-4 text-sm"><%= moment(t.transaction_date).tz(timezone).format('MMM D, YYYY') %></td>
                       <td class="px-6 py-4 text-sm"><%= t.product_name %></td>
                       <td class="px-6 py-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded"><%= t.license_key %></code></td>
                       <td class="px-6 py-4 text-sm font-medium">Rp <%= new Intl.NumberFormat('id-ID').format(t.amount) %></td>

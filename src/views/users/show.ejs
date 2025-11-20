@@ -58,7 +58,7 @@
                 <div>
                   <p class="text-xs text-gray-500 uppercase">Last Login</p>
                   <p class="mt-1 text-sm">
-                    <%= viewUser.last_login ? moment(viewUser.last_login).format('MMM D, YYYY HH:mm') : 'Never' %>
+                    <%= viewUser.last_login ? moment(viewUser.last_login).tz(timezone).format('MMM D, YYYY HH:mm') : 'Never' %>
                   </p>
                 </div>
                 <div>
@@ -67,11 +67,11 @@
                 </div>
                 <div>
                   <p class="text-xs text-gray-500 uppercase">Created</p>
-                  <p class="mt-1 text-sm"><%= moment(viewUser.created_at).tz('Asia/Jakarta').format('MMM D, YYYY') %></p>
+                  <p class="mt-1 text-sm"><%= moment(viewUser.created_at).tz(timezone).format('MMM D, YYYY') %></p>
                 </div>
                 <div>
                   <p class="text-xs text-gray-500 uppercase">Updated</p>
-                  <p class="mt-1 text-sm"><%= moment(viewUser.updated_at).tz('Asia/Jakarta').format('MMM D, YYYY') %></p>
+                  <p class="mt-1 text-sm"><%= moment(viewUser.updated_at).tz(timezone).format('MMM D, YYYY') %></p>
                 </div>
               </div>
             </div>
@@ -110,10 +110,10 @@
                     </div>
                     <div class="flex-shrink-0 text-right">
                       <p class="text-xs text-gray-500">
-                        <%= moment(activity.created_at).tz('Asia/Jakarta').format('MMM D, YYYY') %>
+                        <%= moment(activity.created_at).tz(timezone).format('MMM D, YYYY') %>
                       </p>
                       <p class="text-xs text-gray-400">
-                        <%= moment(activity.created_at).tz('Asia/Jakarta').format('HH:mm') %>
+                        <%= moment(activity.created_at).tz(timezone).format('HH:mm') %>
                       </p>
                     </div>
                   </div>

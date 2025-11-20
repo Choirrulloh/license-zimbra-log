@@ -72,6 +72,20 @@ app.locals.moment = moment;
 const helpers = require('./utils/helpers');
 app.locals.helpers = helpers;
 
+// Middleware to inject timezone into all views
+const db = require('./database/db');
+app.use(async (req, res, next) => {
+  try {
+    // Get timezone from settings
+    const timezoneSetting = await db.get("SELECT value FROM settings WHERE key = 'timezone'");
+    res.locals.timezone = timezoneSetting?.value || 'Asia/Jakarta';
+  } catch (error) {
+    // Fallback to default if DB error
+    res.locals.timezone = 'Asia/Jakarta';
+  }
+  next();
+});
+
 // Routes
 const routes = require('./routes');
 app.use('/', routes);

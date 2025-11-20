@@ -12,7 +12,7 @@
       <header class="bg-white shadow-sm">
         <div class="flex items-center justify-between p-4">
           <h2 class="text-xl font-semibold text-gray-800"><%= product.name %></h2>
-          <span class="text-sm text-gray-600"><%= moment().format('dddd, MMMM D, YYYY') %></span>
+          <span class="text-sm text-gray-600"><%= moment().tz(timezone).format('dddd, MMMM D, YYYY') %></span>
         </div>
       </header>
       <main class="flex-1 overflow-y-auto p-6">
@@ -45,7 +45,7 @@
             </div>
             <div>
               <p class="text-sm text-gray-500">Created</p>
-              <p class="font-medium"><%= moment(product.created_at).tz('Asia/Jakarta').format('MMM D, YYYY') %></p>
+              <p class="font-medium"><%= moment(product.created_at).tz(timezone).format('MMM D, YYYY') %></p>
             </div>
             <div class="md:col-span-2">
               <p class="text-sm text-gray-500">Description</p>
@@ -209,7 +209,7 @@
                         </span>
                       </td>
                       <td class="px-6 py-4 text-sm">
-                        <%= l.expiry_date ? moment(l.expiry_date).tz('Asia/Jakarta').format('MMM D, YYYY') : 'Never' %>
+                        <%= l.expiry_date ? moment(l.expiry_date).tz(timezone).format('MMM D, YYYY') : 'Never' %>
                       </td>
                     </tr>
                   <% }); %>
