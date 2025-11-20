@@ -1,5 +1,5 @@
 const db = require('../database/db');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const ActivityLogger = require('../utils/activityLogger');
 const emailService = require('../services/emailService');

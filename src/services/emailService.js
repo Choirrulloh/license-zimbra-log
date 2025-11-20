@@ -8,10 +8,9 @@ class EmailService {
   }
 
   // Initialize email transporter
-  initializeTransporter() {
+  async initializeTransporter() {
     try {
-      // Get email settings from database or environment
-      const emailSettings = {
+      let emailSettings = {
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
         port: parseInt(process.env.SMTP_PORT || '587'),
         secure: process.env.SMTP_SECURE === 'true',
@@ -21,7 +20,31 @@ class EmailService {
         }
       };
 
-      // If no credentials, use test account (for development)
+      // Try to get settings from database first
+      try {
+        const settingsRows = await db.all('SELECT * FROM settings');
+        const dbSettings = {};
+        settingsRows.forEach(row => {
+          dbSettings[row.key] = row.value;
+        });
+
+        if (dbSettings.smtp_host && dbSettings.smtp_user && dbSettings.smtp_password) {
+          emailSettings = {
+            host: dbSettings.smtp_host,
+            port: parseInt(dbSettings.smtp_port || '587'),
+            secure: dbSettings.smtp_secure === 'true' || dbSettings.smtp_secure === true,
+            auth: {
+              user: dbSettings.smtp_user,
+              pass: dbSettings.smtp_password
+            }
+          };
+          console.log(`📧 Using SMTP settings from database: ${emailSettings.host}:${emailSettings.port}`);
+        }
+      } catch (dbError) {
+        console.log('⚠️  Could not read SMTP settings from database, using environment variables');
+      }
+
+      // If no credentials, use simulated mode (for development)
       if (!emailSettings.auth.user || !emailSettings.auth.pass) {
         console.log('⚠️  No SMTP credentials found. Email sending will be simulated.');
         this.transporter = null;
@@ -33,16 +56,23 @@ class EmailService {
       // Verify connection
       this.transporter.verify((error, success) => {
         if (error) {
-          console.error('Email transporter verification failed:', error);
+          console.error('📧 Email transporter verification failed:', error.message);
           this.transporter = null;
         } else {
-          console.log('✓ Email service ready');
+          console.log('✓ Email service ready and verified');
         }
       });
     } catch (error) {
       console.error('Error initializing email transporter:', error);
       this.transporter = null;
     }
+  }
+
+  // Reload SMTP configuration from database (call after settings updated)
+  async reloadConfig() {
+    console.log('🔄 Reloading email service configuration...');
+    await this.initializeTransporter();
+    return { success: this.transporter !== null };
   }
 
   // Replace variables in template

@@ -54,13 +54,13 @@
             Step 1: Upload Files
           </h4>
 
-          <div id="uploadZone" class="upload-zone rounded-lg p-8 text-center mb-4">
+          <div id="uploadZone" class="upload-zone rounded-lg p-8 text-center mb-4 cursor-pointer">
             <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 mb-3"></i>
             <p class="text-lg text-gray-600 mb-2">Drag & Drop Files Here</p>
             <p class="text-sm text-gray-500 mb-4">or click to browse your computer</p>
             <p class="text-xs text-gray-400">Supported: .js, .sh, .zip | Max size: <%= quota.max_file_size_mb %>MB</p>
-            <input type="file" id="fileInput" accept=".js,.sh,.zip" class="hidden">
           </div>
+          <input type="file" id="fileInput" accept=".js,.sh,.zip" class="hidden">
 
           <div id="uploadedFiles" class="hidden mb-4">
             <div class="bg-gray-50 rounded-lg p-4">
@@ -77,7 +77,7 @@
             </div>
           </div>
 
-          <button onclick="document.getElementById('fileInput').click()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+          <button id="selectFilesBtn" type="button" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors cursor-pointer">
             <i class="fas fa-plus mr-2"></i>Select Files
           </button>
         </div>
@@ -415,32 +415,61 @@
     let uploadedFileData = null; // Store upload response data
     let currentObfuscationId = null;
 
-    // Drag & Drop
-    const uploadZone = document.getElementById('uploadZone');
-    const fileInput = document.getElementById('fileInput');
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      // Drag & Drop
+      const uploadZone = document.getElementById('uploadZone');
+      const fileInput = document.getElementById('fileInput');
+      const selectFilesBtn = document.getElementById('selectFilesBtn');
 
-    uploadZone.addEventListener('click', () => fileInput.click());
-
-    uploadZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadZone.classList.add('drag-over');
-    });
-
-    uploadZone.addEventListener('dragleave', () => {
-      uploadZone.classList.remove('drag-over');
-    });
-
-    uploadZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadZone.classList.remove('drag-over');
-      if (e.dataTransfer.files.length > 0) {
-        handleFileSelect(e.dataTransfer.files[0]);
+      // Select Files button click handler
+      if (selectFilesBtn) {
+        selectFilesBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('Select Files button clicked');
+          if (fileInput) {
+            fileInput.click();
+          } else {
+            console.error('File input not found');
+          }
+        });
       }
-    });
 
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) {
-        handleFileSelect(e.target.files[0]);
+      // Upload zone click handler
+      if (uploadZone) {
+        uploadZone.addEventListener('click', function(e) {
+          console.log('Upload zone clicked');
+          if (fileInput) {
+            fileInput.click();
+          }
+        });
+
+        uploadZone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+          uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          uploadZone.classList.remove('drag-over');
+          if (e.dataTransfer.files.length > 0) {
+            handleFileSelect(e.dataTransfer.files[0]);
+          }
+        });
+      }
+
+      // File input change handler
+      if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+          console.log('File selected:', e.target.files);
+          if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+          }
+        });
       }
     });
 

@@ -72,6 +72,17 @@ class SettingsController {
         );
       }
 
+      // Check if SMTP settings were updated
+      const smtpKeys = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_password', 'smtp_secure'];
+      const smtpUpdated = Object.keys(updates).some(key => smtpKeys.includes(key));
+
+      // Reload email service if SMTP settings changed
+      if (smtpUpdated) {
+        const emailService = require('../services/emailService');
+        await emailService.reloadConfig();
+        console.log('📧 Email service configuration reloaded after SMTP settings update');
+      }
+
       // Log activity
       await ActivityLogger.log({
         userId: req.session.userId,
@@ -86,7 +97,9 @@ class SettingsController {
 
       res.json({
         success: true,
-        message: 'Settings updated successfully'
+        message: smtpUpdated ?
+          'Settings updated successfully. Email service reloaded with new SMTP configuration.' :
+          'Settings updated successfully'
       });
     } catch (error) {
       console.error('Error updating settings:', error);
