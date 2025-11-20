@@ -236,10 +236,23 @@ class CustomerController {
         return res.status(404).send('Customer not found');
       }
 
+      // Get all active products
+      const products = await db.all('SELECT * FROM products WHERE is_active = 1 ORDER BY name');
+
+      // Get customer's product access
+      const productAccess = await db.all(
+        'SELECT product_id FROM customer_product_access WHERE customer_id = ?',
+        [id]
+      );
+      const accessedProductIds = productAccess.map(pa => pa.product_id);
+
       res.render('customers/edit', {
         user: req.session,
         customer,
-        error: null
+        products,
+        accessedProductIds,
+        error: null,
+        moment: require('moment-timezone')
       });
     } catch (error) {
       console.error('Error fetching customer:', error);
@@ -250,21 +263,74 @@ class CustomerController {
   async update(req, res) {
     try {
       const { id } = req.params;
-      const { name, email, company, phone, address, is_active } = req.body;
+      const {
+        name,
+        email,
+        company,
+        phone,
+        address,
+        is_active,
+        license_limit,
+        code_protection_limit,
+        product_access
+      } = req.body;
 
       if (!name || !email) {
         const customer = await db.get('SELECT * FROM customers WHERE id = ?', [id]);
+        const products = await db.all('SELECT * FROM products WHERE is_active = 1 ORDER BY name');
+        const productAccess = await db.all(
+          'SELECT product_id FROM customer_product_access WHERE customer_id = ?',
+          [id]
+        );
+        const accessedProductIds = productAccess.map(pa => pa.product_id);
+
         return res.render('customers/edit', {
           user: req.session,
           customer,
-          error: 'Name and email are required'
+          products,
+          accessedProductIds,
+          error: 'Name and email are required',
+          moment: require('moment-timezone')
         });
       }
 
+      // Update basic info and quotas
       await db.run(
-        'UPDATE customers SET name = ?, email = ?, company = ?, phone = ?, address = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [name, email, company, phone, address, is_active === 'on' ? 1 : 0, id]
+        `UPDATE customers
+         SET name = ?, email = ?, company = ?, phone = ?, address = ?,
+             is_active = ?,
+             license_limit = ?, code_protection_limit = ?,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [
+          name,
+          email,
+          company,
+          phone,
+          address,
+          is_active === 'on' ? 1 : 0,
+          parseInt(license_limit) || 0,
+          parseInt(code_protection_limit) || 0,
+          id
+        ]
       );
+
+      // Update product access
+      // First, delete existing access
+      await db.run('DELETE FROM customer_product_access WHERE customer_id = ?', [id]);
+
+      // Then, insert new access
+      if (product_access) {
+        const productIds = Array.isArray(product_access) ? product_access : [product_access];
+
+        for (const productId of productIds) {
+          await db.run(
+            `INSERT INTO customer_product_access (customer_id, product_id, can_generate_license)
+             VALUES (?, ?, 1)`,
+            [id, productId]
+          );
+        }
+      }
 
       res.redirect('/customers');
     } catch (error) {

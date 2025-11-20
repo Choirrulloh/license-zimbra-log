@@ -4,252 +4,411 @@
   <title>Code Protection - Customer Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .upload-zone {
+      border: 2px dashed #cbd5e0;
+      transition: all 0.3s;
+    }
+    .upload-zone.drag-over {
+      border-color: #4299e1;
+      background-color: #ebf8ff;
+    }
+    .level-card {
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .level-card.selected {
+      border-color: #4299e1;
+      background-color: #ebf8ff;
+    }
+  </style>
 </head>
 <body class="bg-gray-100">
-  <%- include('partials/sidebar', { currentPage: 'code-protection' }) %>
+  <div class="flex h-screen overflow-hidden">
+    <%- include('partials/sidebar', { currentPage: 'code-protection' }) %>
 
-  <div class="flex-1 flex flex-col overflow-hidden">
-    <%- include('partials/header', { title: 'Code Protection', subtitle: 'Generate and manage code protection' }) %>
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <%- include('partials/header', { title: 'Code Protection', subtitle: 'Protect your JavaScript code with industry-standard obfuscation' }) %>
 
-    <main class="flex-1 overflow-y-auto p-6">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Left: Generate Form -->
-        <div class="lg:col-span-2 space-y-6">
-          <!-- Quota Card -->
-          <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm text-purple-700 font-medium">Code Protection Quota</p>
-                <p class="text-2xl font-bold text-purple-900">
-                  <%= quotaInfo.code_protection_used %>/<%= quotaInfo.code_protection_limit === 0 ? '∞' : quotaInfo.code_protection_limit %>
+      <main class="flex-1 overflow-y-auto p-6">
+        <!-- Header Card -->
+        <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg shadow-md p-6 mb-6 text-white">
+          <div class="flex items-center space-x-3">
+            <i class="fas fa-shield-alt text-4xl"></i>
+            <div>
+              <h3 class="text-2xl font-bold">Code Protection Service</h3>
+              <p class="text-purple-100">Protect your JavaScript code with industry-standard obfuscation techniques</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Usage Information -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h4 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-info-circle text-purple-500 mr-2"></i>
+            Usage Information
+          </h4>
+          <div class="flex items-center justify-between">
+            <div>
+              <% if (quota.monthly_limit === 0 || quota.monthly_limit === -1) { %>
+                <p class="text-sm text-gray-600">
+                  <i class="fas fa-infinity text-green-500 mr-2"></i>
+                  Your Quota: <span class="font-semibold text-green-600">Unlimited</span>
                 </p>
-              </div>
-              <div class="text-right">
-                <p class="text-sm text-purple-700">Remaining</p>
-                <p class="text-xl font-semibold text-purple-900">
-                  <%= quotaInfo.code_protection_remaining === 'Unlimited' ? '∞' : quotaInfo.code_protection_remaining %>
+                <p class="text-xs text-gray-500 mt-1">
+                  <i class="fas fa-crown text-yellow-500 mr-1"></i>
+                  No quota limits
                 </p>
-              </div>
-            </div>
-            <% if (quotaInfo.code_protection_limit > 0) { %>
-              <div class="w-full bg-purple-200 rounded-full h-2 mt-3">
-                <div class="bg-purple-600 h-2 rounded-full" style="width: <%= (quotaInfo.code_protection_used / quotaInfo.code_protection_limit * 100) %>%"></div>
-              </div>
-            <% } %>
-          </div>
-
-          <!-- Generate Form -->
-          <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">
-              <i class="fas fa-shield-alt text-purple-600 mr-2"></i> Generate Protection Code
-            </h3>
-
-            <% if (quotaInfo.code_protection_limit > 0 && quotaInfo.code_protection_used >= quotaInfo.code_protection_limit) { %>
-              <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
-                <div class="flex items-center">
-                  <i class="fas fa-exclamation-circle mr-3"></i>
-                  <div>
-                    <p class="font-semibold">Quota Exceeded!</p>
-                    <p class="text-sm">You have used all <%= quotaInfo.code_protection_limit %> code protections. Contact administrator to increase your limit.</p>
-                  </div>
-                </div>
-              </div>
-            <% } else { %>
-              <form id="generateForm" class="space-y-4">
-                <div>
-                  <label class="block text-gray-700 text-sm font-medium mb-2">
-                    <i class="fas fa-code mr-1"></i> Code to Protect *
-                  </label>
-                  <textarea
-                    id="code_input"
-                    name="code_input"
-                    required
-                    rows="4"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm"
-                    placeholder="Enter your code here..."
-                  ></textarea>
-                  <p class="text-xs text-gray-500 mt-1">
-                    <i class="fas fa-info-circle"></i> Enter any text, code, or string you want to protect
-                  </p>
-                </div>
-
-                <div>
-                  <label class="block text-gray-700 text-sm font-medium mb-2">
-                    <i class="fas fa-clock mr-1"></i> Expiration (optional)
-                  </label>
-                  <select
-                    id="duration_days"
-                    name="duration_days"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="">Never expires</option>
-                    <option value="7">7 days</option>
-                    <option value="30">30 days</option>
-                    <option value="90">90 days</option>
-                    <option value="180">180 days</option>
-                    <option value="365">1 year</option>
-                  </select>
-                </div>
-
-                <button
-                  type="submit"
-                  id="generateBtn"
-                  class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition-colors"
-                >
-                  <i class="fas fa-shield-alt mr-2"></i> Generate Protection Code
-                </button>
-              </form>
-            <% } %>
-          </div>
-
-          <!-- Protection History -->
-          <div class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b">
-              <h3 class="text-lg font-semibold text-gray-800">
-                <i class="fas fa-history mr-2"></i> Protection History
-              </h3>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Protected Code</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Original</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expires</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <% if (protections.length > 0) { %>
-                    <% protections.forEach(protection => { %>
-                      <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4">
-                          <div class="flex items-center">
-                            <code class="text-sm bg-purple-50 px-2 py-1 rounded font-mono text-purple-800">
-                              <%= protection.protected_code.substring(0, 16) %>...
-                            </code>
-                            <button onclick="copyCode('<%= protection.protected_code %>')" class="ml-2 text-gray-400 hover:text-gray-600">
-                              <i class="fas fa-copy"></i>
-                            </button>
-                          </div>
-                        </td>
-                        <td class="px-6 py-4">
-                          <code class="text-xs text-gray-600 truncate block max-w-xs">
-                            <%= protection.original_code.substring(0, 30) %><%= protection.original_code.length > 30 ? '...' : '' %>
-                          </code>
-                        </td>
-                        <td class="px-6 py-4">
-                          <%
-                            const isExpired = protection.expires_at && new Date(protection.expires_at) < new Date();
-                            const isActive = !protection.expires_at || !isExpired;
-                          %>
-                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full <%= isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
-                            <i class="fas <%= isActive ? 'fa-check-circle' : 'fa-times-circle' %> mr-1"></i>
-                            <%= isActive ? 'Active' : 'Expired' %>
-                          </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">
-                          <% if (protection.expires_at) { %>
-                            <%= moment(protection.expires_at).tz(timezone).format('MMM D, YYYY') %>
-                          <% } else { %>
-                            <span class="text-green-600">Never</span>
-                          <% } %>
-                        </td>
-                        <td class="px-6 py-4 text-sm">
-                          <button onclick="viewDetails('<%= protection.protected_code %>', '<%= protection.original_code.replace(/'/g, "\\'") %>')" class="text-blue-600 hover:text-blue-900">
-                            <i class="fas fa-eye"></i> View
-                          </button>
-                        </td>
-                      </tr>
-                    <% }) %>
-                  <% } else { %>
-                    <tr>
-                      <td colspan="5" class="px-6 py-8 text-center text-gray-500">
-                        No code protections yet. Generate your first one above.
-                      </td>
-                    </tr>
-                  <% } %>
-                </tbody>
-              </table>
+              <% } else { %>
+                <p class="text-sm text-gray-600">
+                  <i class="fas fa-chart-bar text-purple-500 mr-2"></i>
+                  Your Quota: <span class="font-semibold"><%= quota.monthly_limit - quota.used_this_month %> of <%= quota.monthly_limit %></span> remaining
+                </p>
+                <p class="text-xs text-gray-500 mt-1">
+                  Used: <%= quota.used_this_month %> / <%= quota.monthly_limit %>
+                </p>
+              <% } %>
             </div>
           </div>
         </div>
 
-        <!-- Right: Info -->
-        <div class="space-y-6">
-          <!-- How it works -->
-          <div class="bg-white rounded-lg shadow p-6">
-            <h4 class="font-semibold text-gray-800 mb-3">
-              <i class="fas fa-info-circle text-purple-600 mr-2"></i> How it works
-            </h4>
-            <ul class="space-y-2 text-sm text-gray-600">
-              <li class="flex items-start">
-                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
-                <span>Enter any code or text you want to protect</span>
-              </li>
-              <li class="flex items-start">
-                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
-                <span>System generates a unique protection hash</span>
-              </li>
-              <li class="flex items-start">
-                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
-                <span>Use the protected code in your applications</span>
-              </li>
-              <li class="flex items-start">
-                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
-                <span>Set optional expiration date</span>
-              </li>
-            </ul>
+        <!-- Step 1: Upload Files -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h4 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-upload text-purple-500 mr-2"></i>
+            Step 1: Upload Files
+          </h4>
+
+          <div id="uploadZone" class="upload-zone rounded-lg p-8 text-center mb-4 cursor-pointer">
+            <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 mb-3"></i>
+            <p class="text-lg text-gray-600 mb-2">Drag & Drop Files Here</p>
+            <p class="text-sm text-gray-500 mb-4">or click to browse your computer</p>
+            <p class="text-xs text-gray-400">Supported: .js, .sh, .zip | Max size: <%= quota.max_file_size_mb %>MB</p>
           </div>
 
-          <!-- Security Note -->
-          <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
-            <div class="flex items-start">
-              <i class="fas fa-shield-alt text-yellow-600 mr-3 mt-1"></i>
-              <div class="text-sm">
-                <p class="text-yellow-800 font-medium mb-1">Security Note</p>
-                <p class="text-yellow-700">Protected codes are hashed using SHA-256. Keep your original code safe.</p>
-              </div>
+          <input type="file" id="fileInput" accept=".js,.sh,.zip" style="display: none !important;" multiple>
+
+          <div id="uploadedFiles" class="hidden mb-4">
+            <div class="bg-gray-50 rounded-lg p-4">
+              <p class="text-sm font-medium text-gray-700 mb-2">
+                <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                Uploaded Files
+              </p>
+              <div id="filesList" class="space-y-2"></div>
             </div>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <%- include('partials/toast') %>
-
-  <!-- Details Modal -->
-  <div id="detailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
-      <div class="p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-xl font-bold text-gray-800">Code Protection Details</h3>
-          <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
-            <i class="fas fa-times text-xl"></i>
-          </button>
-        </div>
-
-        <div class="space-y-4">
-          <div>
-            <label class="text-sm text-gray-600 block mb-1">Original Code:</label>
-            <div class="bg-gray-50 p-3 rounded font-mono text-sm break-all" id="modalOriginal"></div>
-          </div>
-
-          <div>
-            <label class="text-sm text-gray-600 block mb-1">Protected Code:</label>
-            <div class="bg-purple-50 p-3 rounded font-mono text-sm break-all text-purple-800 flex items-center justify-between" id="modalProtected">
-              <span id="protectedCodeText"></span>
-              <button onclick="copyModalCode()" class="text-purple-600 hover:text-purple-800 ml-2">
-                <i class="fas fa-copy"></i>
+            <div class="mt-4 flex space-x-2">
+              <button onclick="clearFiles()" class="text-sm text-red-600 hover:text-red-700">
+                <i class="fas fa-times mr-1"></i>Clear All
               </button>
             </div>
           </div>
+
+          <button id="selectFilesBtn" type="button" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors cursor-pointer">
+            <i class="fas fa-plus mr-2"></i>Select Files
+          </button>
         </div>
 
-        <div class="mt-6 flex justify-end">
-          <button onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg">
+        <!-- Step 2: Configure Options -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h4 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-cog text-purple-500 mr-2"></i>
+            Step 2: Configure Options
+          </h4>
+
+          <p class="text-sm text-gray-600 mb-4">Obfuscation Level:</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="level-card border-2 rounded-lg p-4 text-center" data-level="low" onclick="selectLevel('low')">
+              <i class="fas fa-bolt text-3xl text-yellow-500 mb-2"></i>
+              <h5 class="font-semibold text-gray-800">Low</h5>
+              <p class="text-sm text-gray-600 mt-2">Basic protection, fast processing</p>
+            </div>
+
+            <div class="level-card border-2 rounded-lg p-4 text-center selected" data-level="medium" onclick="selectLevel('medium')">
+              <i class="fas fa-balance-scale text-3xl text-purple-500 mb-2"></i>
+              <h5 class="font-semibold text-gray-800">Medium</h5>
+              <p class="text-sm text-gray-600 mt-2">Recommended for most cases</p>
+            </div>
+
+            <div class="level-card border-2 rounded-lg p-4 text-center" data-level="high" onclick="selectLevel('high')">
+              <i class="fas fa-lock text-3xl text-red-500 mb-2"></i>
+              <h5 class="font-semibold text-gray-800">High</h5>
+              <p class="text-sm text-gray-600 mt-2">Maximum protection, slower</p>
+            </div>
+          </div>
+
+          <div class="border-t pt-4">
+            <label class="flex items-center cursor-pointer">
+              <input type="checkbox" id="showAdvanced" class="mr-2" onchange="toggleAdvanced()">
+              <span class="text-sm font-medium text-gray-700">Show Advanced Options</span>
+            </label>
+
+            <div id="advancedOptions" class="hidden mt-4">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Options Column -->
+                <div class="md:col-span-2 bg-gray-50 rounded-lg p-4 space-y-2">
+                  <label class="flex items-center">
+                    <input type="checkbox" id="optCompact" class="mr-2" checked>
+                    <span class="text-sm text-gray-700">Compact code (remove whitespace)</span>
+                  </label>
+                  <label class="flex items-center">
+                    <input type="checkbox" id="optRenameVars" class="mr-2" checked>
+                    <span class="text-sm text-gray-700">Rename variables and functions</span>
+                  </label>
+                  <label class="flex items-center">
+                    <input type="checkbox" id="optStringEnc" class="mr-2" checked>
+                    <span class="text-sm text-gray-700">String array encoding</span>
+                  </label>
+                  <label class="flex items-center">
+                    <input type="checkbox" id="optControlFlow" class="mr-2">
+                    <span class="text-sm text-gray-700">Control flow flattening (slower)</span>
+                  </label>
+                  <label class="flex items-center">
+                    <input type="checkbox" id="optDeadCode" class="mr-2">
+                    <span class="text-sm text-gray-700">Dead code injection</span>
+                  </label>
+                  <label class="flex items-center">
+                    <input type="checkbox" id="optDisableConsole" class="mr-2">
+                    <span class="text-sm text-gray-700">Disable console output</span>
+                  </label>
+                  <button onclick="resetAdvanced()" class="mt-2 text-sm text-purple-600 hover:text-purple-700">
+                    <i class="fas fa-redo mr-1"></i>Reset to Default
+                  </button>
+                </div>
+
+                <!-- Legend Column -->
+                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <h5 class="text-sm font-semibold text-purple-800 mb-3">
+                    <i class="fas fa-info-circle mr-1"></i>Options Guide
+                  </h5>
+                  <div class="space-y-2 text-xs text-gray-700">
+                    <div>
+                      <p class="font-medium text-purple-700">Compact Code</p>
+                      <p class="text-gray-600">Removes whitespace & newlines to reduce file size</p>
+                    </div>
+                    <div>
+                      <p class="font-medium text-purple-700">Rename Variables</p>
+                      <p class="text-gray-600">Changes variable names to short random strings</p>
+                    </div>
+                    <div>
+                      <p class="font-medium text-purple-700">String Encoding</p>
+                      <p class="text-gray-600">Encrypts strings to hide text content</p>
+                    </div>
+                    <div>
+                      <p class="font-medium text-purple-700">Control Flow</p>
+                      <p class="text-gray-600">Makes code logic harder to follow (slow)</p>
+                    </div>
+                    <div>
+                      <p class="font-medium text-purple-700">Dead Code</p>
+                      <p class="text-gray-600">Adds fake code to confuse analysis</p>
+                    </div>
+                    <div>
+                      <p class="font-medium text-purple-700">Disable Console</p>
+                      <p class="text-gray-600">Blocks console.log output</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bash Script Protection (only shown for .sh files) -->
+          <div id="bashProtectionSection" class="hidden mt-4 border-t pt-4">
+            <label class="flex items-center cursor-pointer">
+              <input type="checkbox" id="bashInjectLicense" class="mr-2" onchange="toggleBashInjection()">
+              <span class="text-sm font-medium text-gray-700">
+                <i class="fas fa-terminal text-green-600 mr-1"></i>
+                Inject License Validation (Bash Scripts Only)
+              </span>
+            </label>
+
+            <div id="bashInjectionOptions" class="hidden mt-4 bg-green-50 rounded-lg p-4 border border-green-200">
+              <p class="text-sm text-gray-700 mb-3">
+                <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                The script will require a valid license key when executed
+              </p>
+
+              <!-- Main Script Selection (for ZIP with multiple .sh files) -->
+              <div id="mainScriptSection" class="hidden mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  <i class="fas fa-file-code text-yellow-600 mr-1"></i>
+                  Select Main Script (Entry Point):
+                </label>
+                <select id="bashMainScript" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                  <option value="">-- Select Main Script --</option>
+                </select>
+                <p class="text-xs text-gray-600 mt-1">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  License validation will only be injected into the main script. Other scripts will be obfuscated only.
+                </p>
+              </div>
+
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Select Product:</label>
+                <select id="bashProductId" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                  <option value="">-- Select Product --</option>
+                  <% products.forEach(product => { %>
+                    <option value="<%= product.id %>"><%= product.name %></option>
+                  <% }) %>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Welcome Message:</label>
+                <input type="text" id="bashWelcomeMsg" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="License Protected Script">
+              </div>
+
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Support Contact:</label>
+                <input type="text" id="bashSupportContact" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="support@example.com">
+              </div>
+
+              <div class="space-y-2 mt-3">
+                <p class="text-sm font-medium text-gray-700">Validation Options:</p>
+                <label class="flex items-center">
+                  <input type="checkbox" id="bashCheckExpiry" class="mr-2" checked>
+                  <span class="text-sm text-gray-700">Check license expiry</span>
+                </label>
+                <label class="flex items-center">
+                  <input type="checkbox" id="bashCheckActivation" class="mr-2" checked>
+                  <span class="text-sm text-gray-700">Check activation status</span>
+                </label>
+                <label class="flex items-center">
+                  <input type="checkbox" id="bashCheckMachine" class="mr-2">
+                  <span class="text-sm text-gray-700">Validate machine binding</span>
+                </label>
+                <label class="flex items-center">
+                  <input type="checkbox" id="bashShowInfo" class="mr-2" checked>
+                  <span class="text-sm text-gray-700">Show license info after validation</span>
+                </label>
+              </div>
+
+              <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
+                <p class="text-xs text-blue-700">
+                  <i class="fas fa-lightbulb mr-1"></i>
+                  API Endpoint: <%= apiUrl %>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="flex justify-center mb-6">
+          <button id="obfuscateBtn" onclick="startObfuscation()" disabled class="bg-gray-400 text-white px-8 py-3 rounded-lg text-lg font-semibold cursor-not-allowed">
+            <i class="fas fa-lock mr-2"></i>Start Obfuscation
+          </button>
+        </div>
+
+        <!-- Recent Obfuscations -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h4 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-history text-purple-500 mr-2"></i>
+            Recent Obfuscations
+          </h4>
+
+          <% if (recentObfuscations && recentObfuscations.length > 0) { %>
+            <div class="overflow-x-auto">
+              <table class="min-w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Date & Time</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Files</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Level</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Size</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <% recentObfuscations.forEach(obf => { %>
+                    <tr>
+                      <td class="px-4 py-3 text-sm text-gray-800">
+                        <%= moment(obf.created_at).tz(timezone).format('MMM DD, h:mm A') %>
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-800"><%= obf.original_filename %></td>
+                      <td class="px-4 py-3">
+                        <span class="text-xs px-2 py-1 rounded-full <%= obf.obfuscation_level === 'high' ? 'bg-red-100 text-red-600' : obf.obfuscation_level === 'medium' ? 'bg-purple-100 text-purple-600' : 'bg-yellow-100 text-yellow-600' %>">
+                          <%= obf.obfuscation_level %>
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-600">
+                        <%= (obf.obfuscated_size / 1024).toFixed(0) %> KB
+                      </td>
+                      <td class="px-4 py-3">
+                        <div class="flex space-x-3">
+                          <% const basePath = typeof customerPortalBase !== 'undefined' ? customerPortalBase : '/customer'; %>
+                          <a href="<%= basePath %>/code-protection/download/<%= obf.id %>" class="text-purple-600 hover:text-purple-700 text-sm">
+                            <i class="fas fa-download mr-1"></i>Download
+                          </a>
+                          <button onclick="deleteObfuscation(<%= obf.id %>)" class="text-red-600 hover:text-red-700 text-sm">
+                            <i class="fas fa-trash mr-1"></i>Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <p class="text-center text-gray-500 py-8">
+              <i class="fas fa-inbox text-4xl mb-2"></i><br>
+              No obfuscations yet. Upload a file to get started!
+            </p>
+          <% } %>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Processing Modal -->
+  <div id="processingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+      <div class="text-center">
+        <div class="mb-4">
+          <i class="fas fa-spinner fa-spin text-5xl text-purple-500"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-800 mb-2">Processing Your Files...</h3>
+        <div class="bg-gray-200 rounded-full h-4 mb-4">
+          <div id="progressBar" class="bg-purple-500 h-4 rounded-full transition-all" style="width: 0%"></div>
+        </div>
+        <p id="progressText" class="text-sm text-gray-600 mb-2">Uploading...</p>
+        <p class="text-xs text-gray-500">Please wait, this may take a moment</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div id="successModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+      <div class="text-center">
+        <div class="mb-4">
+          <i class="fas fa-check-circle text-6xl text-green-500"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-800 mb-2">Obfuscation Complete!</h3>
+        <p class="text-gray-600 mb-4">Your code has been successfully obfuscated and is ready for download.</p>
+
+        <div class="bg-gray-50 rounded-lg p-4 mb-4 text-left">
+          <p class="text-sm font-medium text-gray-700 mb-2">
+            <i class="fas fa-chart-bar mr-2"></i>Summary:
+          </p>
+          <div class="space-y-1 text-sm text-gray-600">
+            <p>Files processed: <span id="sumFiles" class="font-semibold"></span></p>
+            <p>Original size: <span id="sumOrigSize" class="font-semibold"></span></p>
+            <p>Obfuscated size: <span id="sumObfSize" class="font-semibold"></span></p>
+            <p>Processing time: <span id="sumTime" class="font-semibold"></span></p>
+          </div>
+        </div>
+
+        <p class="text-xs text-gray-500 mb-4">
+          <i class="fas fa-clock mr-1"></i>Download link expires in 7 days
+        </p>
+
+        <div class="flex space-x-3">
+          <button onclick="downloadResult()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
+            <i class="fas fa-download mr-2"></i>Download
+          </button>
+          <button onclick="closeSuccessModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg">
             Close
           </button>
         </div>
@@ -257,70 +416,403 @@
     </div>
   </div>
 
-  <script>
-    document.getElementById('generateForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
+  <!-- Error Modal -->
+  <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+      <div class="text-center">
+        <div class="mb-4">
+          <i class="fas fa-times-circle text-6xl text-red-500"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-800 mb-2">Obfuscation Failed</h3>
+        <p class="text-gray-600 mb-4">We encountered an error while processing your files.</p>
 
-      const btn = document.getElementById('generateBtn');
-      const originalText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating...';
+        <div class="bg-red-50 rounded-lg p-4 mb-4">
+          <p class="text-sm font-medium text-red-700 mb-1">Error Details:</p>
+          <p id="errorMessage" class="text-sm text-red-600"></p>
+        </div>
+
+        <p class="text-xs text-gray-500 mb-4">Please fix the error and try again. Your quota has not been used.</p>
+
+        <button onclick="closeErrorModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <%- include('partials/toast') %>
+
+  <script>
+    let selectedLevel = 'medium';
+    let uploadedFile = null;
+    let uploadedFileData = null;
+    let currentObfuscationId = null;
+    const basePath = '<%= typeof customerPortalBase !== "undefined" ? customerPortalBase : "/customer" %>';
+
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      const uploadZone = document.getElementById('uploadZone');
+      const fileInput = document.getElementById('fileInput');
+      const selectFilesBtn = document.getElementById('selectFilesBtn');
+
+      if (selectFilesBtn) {
+        selectFilesBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('Select Files button clicked');
+          if (fileInput) {
+            fileInput.click();
+          } else {
+            console.error('File input not found');
+          }
+        });
+      }
+
+      if (uploadZone) {
+        uploadZone.addEventListener('click', function(e) {
+          console.log('Upload zone clicked');
+          if (fileInput) {
+            fileInput.click();
+          }
+        });
+
+        uploadZone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+          uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          uploadZone.classList.remove('drag-over');
+          if (e.dataTransfer.files.length > 0) {
+            handleFileSelect(e.dataTransfer.files[0]);
+          }
+        });
+      }
+
+      if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+          console.log('File selected:', e.target.files);
+          if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+          }
+        });
+      }
+    });
+
+    async function handleFileSelect(file) {
+      const allowedExts = ['.js', '.sh', '.zip'];
+      const fileName = file.name.toLowerCase();
+      const isValid = allowedExts.some(ext => fileName.endsWith(ext));
+
+      if (!isValid) {
+        showToast('Invalid file type. Only .js, .sh, and .zip files are allowed', 'error');
+        return;
+      }
+
+      if (file.size > <%= quota.max_file_size_mb %> * 1024 * 1024) {
+        showToast('File too large. Maximum size is <%= quota.max_file_size_mb %>MB', 'error');
+        return;
+      }
+
+      uploadedFile = file;
+      showToast('Analyzing file...', 'info');
 
       try {
-        const formData = {
-          code_input: document.getElementById('code_input').value,
-          duration_days: document.getElementById('duration_days').value
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const uploadRes = await fetch(basePath + '/code-protection/upload', {
+          method: 'POST',
+          body: formData,
+          credentials: 'same-origin'
+        });
+
+        const uploadData = await uploadRes.json();
+
+        if (!uploadData.success) {
+          throw new Error(uploadData.message);
+        }
+
+        uploadedFileData = uploadData.file;
+
+        const isBashScript = fileName.endsWith('.sh');
+        const isZip = fileName.endsWith('.zip');
+        const hasShellScripts = uploadData.file.shellScripts && uploadData.file.shellScripts.length > 0;
+
+        if (isBashScript || (isZip && hasShellScripts)) {
+          document.getElementById('bashProtectionSection').classList.remove('hidden');
+
+          if (hasShellScripts && uploadData.file.shellScripts.length > 1) {
+            const mainScriptSection = document.getElementById('mainScriptSection');
+            const mainScriptSelect = document.getElementById('bashMainScript');
+
+            mainScriptSelect.innerHTML = '<option value="">-- Select Main Script --</option>';
+            uploadData.file.shellScripts.forEach(script => {
+              const option = document.createElement('option');
+              option.value = script.path;
+              option.textContent = script.path;
+              mainScriptSelect.appendChild(option);
+            });
+
+            mainScriptSection.classList.remove('hidden');
+          } else if (hasShellScripts && uploadData.file.shellScripts.length === 1) {
+            document.getElementById('bashMainScript').value = uploadData.file.shellScripts[0].path;
+            document.getElementById('mainScriptSection').classList.add('hidden');
+          } else {
+            document.getElementById('mainScriptSection').classList.add('hidden');
+          }
+        } else {
+          document.getElementById('bashProtectionSection').classList.add('hidden');
+          document.getElementById('bashInjectLicense').checked = false;
+          document.getElementById('bashInjectionOptions').classList.add('hidden');
+          document.getElementById('mainScriptSection').classList.add('hidden');
+        }
+
+        document.getElementById('uploadedFiles').classList.remove('hidden');
+        let fileIcon = 'fa-file-code';
+        let iconColor = 'text-purple-500';
+
+        if (isBashScript) {
+          fileIcon = 'fa-terminal';
+          iconColor = 'text-green-500';
+        } else if (isZip) {
+          fileIcon = 'fa-file-archive';
+          iconColor = 'text-purple-500';
+        }
+
+        let shellScriptsInfo = '';
+        if (hasShellScripts) {
+          shellScriptsInfo = `<p class="text-xs text-green-600 mt-1">
+            <i class="fas fa-terminal mr-1"></i>
+            Found ${uploadData.file.shellScripts.length} shell script(s)
+          </p>`;
+        }
+
+        document.getElementById('filesList').innerHTML = `
+          <div class="flex items-center justify-between bg-white p-3 rounded border">
+            <div class="flex items-center space-x-3">
+              <i class="fas ${fileIcon} ${iconColor} text-xl"></i>
+              <div>
+                <p class="text-sm font-medium text-gray-800">${file.name}</p>
+                <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(0)} KB</p>
+                ${shellScriptsInfo}
+              </div>
+            </div>
+            <button onclick="clearFiles()" class="text-red-500 hover:text-red-700">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        `;
+
+        const btn = document.getElementById('obfuscateBtn');
+        btn.disabled = false;
+        btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+        btn.classList.add('bg-purple-600', 'hover:bg-purple-700', 'cursor-pointer');
+
+        showToast('File ready for obfuscation', 'success');
+
+      } catch (error) {
+        showToast('Upload failed: ' + error.message, 'error');
+        uploadedFile = null;
+        uploadedFileData = null;
+      }
+    }
+
+    function clearFiles() {
+      uploadedFile = null;
+      uploadedFileData = null;
+      document.getElementById('uploadedFiles').classList.add('hidden');
+      document.getElementById('fileInput').value = '';
+      document.getElementById('bashProtectionSection').classList.add('hidden');
+      document.getElementById('mainScriptSection').classList.add('hidden');
+
+      const btn = document.getElementById('obfuscateBtn');
+      btn.disabled = true;
+      btn.classList.add('bg-gray-400', 'cursor-not-allowed');
+      btn.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'cursor-pointer');
+    }
+
+    function selectLevel(level) {
+      selectedLevel = level;
+      document.querySelectorAll('.level-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      document.querySelector(`[data-level="${level}"]`).classList.add('selected');
+    }
+
+    function toggleAdvanced() {
+      const advanced = document.getElementById('advancedOptions');
+      if (document.getElementById('showAdvanced').checked) {
+        advanced.classList.remove('hidden');
+      } else {
+        advanced.classList.add('hidden');
+      }
+    }
+
+    function resetAdvanced() {
+      document.getElementById('optCompact').checked = true;
+      document.getElementById('optRenameVars').checked = true;
+      document.getElementById('optStringEnc').checked = true;
+      document.getElementById('optControlFlow').checked = false;
+      document.getElementById('optDeadCode').checked = false;
+      document.getElementById('optDisableConsole').checked = false;
+    }
+
+    function toggleBashInjection() {
+      const options = document.getElementById('bashInjectionOptions');
+      if (document.getElementById('bashInjectLicense').checked) {
+        options.classList.remove('hidden');
+      } else {
+        options.classList.add('hidden');
+      }
+    }
+
+    async function startObfuscation() {
+      if (!uploadedFile || !uploadedFileData) {
+        showToast('Please upload a file first', 'warning');
+        return;
+      }
+
+      document.getElementById('processingModal').classList.remove('hidden');
+      document.getElementById('progressBar').style.width = '50%';
+      document.getElementById('progressText').textContent = 'Obfuscating code...';
+
+      try {
+        const options = {
+          compact: document.getElementById('optCompact').checked,
+          renameVariables: document.getElementById('optRenameVars').checked,
+          stringEncoding: document.getElementById('optStringEnc').checked,
+          controlFlow: document.getElementById('optControlFlow').checked,
+          deadCode: document.getElementById('optDeadCode').checked,
+          disableConsole: document.getElementById('optDisableConsole').checked
         };
 
-        const response = await fetch('/customer/code-protection', {
+        let bashInjection = null;
+        const fileName = uploadedFile.name.toLowerCase();
+        const isSingleBashScript = fileName.endsWith('.sh');
+        const isZipWithShellScripts = uploadedFileData.shellScripts && uploadedFileData.shellScripts.length > 0;
+
+        if ((isSingleBashScript || isZipWithShellScripts) &&
+            document.getElementById('bashInjectLicense').checked) {
+
+          const productId = document.getElementById('bashProductId').value;
+          if (!productId) {
+            throw new Error('Please select a product for license injection');
+          }
+
+          let mainScript = null;
+          if (isZipWithShellScripts && uploadedFileData.shellScripts.length > 1) {
+            mainScript = document.getElementById('bashMainScript').value;
+            if (!mainScript) {
+              throw new Error('Please select the main script for license injection');
+            }
+          } else if (isZipWithShellScripts && uploadedFileData.shellScripts.length === 1) {
+            mainScript = uploadedFileData.shellScripts[0].path;
+          }
+
+          bashInjection = {
+            injectLicense: true,
+            productId: parseInt(productId),
+            mainScript: mainScript,
+            welcomeMessage: document.getElementById('bashWelcomeMsg').value,
+            supportContact: document.getElementById('bashSupportContact').value,
+            checkExpiry: document.getElementById('bashCheckExpiry').checked,
+            checkActivation: document.getElementById('bashCheckActivation').checked,
+            checkMachine: document.getElementById('bashCheckMachine').checked,
+            showInfo: document.getElementById('bashShowInfo').checked
+          };
+        }
+
+        const obfRes = await fetch(basePath + '/code-protection/obfuscate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            fileId: uploadedFileData.id,
+            originalName: uploadedFile.name,
+            level: selectedLevel,
+            options,
+            bashInjection
+          })
+        });
+
+        const obfData = await obfRes.json();
+
+        if (!obfData.success) {
+          throw new Error(obfData.message);
+        }
+
+        document.getElementById('progressBar').style.width = '100%';
+        document.getElementById('progressText').textContent = 'Complete!';
+
+        setTimeout(() => {
+          document.getElementById('processingModal').classList.add('hidden');
+          showSuccessModal(obfData.obfuscation);
+        }, 500);
+
+      } catch (error) {
+        document.getElementById('processingModal').classList.add('hidden');
+        showErrorModal(error.message);
+      }
+    }
+
+    function showSuccessModal(data) {
+      currentObfuscationId = data.id;
+      document.getElementById('sumFiles').textContent = data.filesProcessed;
+      document.getElementById('sumOrigSize').textContent = (data.originalSize / 1024).toFixed(0) + ' KB';
+      document.getElementById('sumObfSize').textContent = (data.obfuscatedSize / 1024).toFixed(0) + ' KB (' + data.reduction + '%)';
+      document.getElementById('sumTime').textContent = data.processingTime + ' seconds';
+      document.getElementById('successModal').classList.remove('hidden');
+    }
+
+    function closeSuccessModal() {
+      document.getElementById('successModal').classList.add('hidden');
+      location.reload();
+    }
+
+    function downloadResult() {
+      if (currentObfuscationId) {
+        window.location.href = basePath + '/code-protection/download/' + currentObfuscationId;
+      }
+    }
+
+    function showErrorModal(message) {
+      document.getElementById('errorMessage').textContent = message;
+      document.getElementById('errorModal').classList.remove('hidden');
+    }
+
+    function closeErrorModal() {
+      document.getElementById('errorModal').classList.add('hidden');
+    }
+
+    async function deleteObfuscation(id) {
+      if (!confirm('Are you sure you want to delete this obfuscation? This action cannot be undone.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(basePath + `/code-protection/${id}`, {
+          method: 'DELETE',
+          credentials: 'same-origin'
         });
 
         const data = await response.json();
 
         if (data.success) {
-          showToast('Code protection generated successfully!', 'success');
-          setTimeout(() => window.location.reload(), 1000);
+          showToast('Obfuscation deleted successfully', 'success');
+          setTimeout(() => location.reload(), 1000);
         } else {
-          showToast(data.error || 'Failed to generate code protection', 'error');
+          showToast(data.message || 'Failed to delete obfuscation', 'error');
         }
       } catch (error) {
-        console.error('Error:', error);
-        showToast('Failed to generate code protection', 'error');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
+        console.error('Delete error:', error);
+        showToast('Error deleting obfuscation', 'error');
       }
-    });
-
-    function copyCode(code) {
-      navigator.clipboard.writeText(code).then(() => {
-        showToast('Protected code copied to clipboard!', 'success');
-      }).catch(() => {
-        showToast('Failed to copy code', 'error');
-      });
     }
-
-    function viewDetails(protectedCode, originalCode) {
-      document.getElementById('modalOriginal').textContent = originalCode;
-      document.getElementById('protectedCodeText').textContent = protectedCode;
-      document.getElementById('detailsModal').classList.remove('hidden');
-    }
-
-    function copyModalCode() {
-      const code = document.getElementById('protectedCodeText').textContent;
-      copyCode(code);
-    }
-
-    function closeModal() {
-      document.getElementById('detailsModal').classList.add('hidden');
-    }
-
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') closeModal();
-    });
   </script>
 </body>
 </html>

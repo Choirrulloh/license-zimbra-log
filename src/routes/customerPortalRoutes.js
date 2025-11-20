@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
 const customerPortalController = require('../controllers/customerPortalController');
 const {
   requireCustomerAuth,
@@ -8,6 +10,24 @@ const {
   checkLicenseQuota,
   checkCodeProtectionQuota
 } = require('../middleware/customerAuth');
+
+// Multer configuration for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/temp');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB
+  }
+});
 
 // Middleware to set customer portal base URL for views
 router.use((req, res, next) => {
@@ -44,7 +64,10 @@ router.get('/profile', requireCustomerAuth, customerPortalController.showProfile
 router.post('/profile', requireCustomerAuth, customerPortalController.updateProfile);
 router.post('/change-password', requireCustomerAuth, customerPortalController.changePassword);
 router.get('/code-protection', requireCustomerAuth, checkPasswordChange, customerPortalController.showCodeProtection);
-router.post('/code-protection', requireCustomerAuth, checkPasswordChange, checkCodeProtectionQuota, customerPortalController.generateCodeProtection);
+router.post('/code-protection/upload', requireCustomerAuth, checkPasswordChange, checkCodeProtectionQuota, upload.single('file'), customerPortalController.uploadCodeProtectionFile);
+router.post('/code-protection/obfuscate', requireCustomerAuth, checkPasswordChange, checkCodeProtectionQuota, customerPortalController.obfuscateCodeProtectionFile);
+router.get('/code-protection/download/:id', requireCustomerAuth, customerPortalController.downloadCodeProtectionFile);
+router.delete('/code-protection/:id', requireCustomerAuth, customerPortalController.deleteCodeProtectionFile);
 
 // API routes
 router.get('/api/license-types/:product_id', requireCustomerAuth, customerPortalController.getLicenseTypes);

@@ -647,18 +647,40 @@ class CustomerPortalController {
     try {
       const customerId = req.customer.id;
 
-      // For customer portal, code protection feature is not yet implemented
-      // Just show empty list for now
-      const protections = [];
+      // Get customer's quota info (use code_protection_limit and code_protection_used from customers table)
+      const quota = {
+        monthly_limit: req.customer.code_protection_limit,
+        used_this_month: req.customer.code_protection_used,
+        max_file_size_mb: 50, // Default 50MB for customers
+        reset_date: null // Customers don't have monthly reset, just total limit
+      };
+
+      // Get recent obfuscations
+      const recentObfuscations = await db.all(
+        `SELECT * FROM code_obfuscations
+         WHERE customer_id = ? AND status = 'completed'
+         ORDER BY created_at DESC
+         LIMIT 3`,
+        [customerId]
+      );
+
+      // Get products for bash license injection
+      const products = await db.all('SELECT id, name FROM products ORDER BY name');
+
+      // Get settings for API URL
+      const settings = await db.all('SELECT key, value FROM settings');
+      const settingsObj = settings.reduce((acc, s) => {
+        acc[s.key] = s.value;
+        return acc;
+      }, {});
 
       res.render('customer-portal/code-protection', {
         customer: req.customer,
-        protections,
-        quotaInfo: {
-          code_protection_limit: req.customer.code_protection_limit,
-          code_protection_used: req.customer.code_protection_used,
-          code_protection_remaining: req.customer.code_protection_limit === 0 ? 'Unlimited' : req.customer.code_protection_limit - req.customer.code_protection_used
-        },
+        currentPage: 'code-protection',
+        quota,
+        recentObfuscations,
+        products,
+        apiUrl: settingsObj.app_url ? `${settingsObj.app_url}/api/validate` : 'http://localhost:3000/api/validate',
         moment: require('moment-timezone')
       });
     } catch (error) {
@@ -667,18 +689,546 @@ class CustomerPortalController {
     }
   }
 
-  // Generate code protection
-  async generateCodeProtection(req, res) {
+  // Upload and validate file for code protection
+  async uploadCodeProtectionFile(req, res) {
     try {
-      // TODO: Code protection feature for customer portal not yet implemented
-      // Need to create code_protection table for customer portal first
-      return res.status(501).json({
-        success: false,
-        error: 'Code protection feature is not yet available for customer portal'
+      const path = require('path');
+      const fs = require('fs').promises;
+      const obfuscatorService = require('../services/obfuscatorService');
+      const bashObfuscatorService = require('../services/bashObfuscatorService');
+
+      console.log('Upload request received from customer:', req.customer.id);
+
+      if (!req.file) {
+        console.log('No file in request');
+        return res.status(400).json({
+          success: false,
+          message: 'No file uploaded'
+        });
+      }
+
+      const file = req.file;
+      const customerId = req.customer.id;
+
+      console.log('File uploaded:', file.originalname, 'Size:', file.size, 'bytes');
+
+      // Validate file extension
+      const allowedExtensions = ['.js', '.zip', '.sh'];
+      const fileExt = path.extname(file.originalname).toLowerCase();
+
+      if (!allowedExtensions.includes(fileExt)) {
+        await fs.unlink(file.path);
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid file type. Only .js, .sh, and .zip files are allowed'
+        });
+      }
+
+      // Check quota (0 means unlimited)
+      if (req.customer.code_protection_limit > 0 &&
+          req.customer.code_protection_used >= req.customer.code_protection_limit) {
+        await fs.unlink(file.path);
+        return res.status(403).json({
+          success: false,
+          message: `Quota limit reached. You have used ${req.customer.code_protection_used} of ${req.customer.code_protection_limit} protections.`
+        });
+      }
+
+      // Check file size (50MB max for customers)
+      const maxSizeMB = 50;
+      const maxSizeBytes = maxSizeMB * 1024 * 1024;
+
+      if (file.size > maxSizeBytes) {
+        await fs.unlink(file.path);
+        return res.status(400).json({
+          success: false,
+          message: `File too large. Maximum size is ${maxSizeMB}MB`
+        });
+      }
+
+      // Validate JavaScript syntax if .js file
+      if (fileExt === '.js') {
+        const validation = await obfuscatorService.validateJavaScript(file.path);
+        if (!validation.valid) {
+          await fs.unlink(file.path);
+          return res.status(400).json({
+            success: false,
+            message: `Invalid JavaScript syntax: ${validation.error}`,
+            line: validation.line
+          });
+        }
+      }
+
+      // Calculate hash
+      const fileHash = await obfuscatorService.calculateFileHash(file.path);
+
+      // Detect shell scripts in ZIP for multi-script support
+      let shellScripts = [];
+      if (fileExt === '.zip') {
+        try {
+          shellScripts = await this.detectShellScriptsInZip(file.path);
+        } catch (error) {
+          console.warn('Error detecting shell scripts in ZIP:', error.message);
+        }
+      }
+
+      res.json({
+        success: true,
+        file: {
+          id: file.filename,
+          originalName: file.originalname,
+          size: file.size,
+          hash: fileHash,
+          path: file.path,
+          shellScripts: shellScripts
+        }
       });
     } catch (error) {
-      console.error('Error generating code protection:', error);
-      res.status(500).json({ success: false, error: 'Error generating code protection' });
+      console.error('Upload error:', error);
+      if (req.file && req.file.path) {
+        const fs = require('fs').promises;
+        await fs.unlink(req.file.path).catch(() => {});
+      }
+      res.status(500).json({
+        success: false,
+        message: 'Upload failed: ' + error.message
+      });
+    }
+  }
+
+  // Obfuscate uploaded file
+  async obfuscateCodeProtectionFile(req, res) {
+    try {
+      const path = require('path');
+      const fs = require('fs').promises;
+      const obfuscatorService = require('../services/obfuscatorService');
+      const bashObfuscatorService = require('../services/bashObfuscatorService');
+      const moment = require('moment');
+
+      const { fileId, level, options, bashInjection } = req.body;
+      const customerId = req.customer.id;
+
+      console.log('Obfuscate request:', {
+        customerId,
+        fileId,
+        level,
+        hasBashInjection: !!bashInjection
+      });
+
+      if (!fileId || !level) {
+        console.log('Missing parameters - fileId:', fileId, 'level:', level);
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required parameters'
+        });
+      }
+
+      // Check quota again (0 means unlimited)
+      if (req.customer.code_protection_limit > 0 &&
+          req.customer.code_protection_used >= req.customer.code_protection_limit) {
+        console.log('Quota limit reached for customer:', customerId);
+        return res.status(403).json({
+          success: false,
+          message: 'Quota limit reached'
+        });
+      }
+
+      // Find uploaded file
+      const uploadPath = path.join(__dirname, '../../uploads/temp', fileId);
+      console.log('Looking for file at:', uploadPath);
+
+      try {
+        await fs.access(uploadPath);
+        console.log('File found:', uploadPath);
+      } catch (error) {
+        console.log('File not found:', uploadPath, 'Error:', error.message);
+        return res.status(404).json({
+          success: false,
+          message: 'Uploaded file not found'
+        });
+      }
+
+      const originalFilename = req.body.originalName || fileId;
+      const fileExt = path.extname(originalFilename).toLowerCase();
+      const fileStats = await fs.stat(uploadPath);
+      console.log('File stats:', { originalFilename, fileExt, size: fileStats.size });
+
+      // Create obfuscation record
+      console.log('Creating obfuscation record...');
+      const result = await db.run(
+        `INSERT INTO code_obfuscations
+         (customer_id, original_filename, file_size, obfuscation_level, options, status)
+         VALUES (?, ?, ?, ?, ?, 'processing')`,
+        [customerId, originalFilename, fileStats.size, level, JSON.stringify(options || {})]
+      );
+
+      const obfuscationId = result.id;
+      console.log('Obfuscation record created with ID:', obfuscationId);
+
+      try {
+        // Generate output filename
+        const timestamp = Date.now();
+        const outputFilename = `obfuscated_customer_${customerId}_${timestamp}${fileExt}`;
+        const outputPath = path.join(__dirname, '../../uploads/obfuscated', outputFilename);
+
+        // Ensure output directory exists
+        await fs.mkdir(path.dirname(outputPath), { recursive: true });
+
+        // Parse custom options
+        const customOptions = {};
+        if (options) {
+          if (options.compact) customOptions.compact = true;
+          if (options.renameVariables) customOptions.renameGlobals = true;
+          if (options.stringEncoding) customOptions.stringArray = true;
+          if (options.controlFlow) customOptions.controlFlowFlattening = true;
+          if (options.deadCode) customOptions.deadCodeInjection = true;
+          if (options.disableConsole) customOptions.disableConsoleOutput = true;
+        }
+
+        // Obfuscate
+        let obfResult;
+        const startTime = Date.now();
+        let licenseInjected = false;
+        let injectedProductId = null;
+
+        if (fileExt === '.js') {
+          obfResult = await obfuscatorService.obfuscateFile(
+            uploadPath,
+            outputPath,
+            level,
+            customOptions
+          );
+        } else if (fileExt === '.zip') {
+          // Detect if ZIP contains .sh files
+          let zipShellScripts = [];
+          try {
+            zipShellScripts = await this.detectShellScriptsInZip(uploadPath);
+          } catch (error) {
+            console.warn('Error detecting shell scripts:', error.message);
+          }
+
+          if (zipShellScripts.length > 0) {
+            let licenseConfig = null;
+            const mainScript = bashInjection?.mainScript || null;
+
+            if (bashInjection && bashInjection.injectLicense && bashInjection.productId && mainScript) {
+              const product = await db.get('SELECT * FROM products WHERE id = ?', [bashInjection.productId]);
+
+              if (!product) {
+                throw new Error('Selected product not found');
+              }
+
+              const settings = await db.all('SELECT key, value FROM settings');
+              const settingsObj = settings.reduce((acc, s) => {
+                acc[s.key] = s.value;
+                return acc;
+              }, {});
+
+              const apiUrl = settingsObj.app_url
+                ? `${settingsObj.app_url}/api/validate`
+                : 'http://localhost:3000/api/validate';
+
+              licenseConfig = {
+                productId: product.id,
+                productName: product.name,
+                apiUrl: apiUrl,
+                welcomeMessage: bashInjection.welcomeMessage || `License Protected Script - ${product.name}`,
+                supportContact: bashInjection.supportContact || settingsObj.email_from_address || 'support@example.com',
+                checkExpiry: bashInjection.checkExpiry !== false,
+                checkActivation: bashInjection.checkActivation !== false,
+                checkMachine: bashInjection.checkMachine === true,
+                showInfo: bashInjection.showInfo !== false
+              };
+
+              licenseInjected = true;
+              injectedProductId = product.id;
+            }
+
+            obfResult = await bashObfuscatorService.obfuscateZip(
+              uploadPath,
+              outputPath,
+              level,
+              customOptions,
+              mainScript,
+              licenseConfig
+            );
+          } else {
+            obfResult = await obfuscatorService.obfuscateZip(
+              uploadPath,
+              outputPath,
+              level,
+              customOptions
+            );
+          }
+        } else if (fileExt === '.sh') {
+          console.log('Processing bash script with bashInjection:', bashInjection);
+          let licenseConfig = null;
+
+          if (bashInjection && bashInjection.injectLicense && bashInjection.productId) {
+            console.log('License injection enabled for product:', bashInjection.productId);
+            const product = await db.get('SELECT * FROM products WHERE id = ?', [bashInjection.productId]);
+
+            if (!product) {
+              throw new Error('Selected product not found');
+            }
+
+            const settings = await db.all('SELECT key, value FROM settings');
+            const settingsObj = settings.reduce((acc, s) => {
+              acc[s.key] = s.value;
+              return acc;
+            }, {});
+
+            const apiUrl = settingsObj.app_url
+              ? `${settingsObj.app_url}/api/validate`
+              : 'http://localhost:3000/api/validate';
+
+            licenseConfig = {
+              productId: product.id,
+              productName: product.name,
+              apiUrl: apiUrl,
+              welcomeMessage: bashInjection.welcomeMessage || `License Protected Script - ${product.name}`,
+              supportContact: bashInjection.supportContact || settingsObj.email_from_address || 'support@example.com',
+              checkExpiry: bashInjection.checkExpiry !== false,
+              checkActivation: bashInjection.checkActivation !== false,
+              checkMachine: bashInjection.checkMachine === true,
+              showInfo: bashInjection.showInfo !== false
+            };
+
+            licenseInjected = true;
+            injectedProductId = product.id;
+          }
+
+          console.log('Calling bashObfuscatorService.obfuscateBashFile...');
+          obfResult = await bashObfuscatorService.obfuscateBashFile(
+            uploadPath,
+            outputPath,
+            level,
+            licenseConfig
+          );
+          console.log('Bash obfuscation completed:', obfResult);
+        } else {
+          throw new Error(`Unsupported file type: ${fileExt}`);
+        }
+
+        const processingTime = ((Date.now() - startTime) / 1000).toFixed(2);
+
+        // Calculate expiry date (7 days from now)
+        const expiresAt = moment().add(7, 'days').format('YYYY-MM-DD HH:mm:ss');
+
+        // Update record
+        await db.run(
+          `UPDATE code_obfuscations
+           SET obfuscated_filename = ?,
+               obfuscated_size = ?,
+               output_path = ?,
+               status = 'completed',
+               completed_at = CURRENT_TIMESTAMP,
+               expires_at = ?,
+               license_injected = ?,
+               injected_product_id = ?,
+               validation_options = ?
+           WHERE id = ?`,
+          [
+            outputFilename,
+            obfResult.obfuscatedSize,
+            outputPath,
+            expiresAt,
+            licenseInjected ? 1 : 0,
+            injectedProductId,
+            licenseInjected ? JSON.stringify(bashInjection || {}) : null,
+            obfuscationId
+          ]
+        );
+
+        // Update customer's code_protection_used count
+        await db.run(
+          `UPDATE customers
+           SET code_protection_used = code_protection_used + 1,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = ?`,
+          [customerId]
+        );
+
+        // Log activity
+        await ActivityLogger.log({
+          userId: customerId,
+          userType: 'customer',
+          action: 'code_obfuscation',
+          entityType: 'code_protection',
+          entityId: obfuscationId,
+          description: `Obfuscated ${originalFilename} (${level} level)`,
+          ipAddress: req.ip || req.connection?.remoteAddress,
+          userAgent: req.headers?.['user-agent']
+        });
+
+        // Cleanup temp file
+        await fs.unlink(uploadPath).catch(() => {});
+
+        res.json({
+          success: true,
+          obfuscation: {
+            id: obfuscationId,
+            filename: outputFilename,
+            originalSize: fileStats.size,
+            obfuscatedSize: obfResult.obfuscatedSize,
+            reduction: obfResult.reduction,
+            processingTime,
+            filesProcessed: obfResult.filesProcessed || 1,
+            expiresAt
+          }
+        });
+      } catch (error) {
+        // Update record with error
+        await db.run(
+          `UPDATE code_obfuscations
+           SET status = 'failed',
+               error_message = ?,
+               completed_at = CURRENT_TIMESTAMP
+           WHERE id = ?`,
+          [error.message, obfuscationId]
+        );
+
+        throw error;
+      }
+    } catch (error) {
+      console.error('Obfuscation error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Obfuscation failed: ' + error.message
+      });
+    }
+  }
+
+  // Download obfuscated file
+  async downloadCodeProtectionFile(req, res) {
+    try {
+      const fs = require('fs').promises;
+      const { id } = req.params;
+      const customerId = req.customer.id;
+
+      // Get obfuscation record
+      const obfuscation = await db.get(
+        `SELECT * FROM code_obfuscations
+         WHERE id = ? AND customer_id = ?`,
+        [id, customerId]
+      );
+
+      if (!obfuscation) {
+        return res.status(404).send('File not found');
+      }
+
+      if (obfuscation.status !== 'completed') {
+        return res.status(400).send('File not ready for download');
+      }
+
+      // Check if file expired
+      if (obfuscation.expires_at) {
+        const expiryDate = new Date(obfuscation.expires_at);
+        if (new Date() > expiryDate) {
+          return res.status(410).send('Download link expired');
+        }
+      }
+
+      // Check if file exists
+      const filePath = obfuscation.output_path;
+      try {
+        await fs.access(filePath);
+      } catch {
+        return res.status(404).send('File not found on server');
+      }
+
+      // Send file
+      res.download(filePath, obfuscation.obfuscated_filename);
+    } catch (error) {
+      console.error('Download error:', error);
+      res.status(500).send('Download failed');
+    }
+  }
+
+  // Delete obfuscation record
+  async deleteCodeProtectionFile(req, res) {
+    try {
+      const fs = require('fs');
+      const { id } = req.params;
+      const customerId = req.customer.id;
+
+      // Get obfuscation record
+      const obfuscation = await db.get(
+        'SELECT * FROM code_obfuscations WHERE id = ? AND customer_id = ?',
+        [id, customerId]
+      );
+
+      if (!obfuscation) {
+        return res.status(404).json({
+          success: false,
+          message: 'Obfuscation not found or access denied'
+        });
+      }
+
+      // Delete file from disk
+      if (obfuscation.output_path && fs.existsSync(obfuscation.output_path)) {
+        fs.unlinkSync(obfuscation.output_path);
+      }
+
+      // Delete from database
+      await db.run('DELETE FROM code_obfuscations WHERE id = ?', [id]);
+
+      // Log activity
+      await ActivityLogger.log({
+        userId: customerId,
+        userType: 'customer',
+        action: 'delete',
+        entityType: 'code_obfuscation',
+        entityId: id,
+        description: `Deleted obfuscation: ${obfuscation.original_filename}`,
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.headers?.['user-agent']
+      });
+
+      res.json({
+        success: true,
+        message: 'Obfuscation deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error deleting obfuscation:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error deleting obfuscation'
+      });
+    }
+  }
+
+  // Detect shell scripts in ZIP
+  async detectShellScriptsInZip(zipPath) {
+    const path = require('path');
+    const fs = require('fs').promises;
+    const unzipper = require('unzipper');
+    const bashObfuscatorService = require('../services/bashObfuscatorService');
+    const tempDir = path.join(path.dirname(zipPath), `detect_${Date.now()}`);
+
+    try {
+      await fs.mkdir(tempDir, { recursive: true });
+
+      await require('fs').createReadStream(zipPath)
+        .pipe(unzipper.Extract({ path: tempDir }))
+        .promise();
+
+      const shFiles = await bashObfuscatorService.findShellFiles(tempDir);
+
+      const shellScripts = shFiles.map(file => {
+        const relativePath = path.relative(tempDir, file);
+        return {
+          path: relativePath,
+          name: path.basename(file)
+        };
+      });
+
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+
+      return shellScripts;
+    } catch (error) {
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+      throw error;
     }
   }
 
