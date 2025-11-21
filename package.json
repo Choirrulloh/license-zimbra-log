@@ -25,6 +25,8 @@
     "db:migrate:011": "node src/database/migrations/011_simplify_features.js",
     "db:migrate:012": "node src/database/migrations/012_remove_license_type_column.js",
     "db:migrate:013": "node src/database/migrations/013_add_customer_portal.js",
+    "db:migrate:017": "node src/database/migrations/017_add_license_expiry_reminder.js",
+    "db:migrate:018": "node src/database/migrations/018_add_impersonation_tokens.js",
     "db:rebuild": "rm -f database/license.db && pnpm db:setup && pnpm db:migrate && pnpm db:seed",
     "setup": "node src/database/setup.js",
     "seed": "node src/database/seed.js",
