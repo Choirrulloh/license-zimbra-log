@@ -111,9 +111,9 @@
             Step 2: Configure Options
           </h4>
 
-          <p class="text-sm text-gray-600 mb-4">Obfuscation Level:</p>
+          <p id="obfuscationLevelLabel" class="text-sm text-gray-600 mb-4 hidden">Obfuscation Level:</p>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div id="obfuscationLevelCards" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 hidden">
             <div class="level-card border-2 rounded-lg p-4 text-center" data-level="low" onclick="selectLevel('low')">
               <i class="fas fa-bolt text-3xl text-yellow-500 mb-2"></i>
               <h5 class="font-semibold text-gray-800">Low</h5>
@@ -133,7 +133,7 @@
             </div>
           </div>
 
-          <div class="border-t pt-4">
+          <div id="advancedOptionsSection" class="border-t pt-4 hidden">
             <label class="flex items-center cursor-pointer">
               <input type="checkbox" id="showAdvanced" class="mr-2" onchange="toggleAdvanced()">
               <span class="text-sm font-medium text-gray-700">Show Advanced Options</span>
@@ -210,15 +210,18 @@
 
           <!-- Bash Script Protection (only shown for .sh files) -->
           <div id="bashProtectionSection" class="hidden mt-4 border-t pt-4">
-            <label class="flex items-center cursor-pointer">
-              <input type="checkbox" id="bashInjectLicense" class="mr-2" onchange="toggleBashInjection()">
-              <span class="text-sm font-medium text-gray-700">
+            <div class="mb-3">
+              <p class="text-sm font-medium text-gray-700 mb-2">
                 <i class="fas fa-terminal text-green-600 mr-1"></i>
-                Inject License Validation (Bash Scripts Only)
-              </span>
-            </label>
+                License Protection
+              </p>
+              <p class="text-xs text-gray-600">
+                <i class="fas fa-shield-alt text-green-600 mr-1"></i>
+                License validation will be automatically injected into your bash script
+              </p>
+            </div>
 
-            <div id="bashInjectionOptions" class="hidden mt-4 bg-green-50 rounded-lg p-4 border border-green-200">
+            <div id="bashInjectionOptions" class="bg-green-50 rounded-lg p-4 border border-green-200">
               <p class="text-sm text-gray-700 mb-3">
                 <i class="fas fa-info-circle text-blue-500 mr-1"></i>
                 The script will require a valid license key when executed
@@ -247,66 +250,6 @@
                     <option value="<%= product.id %>"><%= product.name %></option>
                   <% }) %>
                 </select>
-              </div>
-
-              <div class="mb-3">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Welcome Message:</label>
-                <input type="text" id="bashWelcomeMsg" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="License Protected Script">
-              </div>
-
-              <div class="mb-3">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Support Contact:</label>
-                <input type="text" id="bashSupportContact" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="support@example.com">
-              </div>
-
-              <div class="mt-3">
-                <p class="text-sm font-medium text-gray-700 mb-3">Validation Options:</p>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <!-- Options Column -->
-                  <div class="md:col-span-2 space-y-2">
-                    <label class="flex items-center">
-                      <input type="checkbox" id="bashCheckExpiry" class="mr-2" checked>
-                      <span class="text-sm text-gray-700">Check license expiry</span>
-                    </label>
-                    <label class="flex items-center">
-                      <input type="checkbox" id="bashCheckActivation" class="mr-2" checked>
-                      <span class="text-sm text-gray-700">Check activation status</span>
-                    </label>
-                    <label class="flex items-center">
-                      <input type="checkbox" id="bashCheckMachine" class="mr-2">
-                      <span class="text-sm text-gray-700">Validate machine binding</span>
-                    </label>
-                    <label class="flex items-center">
-                      <input type="checkbox" id="bashShowInfo" class="mr-2" checked>
-                      <span class="text-sm text-gray-700">Show license info after validation</span>
-                    </label>
-                  </div>
-
-                  <!-- Legend Column -->
-                  <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <h5 class="text-sm font-semibold text-green-800 mb-3">
-                      <i class="fas fa-info-circle mr-1"></i>Validation Guide
-                    </h5>
-                    <div class="space-y-2 text-xs text-gray-700">
-                      <div>
-                        <p class="font-medium text-green-700">Check Expiry</p>
-                        <p class="text-gray-600">Validate license hasn't expired</p>
-                      </div>
-                      <div>
-                        <p class="font-medium text-green-700">Check Activation</p>
-                        <p class="text-gray-600">Ensure license is active</p>
-                      </div>
-                      <div>
-                        <p class="font-medium text-green-700">Machine Binding</p>
-                        <p class="text-gray-600">Verify script runs on authorized machine</p>
-                      </div>
-                      <div>
-                        <p class="font-medium text-green-700">Show Info</p>
-                        <p class="text-gray-600">Display license details after validation</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
@@ -473,6 +416,7 @@
     let uploadedFile = null;
     let uploadedFileData = null;
     let currentObfuscationId = null;
+    let currentFileType = null; // 'bash' or 'javascript'
     const basePath = '<%= typeof customerPortalBase !== "undefined" ? customerPortalBase : "/customer" %>';
 
     // Wait for DOM to be fully loaded
@@ -571,7 +515,18 @@
 
         const isBashScript = fileName.endsWith('.sh');
         const isZip = fileName.endsWith('.zip');
+        const isJavaScript = fileName.endsWith('.js');
         const hasShellScripts = uploadData.file.shellScripts && uploadData.file.shellScripts.length > 0;
+
+        // Determine file type
+        if (isBashScript || (isZip && hasShellScripts)) {
+          currentFileType = 'bash';
+        } else {
+          currentFileType = 'javascript';
+        }
+
+        // Update UI based on file type
+        updateUIForFileType();
 
         if (isBashScript || (isZip && hasShellScripts)) {
           document.getElementById('bashProtectionSection').classList.remove('hidden');
@@ -597,8 +552,6 @@
           }
         } else {
           document.getElementById('bashProtectionSection').classList.add('hidden');
-          document.getElementById('bashInjectLicense').checked = false;
-          document.getElementById('bashInjectionOptions').classList.add('hidden');
           document.getElementById('mainScriptSection').classList.add('hidden');
         }
 
@@ -652,13 +605,33 @@
       }
     }
 
+    function updateUIForFileType() {
+      if (currentFileType === 'bash') {
+        // Hide level selection and advanced options for bash
+        document.getElementById('obfuscationLevelLabel').classList.add('hidden');
+        document.getElementById('obfuscationLevelCards').classList.add('hidden');
+        document.getElementById('advancedOptionsSection').classList.add('hidden');
+      } else {
+        // Show level selection and advanced options for javascript
+        document.getElementById('obfuscationLevelLabel').classList.remove('hidden');
+        document.getElementById('obfuscationLevelCards').classList.remove('hidden');
+        document.getElementById('advancedOptionsSection').classList.remove('hidden');
+      }
+    }
+
     function clearFiles() {
       uploadedFile = null;
       uploadedFileData = null;
+      currentFileType = null;
       document.getElementById('uploadedFiles').classList.add('hidden');
       document.getElementById('fileInput').value = '';
       document.getElementById('bashProtectionSection').classList.add('hidden');
       document.getElementById('mainScriptSection').classList.add('hidden');
+
+      // Reset UI to default (hide all options)
+      document.getElementById('obfuscationLevelLabel').classList.add('hidden');
+      document.getElementById('obfuscationLevelCards').classList.add('hidden');
+      document.getElementById('advancedOptionsSection').classList.add('hidden');
 
       const btn = document.getElementById('obfuscateBtn');
       btn.disabled = true;
@@ -692,15 +665,6 @@
       document.getElementById('optDisableConsole').checked = false;
     }
 
-    function toggleBashInjection() {
-      const options = document.getElementById('bashInjectionOptions');
-      if (document.getElementById('bashInjectLicense').checked) {
-        options.classList.remove('hidden');
-      } else {
-        options.classList.add('hidden');
-      }
-    }
-
     async function startObfuscation() {
       if (!uploadedFile || !uploadedFileData) {
         showToast('Please upload a file first', 'warning');
@@ -726,8 +690,8 @@
         const isSingleBashScript = fileName.endsWith('.sh');
         const isZipWithShellScripts = uploadedFileData.shellScripts && uploadedFileData.shellScripts.length > 0;
 
-        if ((isSingleBashScript || isZipWithShellScripts) &&
-            document.getElementById('bashInjectLicense').checked) {
+        // Auto-enable bash injection for bash files
+        if (isSingleBashScript || isZipWithShellScripts) {
 
           const productId = document.getElementById('bashProductId').value;
           if (!productId) {
@@ -747,13 +711,7 @@
           bashInjection = {
             injectLicense: true,
             productId: parseInt(productId),
-            mainScript: mainScript,
-            welcomeMessage: document.getElementById('bashWelcomeMsg').value,
-            supportContact: document.getElementById('bashSupportContact').value,
-            checkExpiry: document.getElementById('bashCheckExpiry').checked,
-            checkActivation: document.getElementById('bashCheckActivation').checked,
-            checkMachine: document.getElementById('bashCheckMachine').checked,
-            showInfo: document.getElementById('bashShowInfo').checked
+            mainScript: mainScript
           };
         }
 

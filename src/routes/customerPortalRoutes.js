@@ -55,22 +55,24 @@ router.get('/reset-password', customerPortalController.showResetPassword);
 router.post('/reset-password', customerPortalController.resetPassword);
 
 // Protected routes (require authentication)
-router.get('/dashboard', requireCustomerAuth, checkPasswordChange, customerPortalController.showDashboard);
-router.get('/licenses', requireCustomerAuth, checkPasswordChange, customerPortalController.showLicenses);
-router.get('/generate-license', requireCustomerAuth, checkPasswordChange, customerPortalController.showGenerateLicense);
-router.post('/generate-license', requireCustomerAuth, checkPasswordChange, checkLicenseQuota, customerPortalController.generateLicense);
-router.get('/products', requireCustomerAuth, checkPasswordChange, customerPortalController.showProducts);
-router.get('/profile', requireCustomerAuth, customerPortalController.showProfile);
-router.post('/profile', requireCustomerAuth, customerPortalController.updateProfile);
-router.post('/change-password', requireCustomerAuth, customerPortalController.changePassword);
-router.get('/code-protection', requireCustomerAuth, checkPasswordChange, customerPortalController.showCodeProtection);
-router.post('/code-protection/upload', requireCustomerAuth, checkPasswordChange, checkCodeProtectionQuota, upload.single('file'), customerPortalController.uploadCodeProtectionFile);
-router.post('/code-protection/obfuscate', requireCustomerAuth, checkPasswordChange, checkCodeProtectionQuota, customerPortalController.obfuscateCodeProtectionFile);
-router.get('/code-protection/download/:id', requireCustomerAuth, customerPortalController.downloadCodeProtectionFile);
-router.delete('/code-protection/:id', requireCustomerAuth, customerPortalController.deleteCodeProtectionFile);
+router.get('/dashboard', requireCustomerAuth, checkPasswordChange, customerPortalController.showDashboard.bind(customerPortalController));
+router.get('/licenses', requireCustomerAuth, checkPasswordChange, customerPortalController.showLicenses.bind(customerPortalController));
+router.get('/generate-license', requireCustomerAuth, checkPasswordChange, customerPortalController.showGenerateLicense.bind(customerPortalController));
+router.post('/generate-license', requireCustomerAuth, checkPasswordChange, checkLicenseQuota, customerPortalController.generateLicense.bind(customerPortalController));
+router.get('/products', requireCustomerAuth, checkPasswordChange, customerPortalController.showProducts.bind(customerPortalController));
+router.get('/profile', requireCustomerAuth, customerPortalController.showProfile.bind(customerPortalController));
+router.post('/profile', requireCustomerAuth, customerPortalController.updateProfile.bind(customerPortalController));
+router.post('/change-password', requireCustomerAuth, customerPortalController.changePassword.bind(customerPortalController));
+router.get('/code-protection', requireCustomerAuth, checkPasswordChange, customerPortalController.showCodeProtection.bind(customerPortalController));
+router.post('/code-protection/upload', requireCustomerAuth, checkPasswordChange, checkCodeProtectionQuota, upload.single('file'), customerPortalController.uploadCodeProtectionFile.bind(customerPortalController));
+router.post('/code-protection/obfuscate', requireCustomerAuth, checkPasswordChange, checkCodeProtectionQuota, customerPortalController.obfuscateCodeProtectionFile.bind(customerPortalController));
+router.get('/code-protection/download/:id', requireCustomerAuth, customerPortalController.downloadCodeProtectionFile.bind(customerPortalController));
+router.delete('/code-protection/:id', requireCustomerAuth, customerPortalController.deleteCodeProtectionFile.bind(customerPortalController));
 
 // API routes
-router.get('/api/license-types/:product_id', requireCustomerAuth, customerPortalController.getLicenseTypes);
+router.get('/api/license-types/:product_id', requireCustomerAuth, customerPortalController.getLicenseTypes.bind(customerPortalController));
+router.get('/api/license/:id', requireCustomerAuth, customerPortalController.getLicenseDetails.bind(customerPortalController));
+router.post('/api/license/:id/request-renewal', requireCustomerAuth, customerPortalController.requestLicenseRenewal.bind(customerPortalController));
 
 // Logout
 router.get('/logout', customerPortalController.logout);

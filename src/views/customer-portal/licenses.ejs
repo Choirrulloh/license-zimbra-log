@@ -6,9 +6,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-100">
-  <%- include('partials/sidebar', { currentPage: 'licenses' }) %>
+  <% const basePath = typeof customerPortalBase !== 'undefined' ? customerPortalBase : '/customer'; %>
+  <div class="flex h-screen overflow-hidden">
+    <%- include('partials/sidebar', { currentPage: 'licenses' }) %>
 
-  <div class="flex-1 flex flex-col overflow-hidden">
+    <div class="flex-1 flex flex-col overflow-hidden">
     <%- include('partials/header', { title: 'My Licenses', subtitle: 'View and manage all your licenses' }) %>
 
     <main class="flex-1 overflow-y-auto p-6">
@@ -22,7 +24,7 @@
                 <p class="font-semibold">Viewing as: <%= customer.name %></p>
               </div>
             </div>
-            <a href="/customer/logout" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded">
+            <a href="<%= basePath %>/logout" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded">
               <i class="fas fa-sign-out-alt mr-2"></i> Exit Customer View
             </a>
           </div>
@@ -34,7 +36,7 @@
         <div>
           <p class="text-gray-600">Total: <span class="font-semibold"><%= licenses.length %></span> licenses</p>
         </div>
-        <a href="/customer/generate-license" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+        <a href="<%= basePath %>/generate-license" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
           <i class="fas fa-plus mr-2"></i> Generate New License
         </a>
       </div>
@@ -73,21 +75,21 @@
                       <div class="text-sm text-gray-600"><%= license.license_type_name %></div>
                     </td>
                     <td class="px-6 py-4">
-                      <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full <%= license.status === 'active' ? 'bg-green-100 text-green-800' : license.status === 'expired' ? 'bg-red-100 text-red-800' : license.status === 'suspended' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800' %>">
-                        <i class="fas <%= license.status === 'active' ? 'fa-check-circle' : license.status === 'expired' ? 'fa-times-circle' : 'fa-pause-circle' %> mr-1"></i>
-                        <%= license.status %>
+                      <span class="px-2.5 py-1 inline-flex items-center text-xs font-semibold rounded-full <%= license.status === 'active' ? 'bg-green-100 text-green-800' : license.status === 'expired' ? 'bg-red-100 text-red-800' : license.status === 'suspended' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800' %>">
+                        <i class="fas <%= license.status === 'active' ? 'fa-check-circle' : license.status === 'expired' ? 'fa-times-circle' : 'fa-pause-circle' %> mr-1.5"></i>
+                        <span class="capitalize"><%= license.status %></span>
                       </span>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-900">
                       <%= license.current_activations %>/<%= license.max_activations %>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-600">
-                      <% if (license.expires_at) { %>
+                      <% if (license.expiry_date) { %>
                         <div>
-                          <%= moment(license.expires_at).tz(timezone).format('MMM D, YYYY') %>
-                          <% if (moment(license.expires_at).diff(moment(), 'days') <= 7 && moment(license.expires_at).diff(moment(), 'days') >= 0) { %>
+                          <%= moment(license.expiry_date).tz(timezone).format('MMM D, YYYY') %>
+                          <% if (moment(license.expiry_date).diff(moment(), 'days') <= 7 && moment(license.expiry_date).diff(moment(), 'days') >= 0) { %>
                             <span class="text-xs text-orange-600 block">
-                              (<%= moment(license.expires_at).diff(moment(), 'days') %> days left)
+                              (<%= moment(license.expiry_date).diff(moment(), 'days') %> days left)
                             </span>
                           <% } %>
                         </div>
@@ -96,8 +98,8 @@
                       <% } %>
                     </td>
                     <td class="px-6 py-4 text-sm space-x-2">
-                      <button onclick="downloadLicense('<%= license.license_key %>', '<%= license.product_name %>')" class="text-blue-600 hover:text-blue-900">
-                        <i class="fas fa-download"></i> Download
+                      <button onclick="showLicenseDetails(<%= license.id %>)" class="text-blue-600 hover:text-blue-900">
+                        <i class="fas fa-eye"></i> Show Details
                       </button>
                     </td>
                   </tr>
@@ -108,7 +110,7 @@
                     <i class="fas fa-key text-6xl text-gray-300 mb-4 block"></i>
                     <h3 class="text-lg font-semibold text-gray-800 mb-2">No Licenses Yet</h3>
                     <p class="text-gray-600 mb-4">You haven't generated any licenses yet.</p>
-                    <a href="/customer/generate-license" class="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+                    <a href="<%= basePath %>/generate-license" class="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
                       <i class="fas fa-plus mr-2"></i> Generate Your First License
                     </a>
                   </td>
@@ -119,11 +121,86 @@
         </div>
       </div>
     </main>
+    </div>
   </div>
 
   <%- include('partials/toast') %>
 
+  <!-- License Details Modal -->
+  <div id="licenseDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-2xl font-bold text-gray-800">License Details</h3>
+          <button onclick="closeLicenseModal()" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+
+        <div class="mb-6">
+          <span id="modalLicenseStatus" class="px-3 py-1 rounded-full text-sm font-semibold"></span>
+        </div>
+
+        <!-- License Details -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <div class="md:col-span-2 lg:col-span-3">
+            <p class="text-sm text-gray-500 mb-2">License Key</p>
+            <div class="flex items-center space-x-2">
+              <code class="bg-gray-100 px-4 py-2 rounded font-mono text-sm flex-1" id="modalLicenseKey"></code>
+              <button onclick="copyLicenseKey()" class="text-blue-600 hover:text-blue-800" title="Copy to clipboard">
+                <i class="fas fa-copy"></i>
+              </button>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">Product</p>
+            <p class="font-medium" id="modalProduct"></p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">License Type</p>
+            <p class="font-medium" id="modalLicenseType"></p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">Issue Date</p>
+            <p class="font-medium" id="modalIssueDate"></p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">Expiry Date</p>
+            <p class="font-medium" id="modalExpiryDate"></p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">Activations</p>
+            <p class="font-medium" id="modalActivations"></p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">Hardware ID</p>
+            <p class="font-medium font-mono text-xs" id="modalHardwareId"></p>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div id="modalNotesSection" class="mb-6 pb-6 border-b hidden">
+          <p class="text-sm text-gray-500 mb-1">Notes</p>
+          <p class="font-medium" id="modalNotes"></p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex space-x-3">
+          <button onclick="requestRenewal()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg">
+            <i class="fas fa-sync mr-2"></i> Request Renewal
+          </button>
+          <button onclick="closeLicenseModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-lg">
+            <i class="fas fa-times mr-2"></i> Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
+    const basePath = '<%= typeof customerPortalBase !== "undefined" ? customerPortalBase : "/customer" %>';
+    let currentLicense = null;
+
     function copyToClipboard(text) {
       navigator.clipboard.writeText(text).then(() => {
         showToast('License key copied to clipboard!', 'success');
@@ -132,19 +209,108 @@
       });
     }
 
-    function downloadLicense(licenseKey, productName) {
-      const content = `License Key: ${licenseKey}\nProduct: ${productName}\n\nThis is your license key. Please keep it safe.`;
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `license-${licenseKey}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      showToast('License downloaded successfully!', 'success');
+    async function showLicenseDetails(licenseId) {
+      try {
+        const response = await fetch(`${basePath}/api/license/${licenseId}`);
+        const data = await response.json();
+
+        if (!data.success) {
+          showToast(data.error || 'Failed to load license details', 'error');
+          return;
+        }
+
+        const license = data.license;
+        currentLicense = license;
+
+        // Update modal content
+        const statusEl = document.getElementById('modalLicenseStatus');
+        statusEl.textContent = license.status.toUpperCase();
+        statusEl.className = `px-3 py-1 rounded-full text-sm font-semibold ${
+          license.status === 'active' ? 'bg-green-100 text-green-800' :
+          license.status === 'expired' ? 'bg-red-100 text-red-800' :
+          license.status === 'suspended' ? 'bg-yellow-100 text-yellow-800' :
+          'bg-gray-100 text-gray-800'
+        }`;
+
+        // License key in details section
+        document.getElementById('modalLicenseKey').textContent = license.license_key;
+        document.getElementById('modalProduct').textContent = license.product_name + (license.product_version ? ' v' + license.product_version : '');
+        document.getElementById('modalLicenseType').textContent = license.license_type_name;
+        document.getElementById('modalIssueDate').textContent = new Date(license.issue_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        document.getElementById('modalExpiryDate').textContent = license.expiry_date ? new Date(license.expiry_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Never';
+        document.getElementById('modalActivations').textContent = `${license.current_activations} / ${license.max_activations}`;
+        document.getElementById('modalHardwareId').textContent = license.hardware_id || 'Not found';
+
+        // Notes
+        if (license.notes) {
+          document.getElementById('modalNotesSection').classList.remove('hidden');
+          document.getElementById('modalNotes').textContent = license.notes;
+        } else {
+          document.getElementById('modalNotesSection').classList.add('hidden');
+        }
+
+        // Show modal
+        document.getElementById('licenseDetailsModal').classList.remove('hidden');
+      } catch (error) {
+        console.error('Error loading license details:', error);
+        showToast('Failed to load license details', 'error');
+      }
     }
+
+    function closeLicenseModal() {
+      document.getElementById('licenseDetailsModal').classList.add('hidden');
+      currentLicense = null;
+    }
+
+    function copyLicenseKey() {
+      const key = document.getElementById('modalLicenseKey').textContent;
+      navigator.clipboard.writeText(key).then(() => {
+        showToast('License key copied to clipboard!', 'success');
+      }).catch(() => {
+        showToast('Failed to copy license key', 'error');
+      });
+    }
+
+    async function requestRenewal() {
+      if (!currentLicense) return;
+
+      if (!confirm('Request license renewal? This will be pending admin approval.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${basePath}/api/license/${currentLicense.id}/request-renewal`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showToast('Renewal request submitted successfully. Waiting for admin approval.', 'success');
+          closeLicenseModal();
+        } else {
+          showToast(data.error || 'Failed to request renewal', 'error');
+        }
+      } catch (error) {
+        console.error('Error requesting renewal:', error);
+        showToast('Failed to request renewal', 'error');
+      }
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeLicenseModal();
+      }
+    });
+
+    // Close modal on outside click
+    document.getElementById('licenseDetailsModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeLicenseModal();
+      }
+    });
   </script>
 </body>
 </html>

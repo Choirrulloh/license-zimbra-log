@@ -114,6 +114,10 @@ router.post('/licenses/:id/suspend', requireAdmin, licenseController.suspend);
 router.post('/licenses/:id/activate', requireAdmin, licenseController.activate);
 router.delete('/licenses/:id', requireAdmin, licenseController.delete);
 
+// License Renewal Requests (Admin only)
+router.post('/licenses/renewals/:id/approve', requireAdmin, licenseController.approveRenewal);
+router.post('/licenses/renewals/:id/reject', requireAdmin, licenseController.rejectRenewal);
+
 // API for getting license types
 router.get('/api/products/:product_id/license-types', requireAuth, licenseController.getLicenseTypes);
 

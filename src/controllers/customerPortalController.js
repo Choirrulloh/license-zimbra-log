@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const ActivityLogger = require('../utils/activityLogger');
 const emailService = require('../services/emailService');
+const licenseGenerator = require('../utils/licenseGenerator');
 
 class CustomerPortalController {
   // Show login page
@@ -492,7 +493,7 @@ class CustomerPortalController {
       }
 
       // Generate license key
-      const licenseKey = this.generateLicenseKey();
+      const licenseKey = licenseGenerator.generateKey();
 
       // Calculate expiry date
       let expiryDate = null;
@@ -503,7 +504,7 @@ class CustomerPortalController {
 
       // Create license
       const result = await db.run(
-        `INSERT INTO licenses (license_key, customer_id, product_id, license_type_id, status, expires_at, max_activations, current_activations)
+        `INSERT INTO licenses (license_key, customer_id, product_id, license_type_id, status, expiry_date, max_activations, current_activations)
          VALUES (?, ?, ?, ?, 'active', ?, ?, 0)`,
         [licenseKey, customerId, product_id, license_type_id, expiryDate ? expiryDate.toISOString() : null, licenseType.max_activations]
       );
@@ -558,10 +559,16 @@ class CustomerPortalController {
   async showProfile(req, res) {
     try {
       const mustChange = req.query.mustChange === '1';
+
+      // Check if customer has password set
+      const customer = await db.get('SELECT password FROM customers WHERE id = ?', [req.customer.id]);
+      const isInitialSetup = !customer.password && req.customer.must_change_password;
+
       res.render('customer-portal/profile', {
         customer: req.customer,
         currentPage: 'profile',
-        mustChange
+        mustChange,
+        isInitialSetup
       });
     } catch (error) {
       console.error('Error showing profile:', error);
@@ -593,9 +600,27 @@ class CustomerPortalController {
       const customerId = req.customer.id;
       const { current_password, new_password, confirm_password } = req.body;
 
+      // Get customer with password
+      const customer = await db.get('SELECT password, must_change_password FROM customers WHERE id = ?', [customerId]);
+
+      if (!customer) {
+        return res.status(404).json({ success: false, error: 'Customer not found' });
+      }
+
+      // Special case: Customer has no password set but must change password (initial setup)
+      const isInitialSetup = !customer.password && customer.must_change_password;
+
       // Validate input
-      if (!current_password || !new_password || !confirm_password) {
-        return res.status(400).json({ success: false, error: 'All password fields are required' });
+      if (isInitialSetup) {
+        // For initial setup, only new password and confirm are required
+        if (!new_password || !confirm_password) {
+          return res.status(400).json({ success: false, error: 'New password and confirmation are required' });
+        }
+      } else {
+        // For normal password change, all fields are required
+        if (!current_password || !new_password || !confirm_password) {
+          return res.status(400).json({ success: false, error: 'All password fields are required' });
+        }
       }
 
       // Validate passwords match
@@ -608,35 +633,19 @@ class CustomerPortalController {
         return res.status(400).json({ success: false, error: 'Password must be at least 8 characters long' });
       }
 
-      // Get customer with password
-      const customer = await db.get('SELECT password FROM customers WHERE id = ?', [customerId]);
+      // Verify current password (skip for initial setup)
+      if (!isInitialSetup) {
+        const passwordMatch = await bcrypt.compare(String(current_password), String(customer.password));
 
-      if (!customer || !customer.password) {
-        console.error('Change password error: Customer or password not found', { customerId, hasCustomer: !!customer });
-        return res.status(404).json({ success: false, error: 'Customer not found' });
-      }
+        if (!passwordMatch) {
+          return res.status(400).json({ success: false, error: 'Current password is incorrect' });
+        }
 
-      // Log for debugging (remove in production after fix)
-      console.log('Change password debug:', {
-        customerId,
-        hasCurrentPassword: !!current_password,
-        currentPasswordType: typeof current_password,
-        hasStoredPassword: !!customer.password,
-        storedPasswordType: typeof customer.password,
-        storedPasswordLength: customer.password?.length
-      });
-
-      // Verify current password
-      const passwordMatch = await bcrypt.compare(String(current_password), String(customer.password));
-
-      if (!passwordMatch) {
-        return res.status(400).json({ success: false, error: 'Current password is incorrect' });
-      }
-
-      // Check if new password is same as current password
-      const isSamePassword = await bcrypt.compare(String(new_password), String(customer.password));
-      if (isSamePassword) {
-        return res.status(400).json({ success: false, error: 'New password must be different from current password' });
+        // Check if new password is same as current password
+        const isSamePassword = await bcrypt.compare(String(new_password), String(customer.password));
+        if (isSamePassword) {
+          return res.status(400).json({ success: false, error: 'New password must be different from current password' });
+        }
       }
 
       // Hash new password
@@ -974,12 +983,12 @@ class CustomerPortalController {
                 productId: product.id,
                 productName: product.name,
                 apiUrl: apiUrl,
-                welcomeMessage: bashInjection.welcomeMessage || `License Protected Script - ${product.name}`,
-                supportContact: bashInjection.supportContact || settingsObj.email_from_address || 'support@example.com',
-                checkExpiry: bashInjection.checkExpiry !== false,
-                checkActivation: bashInjection.checkActivation !== false,
-                checkMachine: bashInjection.checkMachine === true,
-                showInfo: bashInjection.showInfo !== false
+                welcomeMessage: `License Protected Script - ${product.name}`,
+                supportContact: 'support@excelent.co.id',
+                checkExpiry: true,
+                checkActivation: true,
+                checkMachine: true,
+                showInfo: true
               };
 
               licenseInjected = true;
@@ -1028,12 +1037,12 @@ class CustomerPortalController {
               productId: product.id,
               productName: product.name,
               apiUrl: apiUrl,
-              welcomeMessage: bashInjection.welcomeMessage || `License Protected Script - ${product.name}`,
-              supportContact: bashInjection.supportContact || settingsObj.email_from_address || 'support@example.com',
-              checkExpiry: bashInjection.checkExpiry !== false,
-              checkActivation: bashInjection.checkActivation !== false,
-              checkMachine: bashInjection.checkMachine === true,
-              showInfo: bashInjection.showInfo !== false
+              welcomeMessage: `License Protected Script - ${product.name}`,
+              supportContact: 'support@excelent.co.id',
+              checkExpiry: true,
+              checkActivation: true,
+              checkMachine: true,
+              showInfo: true
             };
 
             licenseInjected = true;
@@ -1274,27 +1283,94 @@ class CustomerPortalController {
     }
   }
 
-  // Helper: Generate license key
-  generateLicenseKey() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    const segments = 4;
-    const segmentLength = 4;
-    let key = '';
-
-    for (let i = 0; i < segments; i++) {
-      if (i > 0) key += '-';
-      for (let j = 0; j < segmentLength; j++) {
-        key += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-    }
-
-    return key;
-  }
-
   // Helper: Generate protection code
   generateProtectionCode(input) {
     const hash = crypto.createHash('sha256').update(input).digest('hex');
     return hash.substring(0, 32).toUpperCase();
+  }
+
+  // API: Get license details
+  async getLicenseDetails(req, res) {
+    try {
+      const customerId = req.customer.id;
+      const { id } = req.params;
+
+      // Get license details with product and license type info
+      const license = await db.get(
+        `SELECT l.*, p.name as product_name, p.version as product_version,
+                lt.name as license_type_name
+         FROM licenses l
+         JOIN products p ON l.product_id = p.id
+         JOIN license_types lt ON l.license_type_id = lt.id
+         WHERE l.id = ? AND l.customer_id = ?`,
+        [id, customerId]
+      );
+
+      if (!license) {
+        return res.status(404).json({ success: false, error: 'License not found' });
+      }
+
+      res.json({
+        success: true,
+        license
+      });
+    } catch (error) {
+      console.error('Error getting license details:', error);
+      res.status(500).json({ success: false, error: 'Error loading license details' });
+    }
+  }
+
+  // API: Request license renewal
+  async requestLicenseRenewal(req, res) {
+    try {
+      const customerId = req.customer.id;
+      const { id } = req.params;
+
+      // Check if license exists and belongs to customer
+      const license = await db.get(
+        'SELECT * FROM licenses WHERE id = ? AND customer_id = ?',
+        [id, customerId]
+      );
+
+      if (!license) {
+        return res.status(404).json({ success: false, error: 'License not found' });
+      }
+
+      // Check if there's already a pending request
+      const existingRequest = await db.get(
+        'SELECT * FROM license_renewals WHERE license_id = ? AND status = ?',
+        [id, 'pending']
+      );
+
+      if (existingRequest) {
+        return res.json({ success: false, error: 'A renewal request is already pending for this license' });
+      }
+
+      // Create renewal request
+      await db.run(
+        `INSERT INTO license_renewals (license_id, customer_id, requested_at, status)
+         VALUES (?, ?, CURRENT_TIMESTAMP, 'pending')`,
+        [id, customerId]
+      );
+
+      // Log activity
+      await ActivityLogger.logCreate(
+        customerId,
+        'customer',
+        'license_renewal',
+        id,
+        { license_key: license.license_key },
+        req
+      );
+
+      res.json({
+        success: true,
+        message: 'Renewal request submitted successfully'
+      });
+    } catch (error) {
+      console.error('Error requesting license renewal:', error);
+      res.status(500).json({ success: false, error: 'Error submitting renewal request' });
+    }
   }
 }
 

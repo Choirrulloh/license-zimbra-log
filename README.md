@@ -171,7 +171,6 @@ Lihat dokumentasi lengkap di `client-sdk/README.md`
 
 ### Validation
 - Online validation via REST API
-- Offline validation code support
 - Caching untuk mengurangi server load
 - Expiry date checking
 

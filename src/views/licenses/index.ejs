@@ -29,56 +29,213 @@
           </a>
         </div>
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">License Key</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <% if (licenses.length > 0) { %>
-                <% licenses.forEach(l => { %>
-                  <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4">
-                      <code class="text-xs bg-gray-100 px-2 py-1 rounded"><%= l.license_key %></code>
-                    </td>
-                    <td class="px-6 py-4 text-sm"><%= l.product_name %></td>
-                    <td class="px-6 py-4 text-sm"><%= l.customer_name %></td>
-                    <td class="px-6 py-4 text-sm"><%= l.license_type_name %></td>
-                    <td class="px-6 py-4">
-                      <span class="px-2 py-1 rounded-full text-xs font-semibold <%= l.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
-                        <%= l.status %>
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 text-sm">
-                      <%= l.expiry_date ? moment(l.expiry_date).tz(timezone).format('MMM D, YYYY') : 'Never' %>
-                    </td>
-                    <td class="px-6 py-4 text-sm space-x-2">
-                      <a href="/licenses/<%= l.id %>" class="text-blue-600 hover:text-blue-900">
-                        <i class="fas fa-eye"></i>
-                      </a>
+        <!-- Tabs -->
+        <div class="mb-4 border-b border-gray-200">
+          <nav class="-mb-px flex space-x-8">
+            <a href="/licenses?tab=licenses" class="<%= (!filters.tab || filters.tab === 'licenses') ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' %> whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+              <i class="fas fa-key mr-2"></i> All Licenses
+            </a>
+            <a href="/licenses?tab=renewals" class="<%= filters.tab === 'renewals' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' %> whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+              <i class="fas fa-sync mr-2"></i> Renewal Requests
+              <% if (typeof renewalCount !== 'undefined' && renewalCount > 0) { %>
+                <span class="ml-2 bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded-full"><%= renewalCount %></span>
+              <% } %>
+            </a>
+          </nav>
+        </div>
+
+        <!-- Licenses Tab Content -->
+        <% if (!filters.tab || filters.tab === 'licenses') { %>
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">License Key</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <% if (licenses.length > 0) { %>
+                  <% licenses.forEach(l => { %>
+                    <tr class="hover:bg-gray-50">
+                      <td class="px-6 py-4">
+                        <code class="text-xs bg-gray-100 px-2 py-1 rounded"><%= l.license_key %></code>
+                      </td>
+                      <td class="px-6 py-4 text-sm"><%= l.product_name %></td>
+                      <td class="px-6 py-4 text-sm"><%= l.customer_name %></td>
+                      <td class="px-6 py-4 text-sm"><%= l.license_type_name %></td>
+                      <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold <%= l.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                          <%= l.status %>
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 text-sm">
+                        <%= l.expiry_date ? moment(l.expiry_date).tz(timezone).format('MMM D, YYYY') : 'Never' %>
+                      </td>
+                      <td class="px-6 py-4 text-sm space-x-2">
+                        <a href="/licenses/<%= l.id %>" class="text-blue-600 hover:text-blue-900">
+                          <i class="fas fa-eye"></i>
+                        </a>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="7" class="px-6 py-10 text-center text-gray-500">
+                      No licenses found
                     </td>
                   </tr>
-                <% }); %>
-              <% } else { %>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+
+        <!-- Renewal Requests Tab Content -->
+        <% if (filters.tab === 'renewals') { %>
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <!-- Filter buttons -->
+            <div class="p-4 border-b flex space-x-2">
+              <a href="/licenses?tab=renewals&renewal_status=pending" class="px-4 py-2 rounded <%= !filters.renewal_status || filters.renewal_status === 'pending' ? 'bg-blue-100 text-blue-700 font-semibold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' %>">
+                <i class="fas fa-clock mr-1"></i> Pending
+              </a>
+              <a href="/licenses?tab=renewals&renewal_status=approved" class="px-4 py-2 rounded <%= filters.renewal_status === 'approved' ? 'bg-blue-100 text-blue-700 font-semibold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' %>">
+                <i class="fas fa-check-circle mr-1"></i> Approved
+              </a>
+              <a href="/licenses?tab=renewals&renewal_status=rejected" class="px-4 py-2 rounded <%= filters.renewal_status === 'rejected' ? 'bg-blue-100 text-blue-700 font-semibold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' %>">
+                <i class="fas fa-times-circle mr-1"></i> Rejected
+              </a>
+            </div>
+
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
                 <tr>
-                  <td colspan="7" class="px-6 py-10 text-center text-gray-500">
-                    No licenses found
-                  </td>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">License Key</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Requested</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
-              <% } %>
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <% if (typeof renewals !== 'undefined' && renewals.length > 0) { %>
+                  <% renewals.forEach(r => { %>
+                    <tr class="hover:bg-gray-50">
+                      <td class="px-6 py-4">
+                        <code class="text-xs bg-gray-100 px-2 py-1 rounded"><%= r.license_key %></code>
+                      </td>
+                      <td class="px-6 py-4 text-sm">
+                        <div><%= r.customer_name %></div>
+                        <div class="text-xs text-gray-500"><%= r.customer_email %></div>
+                      </td>
+                      <td class="px-6 py-4 text-sm"><%= r.product_name %></td>
+                      <td class="px-6 py-4 text-sm">
+                        <%= moment(r.requested_at).tz(timezone).format('MMM D, YYYY HH:mm') %>
+                      </td>
+                      <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold <%= r.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : r.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                          <%= r.status %>
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 text-sm space-x-2">
+                        <% if (r.status === 'pending') { %>
+                          <button onclick="approveRenewal(<%= r.id %>)" class="text-green-600 hover:text-green-900" title="Approve">
+                            <i class="fas fa-check"></i>
+                          </button>
+                          <button onclick="rejectRenewal(<%= r.id %>)" class="text-red-600 hover:text-red-900" title="Reject">
+                            <i class="fas fa-times"></i>
+                          </button>
+                        <% } else if (r.status === 'approved') { %>
+                          <span class="text-xs text-gray-500">
+                            Approved <%= moment(r.approved_at).tz(timezone).format('MMM D, YYYY') %>
+                          </span>
+                        <% } else { %>
+                          <button onclick="viewRejectionReason('<%= r.rejected_reason ? r.rejected_reason.replace(/'/g, "\\'") : 'No reason provided' %>')" class="text-blue-600 hover:text-blue-900" title="View Reason">
+                            <i class="fas fa-info-circle"></i>
+                          </button>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="6" class="px-6 py-10 text-center text-gray-500">
+                      No renewal requests found
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
       </main>
     </div>
   </div>
+
+  <script>
+    async function approveRenewal(renewalId) {
+      if (!confirm('Are you sure you want to approve this renewal request? The license expiry date will be extended.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/licenses/renewals/${renewalId}/approve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert('Renewal request approved successfully!');
+          window.location.reload();
+        } else {
+          alert(data.error || 'Failed to approve renewal request');
+        }
+      } catch (error) {
+        console.error('Error approving renewal:', error);
+        alert('Failed to approve renewal request');
+      }
+    }
+
+    async function rejectRenewal(renewalId) {
+      const reason = prompt('Please enter a reason for rejection:');
+
+      if (!reason || reason.trim() === '') {
+        alert('Rejection reason is required');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/licenses/renewals/${renewalId}/reject`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: reason.trim() })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert('Renewal request rejected');
+          window.location.reload();
+        } else {
+          alert(data.error || 'Failed to reject renewal request');
+        }
+      } catch (error) {
+        console.error('Error rejecting renewal:', error);
+        alert('Failed to reject renewal request');
+      }
+    }
+
+    function viewRejectionReason(reason) {
+      alert('Rejection Reason:\n\n' + reason);
+    }
+  </script>
 </body>
 </html>
