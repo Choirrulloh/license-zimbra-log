@@ -99,12 +99,13 @@ class ApiController {
         }
       }
 
-      // Check hardware binding if provided
-      if (hardware_id) {
+      // Check hardware binding if provided (support both hardware_id and machineId)
+      const hwId = hardware_id || machineId;
+      if (hwId) {
         // Check if this hardware is already activated
         const activation = await db.get(
           'SELECT * FROM license_activations WHERE license_id = ? AND hardware_id = ?',
-          [license.id, hardware_id]
+          [license.id, hwId]
         );
 
         if (activation) {
@@ -132,7 +133,7 @@ class ApiController {
           await db.run(
             `INSERT INTO license_activations (license_id, hardware_id, ip_address, hostname)
              VALUES (?, ?, ?, ?)`,
-            [license.id, hardware_id, ip_address || null, hostname || null]
+            [license.id, hwId, ip_address || req.ip, hostname || null]
           );
 
           // Update current activations count
@@ -145,7 +146,7 @@ class ApiController {
           await db.run(
             `INSERT INTO license_history (license_id, action, description)
              VALUES (?, 'activated_device', ?)`,
-            [license.id, `Device activated: ${hardware_id.substring(0, 8)}...`]
+            [license.id, `Device activated: ${hwId.substring(0, 8)}...`]
           );
         }
       }
