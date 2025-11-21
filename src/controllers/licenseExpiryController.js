@@ -63,27 +63,16 @@ const licenseExpiryController = {
       const { reminder_days, reminder_enabled, check_time } = req.body;
 
       if (reminder_days !== undefined) {
-        await db.run(`
-          INSERT INTO settings (key, value, description)
-          VALUES ('license_expiry_reminder_days', ?, 'Days before expiry to send reminder')
-          ON CONFLICT(key) DO UPDATE SET value = excluded.value
-        `, [reminder_days]);
+        await db.run(`INSERT OR REPLACE INTO settings (key, value) VALUES ('license_expiry_reminder_days', ?)`, [reminder_days]);
       }
 
       if (reminder_enabled !== undefined) {
-        await db.run(`
-          INSERT INTO settings (key, value, description)
-          VALUES ('license_expiry_reminder_enabled', ?, 'Enable automatic license expiry reminders')
-          ON CONFLICT(key) DO UPDATE SET value = excluded.value
-        `, [reminder_enabled === 'true' || reminder_enabled === true ? 'true' : 'false']);
+        await db.run(`INSERT OR REPLACE INTO settings (key, value) VALUES ('license_expiry_reminder_enabled', ?)`,
+          [reminder_enabled === 'true' || reminder_enabled === true ? 'true' : 'false']);
       }
 
       if (check_time !== undefined) {
-        await db.run(`
-          INSERT INTO settings (key, value, description)
-          VALUES ('license_expiry_check_time', ?, 'Time of day to run expiry check (HH:MM)')
-          ON CONFLICT(key) DO UPDATE SET value = excluded.value
-        `, [check_time]);
+        await db.run(`INSERT OR REPLACE INTO settings (key, value) VALUES ('license_expiry_check_time', ?)`, [check_time]);
       }
 
       // Restart the job with new settings

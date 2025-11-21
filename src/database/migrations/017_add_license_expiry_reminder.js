@@ -20,18 +20,23 @@ async function migrate() {
 
     // Add settings for license expiry reminder
     const settings = [
-      ['license_expiry_reminder_days', '7', 'Days before expiry to send reminder email'],
-      ['license_expiry_reminder_enabled', 'true', 'Enable automatic license expiry reminder emails'],
-      ['license_expiry_check_time', '09:00', 'Time of day to run expiry check (HH:MM format)']
+      ['license_expiry_reminder_days', '7'],
+      ['license_expiry_reminder_enabled', 'true'],
+      ['license_expiry_check_time', '09:00']
     ];
 
-    for (const [key, value, description] of settings) {
+    // Check if settings table has description column
+    const settingsColumns = await db.all("PRAGMA table_info(settings)");
+    const hasDescription = settingsColumns.some(c => c.name === 'description');
+
+    for (const [key, value] of settings) {
       const existing = await db.get('SELECT id FROM settings WHERE key = ?', [key]);
       if (!existing) {
-        await db.run(
-          'INSERT INTO settings (key, value, description) VALUES (?, ?, ?)',
-          [key, value, description]
-        );
+        if (hasDescription) {
+          await db.run('INSERT INTO settings (key, value, description) VALUES (?, ?, ?)', [key, value, '']);
+        } else {
+          await db.run('INSERT INTO settings (key, value) VALUES (?, ?)', [key, value]);
+        }
         console.log(`✓ Added setting: ${key}`);
       }
     }

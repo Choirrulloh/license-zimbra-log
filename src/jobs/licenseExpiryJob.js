@@ -103,9 +103,8 @@ class LicenseExpiryJob {
 
       // Update last run time
       await db.run(`
-        INSERT INTO settings (key, value, description)
-        VALUES ('license_expiry_last_run', ?, 'Last time license expiry check ran')
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+        INSERT OR REPLACE INTO settings (key, value)
+        VALUES ('license_expiry_last_run', ?)
       `, [new Date().toISOString()]);
 
       logger.info('License expiry check completed:', result);
