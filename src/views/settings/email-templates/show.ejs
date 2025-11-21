@@ -159,7 +159,7 @@
       try {
         const res = await fetch('/settings/email-templates/<%= template.id %>/preview', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' },
           body: JSON.stringify({})
         });
         const data = await res.json();
