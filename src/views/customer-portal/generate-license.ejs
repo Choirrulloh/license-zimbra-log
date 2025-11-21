@@ -313,9 +313,7 @@
 
     function copyLicenseKey() {
       const key = document.getElementById('generatedKey').textContent;
-      navigator.clipboard.writeText(key).then(() => {
-        showToast('License key copied to clipboard!', 'success');
-      });
+      copyToClipboard(key, 'License key copied to clipboard!');
     }
 
     function viewLicenses() {

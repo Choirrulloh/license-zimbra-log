@@ -433,11 +433,7 @@
       newField.value = password;
       confirmField.value = password;
 
-      navigator.clipboard.writeText(password).then(() => {
-        showToast('Password generated and copied!', 'success');
-      }).catch(() => {
-        showToast('Password generated!', 'info');
-      });
+      copyToClipboard(password, 'Password generated and copied!');
 
       setTimeout(() => {
         newField.type = 'password';

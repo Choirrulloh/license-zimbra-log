@@ -105,11 +105,7 @@
       field.type = 'text';
       field.value = password;
 
-      navigator.clipboard.writeText(password).then(() => {
-        showToast('Password generated and copied to clipboard!', 'success');
-      }).catch(() => {
-        showToast('Password generated! Please copy it manually.', 'warning');
-      });
+      copyToClipboard(password, 'Password generated and copied to clipboard!');
 
       setTimeout(() => { field.type = 'password'; }, 10000);
     }

@@ -201,13 +201,7 @@
     const basePath = '<%= typeof customerPortalBase !== "undefined" ? customerPortalBase : "/customer" %>';
     let currentLicense = null;
 
-    function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        showToast('License key copied to clipboard!', 'success');
-      }).catch(() => {
-        showToast('Failed to copy license key', 'error');
-      });
-    }
+    // copyToClipboard is provided by toast partial
 
     async function showLicenseDetails(licenseId) {
       try {
@@ -264,11 +258,7 @@
 
     function copyLicenseKey() {
       const key = document.getElementById('modalLicenseKey').textContent;
-      navigator.clipboard.writeText(key).then(() => {
-        showToast('License key copied to clipboard!', 'success');
-      }).catch(() => {
-        showToast('Failed to copy license key', 'error');
-      });
+      copyToClipboard(key, 'License key copied to clipboard!');
     }
 
     async function requestRenewal() {
