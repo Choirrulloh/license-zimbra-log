@@ -154,7 +154,15 @@ class CodeProtectionController {
    */
   async upload(req, res) {
     try {
-      console.log('Upload request received from user:', req.session.userId);
+      const userId = req.session.userId || req.session.user?.id;
+      console.log('Upload request received from user:', userId);
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not authenticated'
+        });
+      }
 
       if (!req.file) {
         console.log('No file in request');
@@ -165,7 +173,6 @@ class CodeProtectionController {
       }
 
       const file = req.file;
-      const userId = req.session.userId;
 
       console.log('File uploaded:', file.originalname, 'Size:', file.size, 'bytes');
 
@@ -266,7 +273,7 @@ class CodeProtectionController {
   async obfuscate(req, res) {
     try {
       const { fileId, level, options, bashInjection } = req.body;
-      const userId = req.session.userId;
+      const userId = req.session.userId || req.session.user?.id;
 
       console.log('Obfuscate request:', {
         userId,
@@ -274,6 +281,13 @@ class CodeProtectionController {
         level,
         hasBashInjection: !!bashInjection
       });
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not authenticated'
+        });
+      }
 
       if (!fileId || !level) {
         console.log('Missing parameters - fileId:', fileId, 'level:', level);
