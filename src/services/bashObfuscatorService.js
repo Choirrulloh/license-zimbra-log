@@ -216,11 +216,12 @@ echo ""
       const originalSize = (await fs.stat(inputPath)).size;
       const obfuscatedSize = (await fs.stat(outputPath)).size;
 
+      const sizeChange = ((obfuscatedSize - originalSize) / originalSize * 100).toFixed(2);
       return {
         success: true,
         originalSize,
         obfuscatedSize,
-        reduction: ((originalSize - obfuscatedSize) / originalSize * 100).toFixed(2)
+        reduction: sizeChange > 0 ? `+${sizeChange}` : sizeChange
       };
     } catch (error) {
       throw new Error(`Bash obfuscation error: ${error.message}`);
@@ -372,7 +373,7 @@ echo ""
         licenseInjected: mainScript && licenseConfig !== null,
         originalSize,
         obfuscatedSize,
-        reduction: ((originalSize - obfuscatedSize) / originalSize * 100).toFixed(2),
+        reduction: (() => { const change = ((obfuscatedSize - originalSize) / originalSize * 100).toFixed(2); return change > 0 ? `+${change}` : change; })(),
         details: results
       };
     } catch (error) {

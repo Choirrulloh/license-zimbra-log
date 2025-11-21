@@ -49,6 +49,8 @@ const addCsrfToken = (req, res, next) => {
 
 // Skip CSRF for specific routes (API endpoints with their own auth)
 const skipCsrfRoutes = [
+  '/api/validate',
+  '/api/deactivate',
   '/api/license/validate',
   '/api/license/activate',
   '/api/license/deactivate',
