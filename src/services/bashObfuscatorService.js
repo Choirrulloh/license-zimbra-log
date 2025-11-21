@@ -162,26 +162,20 @@ echo ""
     // Remove shebang if exists
     let cleanScript = script.replace(/^#!\/bin\/bash\s*\n/, '');
 
-    // Split into lines for obfuscation
-    const lines = cleanScript.split('\n');
-    const obfuscatedLines = [];
+    // Remove leading/trailing whitespace but preserve internal structure
+    cleanScript = cleanScript.trim();
 
-    for (const line of lines) {
-      // Skip empty lines and comments
-      if (!line.trim() || line.trim().startsWith('#')) {
-        continue;
-      }
+    // Encode entire script to base64 (preserves multi-line constructs)
+    const encoded = Buffer.from(cleanScript).toString('base64');
 
-      // Encode line to base64
-      const encoded = Buffer.from(line).toString('base64');
+    // Generate random variable name
+    const varName = this.generateRandomVarName();
 
-      // Generate random variable name
-      const varName = this.generateRandomVarName();
-
-      // Create obfuscated line
-      obfuscatedLines.push(`${varName}="${encoded}"`);
-      obfuscatedLines.push(`eval "$(echo "$${varName}" | base64 -d)"`);
-    }
+    // Create obfuscated script that decodes and evals the entire script at once
+    const obfuscatedLines = [
+      `${varName}="${encoded}"`,
+      `eval "$(echo "$${varName}" | base64 -d)"`
+    ];
 
     return obfuscatedLines.join('\n');
   }
