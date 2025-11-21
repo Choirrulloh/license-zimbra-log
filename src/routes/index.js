@@ -38,6 +38,7 @@ const roleController = require('../controllers/roleController');
 const permissionController = require('../controllers/permissionController');
 const emailTemplateController = require('../controllers/emailTemplateController');
 const codeProtectionController = require('../controllers/codeProtectionController');
+const licenseExpiryController = require('../controllers/licenseExpiryController');
 
 // Public routes
 router.get('/', (req, res) => {
@@ -117,6 +118,12 @@ router.delete('/licenses/:id', requireAdmin, licenseController.delete);
 // License Renewal Requests (Admin only)
 router.post('/licenses/renewals/:id/approve', requireAdmin, licenseController.approveRenewal);
 router.post('/licenses/renewals/:id/reject', requireAdmin, licenseController.rejectRenewal);
+
+// License Expiry Management (Admin only)
+router.get('/licenses/expiring', requireAdmin, licenseExpiryController.index);
+router.post('/licenses/expiring/check', requireAdmin, licenseExpiryController.triggerCheck);
+router.post('/licenses/expiring/settings', requireAdmin, licenseExpiryController.updateSettings);
+router.get('/api/licenses/expiry-stats', requireAuth, licenseExpiryController.getStats);
 
 // API for getting license types
 router.get('/api/products/:product_id/license-types', requireAuth, licenseController.getLicenseTypes);

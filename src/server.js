@@ -208,6 +208,10 @@ app.listen(PORT, HOST, () => {
     nodeVersion: process.version
   });
 
+  // Start scheduled jobs
+  const licenseExpiryJob = require('./jobs/licenseExpiryJob');
+  licenseExpiryJob.start();
+
   console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║                                                       ║
