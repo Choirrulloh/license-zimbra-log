@@ -62,7 +62,10 @@
     "pdfkit": "^0.13.0",
     "sqlite3": "^5.1.6",
     "unzipper": "^0.12.3",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0",
+    "express-rate-limit": "^7.1.5",
+    "csurf": "^1.11.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

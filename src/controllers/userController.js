@@ -432,10 +432,12 @@ class UserController {
         });
       }
 
-      if (new_password.length < 6) {
+      // Stronger password policy
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{12,}$/;
+      if (!passwordRegex.test(new_password)) {
         return res.status(400).json({
           success: false,
-          message: 'Password must be at least 6 characters'
+          message: 'Password must be at least 12 characters and contain: uppercase, lowercase, number, and special character'
         });
       }
 

@@ -3,6 +3,7 @@ node_modules/
 database/*.db
 database/*.db-journal
 *.log
+logs/
 .DS_Store
 dist/
 coverage/

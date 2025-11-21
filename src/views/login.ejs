@@ -22,6 +22,9 @@
     <% } %>
 
     <form method="POST" action="/login">
+      <% if (typeof csrfToken !== 'undefined') { %>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <% } %>
       <div class="mb-4">
         <label for="email" class="block text-gray-700 text-sm font-bold mb-2">
           <i class="fas fa-envelope"></i> Email

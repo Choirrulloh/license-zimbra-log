@@ -7,12 +7,14 @@ async function seed() {
     console.log('Starting database seeding...');
 
     // Create default admin user
-    const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
+    // IMPORTANT: Change this password immediately after first login!
+    const defaultAdminPassword = process.env.ADMIN_PASSWORD || 'Admin@Secure2024!';
+    const hashedPassword = await bcrypt.hash(defaultAdminPassword, 12);
 
     try {
       await db.run(
         'INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)',
-        [process.env.ADMIN_EMAIL || 'admin@example.com', hashedPassword, 'Administrator', 'admin']
+        [process.env.ADMIN_EMAIL || 'admin@licensing.local', hashedPassword, 'Administrator', 'admin']
       );
       console.log('✓ Admin user created');
     } catch (err) {
@@ -267,7 +269,8 @@ async function seed() {
       customerId = existingCustomer.id;
       console.log('Sample customer already exists, skipping...');
     } else {
-      const customerPassword = await bcrypt.hash('customer123', 10);
+      // IMPORTANT: Change this password immediately after first login!
+      const customerPassword = await bcrypt.hash('Customer@Secure2024!', 12);
       const customerResult = await db.run(
         `INSERT INTO customers (
           name, email, company, phone, address,
@@ -277,7 +280,7 @@ async function seed() {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           'John Doe',
-          'customer@example.com',
+          'customer@licensing.local',
           'ABC Corporation',
           '+1234567890',
           '123 Main Street, City, Country',

@@ -30,6 +30,9 @@
       <% } %>
 
       <form method="POST" action="<%= customerPortalBase %>/login">
+        <% if (typeof csrfToken !== 'undefined') { %>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <% } %>
         <div class="mb-4">
           <label class="block text-gray-700 text-sm font-medium mb-2">
             <i class="fas fa-envelope mr-1"></i> Email Address

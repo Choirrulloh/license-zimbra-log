@@ -2,11 +2,22 @@ const express = require('express');
 const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
 const path = require('path');
-const morgan = require('morgan');
 const helmet = require('helmet');
 const cors = require('cors');
 const os = require('os');
+const fs = require('fs');
 require('dotenv').config();
+
+// Import security middleware and logger
+const logger = require('./utils/logger');
+const { apiLimiter, authLimiter, customerAuthLimiter } = require('./middleware/rateLimiter');
+const { conditionalCsrf, csrfErrorHandler, addCsrfToken } = require('./middleware/csrf');
+
+// Ensure logs directory exists
+const logsDir = path.join(__dirname, '../logs');
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,15 +42,37 @@ app.use(helmet({
   contentSecurityPolicy: false, // Disable for development, enable in production
 }));
 
+// Trust proxy for accurate IP detection behind reverse proxy
+app.set('trust proxy', 1);
+
 // CORS for API
 app.use('/api', cors());
 
-// Logging
-app.use(morgan('dev'));
+// Request logging with Winston
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info(`${req.method} ${req.path}`, {
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      duration: `${duration}ms`,
+      ip: req.ip,
+      userAgent: req.get('user-agent')
+    });
+  });
+  next();
+});
+
+// Apply rate limiting
+app.use('/api', apiLimiter);
+app.use('/login', authLimiter);
+app.use('/customer/login', customerAuthLimiter);
 
 // Body parser
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -50,15 +83,21 @@ app.use(session({
     db: 'sessions.db',
     dir: './database'
   }),
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  secret: process.env.SESSION_SECRET || 'change-this-secret-in-production',
   resave: false,
   saveUninitialized: false,
+  name: 'sessionId', // Don't use default 'connect.sid'
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production'
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
   }
 }));
+
+// CSRF protection (after session middleware)
+app.use(conditionalCsrf);
+app.use(addCsrfToken);
 
 // View engine setup
 app.set('view engine', 'ejs');
@@ -132,14 +171,26 @@ app.use((req, res, next) => {
   }
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// CSRF error handler
+app.use(csrfErrorHandler);
+
 // 404 handler
 app.use((req, res) => {
+  logger.warn(`404 Not Found: ${req.method} ${req.path}`, {
+    ip: req.ip,
+    userAgent: req.get('user-agent')
+  });
   res.status(404).render('errors/404', { user: req.session });
 });
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  logger.logError(err, req);
   res.status(500).render('errors/500', {
     user: req.session,
     error: process.env.NODE_ENV === 'development' ? err : {}
@@ -150,20 +201,32 @@ app.use((err, req, res, next) => {
 const serverIP = getServerIP();
 
 app.listen(PORT, HOST, () => {
+  logger.info('Server started', {
+    port: PORT,
+    host: HOST,
+    environment: process.env.NODE_ENV || 'development',
+    nodeVersion: process.version
+  });
+
   console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║                                                       ║
-║   SaaS Licensing System                              ║
-║   Server running on port ${PORT}                        ║
+║   SaaS Licensing System                               ║
+║   Server running on port ${PORT}                         ║
 ║                                                       ║
-║   Environment: ${process.env.NODE_ENV || 'development'}                              ║
+║   Environment: ${(process.env.NODE_ENV || 'development').padEnd(15)}               ║
 ║                                                       ║
-║   Local:   http://localhost:${PORT}                     ║
-║   Network: http://${serverIP}:${PORT}                   ║
+║   Local:   http://localhost:${PORT}                      ║
+║   Network: http://${serverIP}:${PORT}                    ║
 ║                                                       ║
-║   Admin Login:                                        ║
-║   Email: ${process.env.ADMIN_EMAIL || 'admin@example.com'}                    ║
-║   Password: ${process.env.ADMIN_PASSWORD || 'admin123'}                                 ║
+║   Security Features Enabled:                          ║
+║   - Rate Limiting                                     ║
+║   - CSRF Protection                                   ║
+║   - Input Validation                                  ║
+║   - Structured Logging (Winston)                      ║
+║   - Secure Session Cookies                            ║
+║                                                       ║
+║   IMPORTANT: Change default credentials!              ║
 ║                                                       ║
 ╚═══════════════════════════════════════════════════════╝
   `);
