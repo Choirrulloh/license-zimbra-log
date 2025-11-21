@@ -352,7 +352,8 @@
         const data = await response.json();
 
         if (data.success) {
-          window.location.href = data.redirect;
+          window.open(data.url, '_blank');
+          showToast('Customer portal opened in new tab', 'success');
         } else {
           showToast(data.error || 'Failed to login as customer', 'error');
         }

@@ -47,6 +47,7 @@ router.get('/', (req, res) => {
 // Public routes (not authenticated)
 router.get('/login', redirectIfCustomerAuthenticated, customerPortalController.showLogin);
 router.post('/login', redirectIfCustomerAuthenticated, customerPortalController.login);
+router.get('/impersonate', customerPortalController.impersonate);
 
 // Forgot password routes
 router.get('/forgot-password', customerPortalController.showForgotPassword);

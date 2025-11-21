@@ -454,18 +454,23 @@ class CustomerController {
       if (!customer.password) {
         return res.status(400).json({
           success: false,
-          error: 'Customer does not have a password set. Cannot login as this customer.'
+          error: 'Customer does not have a password set. Please set a password first.'
         });
       }
 
       // Get current admin user
       const adminUser = await db.get('SELECT id, name, email FROM users WHERE id = ?', [req.session.userId]);
 
-      // Log impersonation session
+      // Generate temporary impersonation token (expires in 60 seconds)
+      const crypto = require('crypto');
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 1000).toISOString();
+
+      // Store token in database
       await db.run(
-        `INSERT INTO customer_sessions (customer_id, admin_id, is_impersonation, ip_address, user_agent)
-         VALUES (?, ?, 1, ?, ?)`,
-        [customer.id, adminUser.id, req.ip, req.get('user-agent')]
+        `INSERT INTO impersonation_tokens (token, customer_id, admin_id, expires_at, ip_address, user_agent)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [token, customer.id, adminUser.id, expiresAt, req.ip, req.get('user-agent')]
       );
 
       // Log activity
@@ -479,16 +484,9 @@ class CustomerController {
         req
       );
 
-      // Save admin session data
-      req.session.adminUser = adminUser;
-      req.session.isImpersonation = true;
-
-      // Set customer session
-      req.session.customerId = customer.id;
-
       res.json({
         success: true,
-        redirect: '/customer/dashboard'
+        url: `/customer/impersonate?token=${token}`
       });
     } catch (error) {
       console.error('Error login as customer:', error);

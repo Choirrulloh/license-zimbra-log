@@ -1372,6 +1372,67 @@ class CustomerPortalController {
       res.status(500).json({ success: false, error: 'Error submitting renewal request' });
     }
   }
+
+  // Handle admin impersonation login
+  async impersonate(req, res) {
+    try {
+      const { token } = req.query;
+      const basePath = req.isCustomerPortal ? '' : '/customer';
+
+      if (!token) {
+        return res.redirect(`${basePath}/login?error=Invalid impersonation link`);
+      }
+
+      // Find and validate token
+      const tokenData = await db.get(
+        `SELECT * FROM impersonation_tokens
+         WHERE token = ? AND used_at IS NULL AND expires_at > datetime('now')`,
+        [token]
+      );
+
+      if (!tokenData) {
+        return res.redirect(`${basePath}/login?error=Invalid or expired impersonation link`);
+      }
+
+      // Get customer
+      const customer = await db.get(
+        'SELECT * FROM customers WHERE id = ? AND is_active = 1',
+        [tokenData.customer_id]
+      );
+
+      if (!customer) {
+        return res.redirect(`${basePath}/login?error=Customer not found or inactive`);
+      }
+
+      // Get admin info
+      const admin = await db.get('SELECT id, name, email FROM users WHERE id = ?', [tokenData.admin_id]);
+
+      // Mark token as used
+      await db.run(
+        'UPDATE impersonation_tokens SET used_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [tokenData.id]
+      );
+
+      // Log impersonation session
+      await db.run(
+        `INSERT INTO customer_sessions (customer_id, admin_id, is_impersonation, ip_address, user_agent)
+         VALUES (?, ?, 1, ?, ?)`,
+        [customer.id, tokenData.admin_id, req.ip, req.get('user-agent')]
+      );
+
+      // Set session
+      req.session.customerId = customer.id;
+      req.session.isImpersonation = true;
+      req.session.impersonatedBy = admin;
+
+      // Redirect to dashboard
+      res.redirect(`${basePath}/dashboard`);
+    } catch (error) {
+      console.error('Error in impersonation:', error);
+      const basePath = req.isCustomerPortal ? '' : '/customer';
+      res.redirect(`${basePath}/login?error=Error during impersonation`);
+    }
+  }
 }
 
 module.exports = new CustomerPortalController();
