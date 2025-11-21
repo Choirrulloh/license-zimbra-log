@@ -154,13 +154,18 @@
 
         <div class="mb-4">
           <label class="block text-gray-700 font-medium mb-2">New Password *</label>
-          <input type="password" id="new_password" name="new_password" required minlength="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-          <p class="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+          <div class="flex space-x-2">
+            <input type="password" id="new_password" name="new_password" required minlength="12" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+            <button type="button" onclick="generateModalPassword()" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg">
+              <i class="fas fa-magic"></i>
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">Min 12 chars with uppercase, lowercase, number & special char</p>
         </div>
 
         <div class="mb-6">
           <label class="block text-gray-700 font-medium mb-2">Confirm New Password *</label>
-          <input type="password" id="confirm_password" name="confirm_password" required minlength="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+          <input type="password" id="confirm_password" name="confirm_password" required minlength="12" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
         </div>
 
         <div class="flex space-x-3">
@@ -183,6 +188,44 @@
     function closeChangePasswordModal() {
       document.getElementById('changePasswordModal').classList.add('hidden');
       document.getElementById('changePasswordForm').reset();
+    }
+
+    function generateModalPassword() {
+      const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+      const numbers = '0123456789';
+      const special = '!@#$%^&*(),.?":{}|<>';
+
+      let password = '';
+      password += uppercase[Math.floor(Math.random() * uppercase.length)];
+      password += lowercase[Math.floor(Math.random() * lowercase.length)];
+      password += numbers[Math.floor(Math.random() * numbers.length)];
+      password += special[Math.floor(Math.random() * special.length)];
+
+      const allChars = uppercase + lowercase + numbers + special;
+      for (let i = password.length; i < 16; i++) {
+        password += allChars[Math.floor(Math.random() * allChars.length)];
+      }
+
+      password = password.split('').sort(() => Math.random() - 0.5).join('');
+
+      const newField = document.getElementById('new_password');
+      const confirmField = document.getElementById('confirm_password');
+      newField.type = 'text';
+      confirmField.type = 'text';
+      newField.value = password;
+      confirmField.value = password;
+
+      navigator.clipboard.writeText(password).then(() => {
+        showToast('Password generated and copied!', 'success');
+      }).catch(() => {
+        showToast('Password generated!', 'info');
+      });
+
+      setTimeout(() => {
+        newField.type = 'password';
+        confirmField.type = 'password';
+      }, 10000);
     }
 
     async function submitChangePassword(event) {

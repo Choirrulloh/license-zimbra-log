@@ -39,8 +39,13 @@
 
               <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-medium mb-2">Password *</label>
-                <input type="password" name="password" required minlength="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-                <p class="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+                <div class="flex space-x-2">
+                  <input type="password" name="password" id="password" required minlength="12" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                  <button type="button" onclick="generatePassword()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg whitespace-nowrap">
+                    <i class="fas fa-magic"></i> Generate
+                  </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Min 12 chars with uppercase, lowercase, number & special character</p>
               </div>
 
               <div class="mb-4">
@@ -75,5 +80,38 @@
       </main>
     </div>
   </div>
+  <script>
+    function generatePassword() {
+      const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+      const numbers = '0123456789';
+      const special = '!@#$%^&*(),.?":{}|<>';
+
+      let password = '';
+      password += uppercase[Math.floor(Math.random() * uppercase.length)];
+      password += lowercase[Math.floor(Math.random() * lowercase.length)];
+      password += numbers[Math.floor(Math.random() * numbers.length)];
+      password += special[Math.floor(Math.random() * special.length)];
+
+      const allChars = uppercase + lowercase + numbers + special;
+      for (let i = password.length; i < 16; i++) {
+        password += allChars[Math.floor(Math.random() * allChars.length)];
+      }
+
+      password = password.split('').sort(() => Math.random() - 0.5).join('');
+
+      const field = document.getElementById('password');
+      field.type = 'text';
+      field.value = password;
+
+      navigator.clipboard.writeText(password).then(() => {
+        alert('Password generated and copied to clipboard!');
+      }).catch(() => {
+        alert('Password generated! Please copy it manually.');
+      });
+
+      setTimeout(() => { field.type = 'password'; }, 10000);
+    }
+  </script>
 </body>
 </html>
