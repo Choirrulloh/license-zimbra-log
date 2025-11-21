@@ -152,24 +152,10 @@ app.use((req, res, next) => {
 
 // Routes
 const customerPortalRoutes = require('./routes/customerPortalRoutes');
-const routes = require('./routes');
+app.use('/customer', customerPortalRoutes);
 
-// Dynamic routing based on subdomain
-app.use((req, res, next) => {
-  if (req.isCustomerPortal) {
-    // On customer subdomain, mount customer routes on root
-    customerPortalRoutes(req, res, next);
-  } else {
-    // On admin subdomain or bare domain
-    // Still support /customer path for backward compatibility
-    // Match /customer/ or /customer exactly, but not /customers
-    if (req.path === '/customer' || req.path.startsWith('/customer/')) {
-      customerPortalRoutes(req, res, next);
-    } else {
-      routes(req, res, next);
-    }
-  }
-});
+const routes = require('./routes');
+app.use('/', routes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
