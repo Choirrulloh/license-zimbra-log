@@ -30,7 +30,7 @@ async function migrate() {
     const hasDescription = settingsColumns.some(c => c.name === 'description');
 
     for (const [key, value] of settings) {
-      const existing = await db.get('SELECT id FROM settings WHERE key = ?', [key]);
+      const existing = await db.get('SELECT key FROM settings WHERE key = ?', [key]);
       if (!existing) {
         if (hasDescription) {
           await db.run('INSERT INTO settings (key, value, description) VALUES (?, ?, ?)', [key, value, '']);
