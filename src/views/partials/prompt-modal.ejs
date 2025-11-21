@@ -1,0 +1,68 @@
+<!-- Prompt Modal -->
+<div id="prompt-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 id="prompt-title" class="text-lg font-semibold text-gray-800"></h3>
+      <button onclick="closePromptModal()" class="text-gray-400 hover:text-gray-600">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <p id="prompt-message" class="text-gray-600 mb-4"></p>
+    <input type="text" id="prompt-input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 mb-4" placeholder="">
+    <div class="flex justify-end space-x-2">
+      <button onclick="closePromptModal()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg">Cancel</button>
+      <button id="prompt-confirm-btn" onclick="confirmPromptModal()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let promptResolve = null;
+
+  function showPrompt(message, title = 'Input', placeholder = '') {
+    return new Promise((resolve) => {
+      promptResolve = resolve;
+      document.getElementById('prompt-title').textContent = title;
+      document.getElementById('prompt-message').textContent = message;
+      document.getElementById('prompt-input').placeholder = placeholder;
+      document.getElementById('prompt-input').value = '';
+      document.getElementById('prompt-modal').classList.remove('hidden');
+      document.getElementById('prompt-modal').classList.add('flex');
+      document.getElementById('prompt-input').focus();
+    });
+  }
+
+  function closePromptModal() {
+    document.getElementById('prompt-modal').classList.add('hidden');
+    document.getElementById('prompt-modal').classList.remove('flex');
+    if (promptResolve) {
+      promptResolve(null);
+      promptResolve = null;
+    }
+  }
+
+  function confirmPromptModal() {
+    const value = document.getElementById('prompt-input').value;
+    document.getElementById('prompt-modal').classList.add('hidden');
+    document.getElementById('prompt-modal').classList.remove('flex');
+    if (promptResolve) {
+      promptResolve(value);
+      promptResolve = null;
+    }
+  }
+
+  // Close on background click
+  document.getElementById('prompt-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'prompt-modal') closePromptModal();
+  });
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !document.getElementById('prompt-modal').classList.contains('hidden')) {
+      closePromptModal();
+    }
+    if (e.key === 'Enter' && !document.getElementById('prompt-modal').classList.contains('hidden')) {
+      confirmPromptModal();
+    }
+  });
+</script>

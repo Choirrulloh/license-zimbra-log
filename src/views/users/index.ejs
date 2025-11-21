@@ -103,6 +103,8 @@
   <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
   <script>
+    const csrfToken = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
+
     function showToast(message, type = 'success') {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
@@ -123,7 +125,10 @@
       if (!confirmed) return;
 
       try {
-        const res = await fetch(`/users/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/users/${id}`, {
+          method: 'DELETE',
+          headers: { 'X-CSRF-Token': csrfToken }
+        });
         const data = await res.json();
         if (data.success) {
           showToast('User deleted successfully!', 'success');
@@ -137,7 +142,9 @@
     }
 
     async function suspendUser(id) {
-      const reason = prompt('Enter reason for suspension (optional):');
+      const reason = await showPrompt('Enter reason for suspension:', 'Suspend User', 'Reason (optional)');
+      if (reason === null) return;
+
       const confirmed = await showConfirm(
         'Are you sure you want to suspend this user? They will not be able to login.',
         'Confirm Suspension',
@@ -148,7 +155,10 @@
       try {
         const res = await fetch(`/users/${id}/suspend`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+          },
           body: JSON.stringify({ reason })
         });
         const data = await res.json();
@@ -172,7 +182,10 @@
       if (!confirmed) return;
 
       try {
-        const res = await fetch(`/users/${id}/unsuspend`, { method: 'POST' });
+        const res = await fetch(`/users/${id}/unsuspend`, {
+          method: 'POST',
+          headers: { 'X-CSRF-Token': csrfToken }
+        });
         const data = await res.json();
         if (data.success) {
           showToast('User unsuspended successfully!', 'success');
@@ -186,5 +199,6 @@
     }
   </script>
   <%- include('../partials/confirm-modal') %>
+  <%- include('../partials/prompt-modal') %>
 </body>
 </html>

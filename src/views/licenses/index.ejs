@@ -180,15 +180,23 @@
   </div>
 
   <script>
+    const csrfToken = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
+
     async function approveRenewal(renewalId) {
-      if (!confirm('Are you sure you want to approve this renewal request? The license expiry date will be extended.')) {
-        return;
-      }
+      const confirmed = await showConfirm(
+        'Are you sure you want to approve this renewal request? The license expiry date will be extended.',
+        'Confirm Approval',
+        { type: 'info', confirmText: 'Approve' }
+      );
+      if (!confirmed) return;
 
       try {
         const response = await fetch(`/licenses/renewals/${renewalId}/approve`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+          }
         });
 
         const data = await response.json();
@@ -206,7 +214,8 @@
     }
 
     async function rejectRenewal(renewalId) {
-      const reason = prompt('Please enter a reason for rejection:');
+      const reason = await showPrompt('Please enter a reason for rejection:', 'Reject Renewal', 'Enter reason...');
+      if (reason === null) return;
 
       if (!reason || reason.trim() === '') {
         showToast('Rejection reason is required', 'warning');
@@ -216,7 +225,10 @@
       try {
         const response = await fetch(`/licenses/renewals/${renewalId}/reject`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+          },
           body: JSON.stringify({ reason: reason.trim() })
         });
 
@@ -256,5 +268,7 @@
       modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
     }
   </script>
+  <%- include('../partials/confirm-modal') %>
+  <%- include('../partials/prompt-modal') %>
 </body>
 </html>

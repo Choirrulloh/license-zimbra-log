@@ -91,6 +91,8 @@
         <%- include('../partials/toast-notification') %>
 
         <script>
+          const csrfToken = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
+
           async function deleteCustomer(id) {
             const confirmed = await showConfirm(
               'Are you sure you want to delete this customer? This action cannot be undone.',
@@ -100,7 +102,10 @@
             if (!confirmed) return;
 
             try {
-              const res = await fetch(`/customers/${id}`, { method: 'DELETE' });
+              const res = await fetch(`/customers/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-Token': csrfToken }
+              });
               const data = await res.json();
               if (data.success) {
                 showToast('Customer deleted successfully!', 'success');
@@ -114,7 +119,9 @@
           }
 
           async function suspendCustomer(id) {
-            const reason = prompt('Enter reason for suspension (optional):');
+            const reason = await showPrompt('Enter reason for suspension:', 'Suspend Customer', 'Reason (optional)');
+            if (reason === null) return;
+
             const confirmed = await showConfirm(
               'Are you sure you want to suspend this customer? They will not be able to login.',
               'Confirm Suspension',
@@ -125,7 +132,10 @@
             try {
               const res = await fetch(`/customers/${id}/suspend`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRF-Token': csrfToken
+                },
                 body: JSON.stringify({ reason })
               });
               const data = await res.json();
@@ -149,7 +159,10 @@
             if (!confirmed) return;
 
             try {
-              const res = await fetch(`/customers/${id}/unsuspend`, { method: 'POST' });
+              const res = await fetch(`/customers/${id}/unsuspend`, {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': csrfToken }
+              });
               const data = await res.json();
               if (data.success) {
                 showToast('Customer unsuspended successfully!', 'success');
@@ -166,5 +179,6 @@
     </div>
   </div>
   <%- include('../partials/confirm-modal') %>
+  <%- include('../partials/prompt-modal') %>
 </body>
 </html>
