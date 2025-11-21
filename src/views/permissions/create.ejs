@@ -187,7 +187,8 @@
         const response = await fetch('/permissions/create', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
           },
           body: JSON.stringify(data)
         });
