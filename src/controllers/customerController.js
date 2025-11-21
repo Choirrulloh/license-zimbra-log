@@ -476,15 +476,16 @@ class CustomerController {
       );
 
       // Log activity
-      await ActivityLogger.log(
-        adminUser.id,
-        'user',
-        'login_as_customer',
-        customer.id,
-        'customer',
-        { customer_email: customer.email },
-        req
-      );
+      await ActivityLogger.log({
+        userId: adminUser.id,
+        action: 'login_as_customer',
+        entityType: 'customer',
+        entityId: customer.id,
+        description: `Admin logged in as customer: ${customer.email}`,
+        metadata: { customer_email: customer.email },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
 
       res.json({
         success: true,

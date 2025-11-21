@@ -108,18 +108,19 @@ class CustomerPortalController {
         }
       }
 
+      // If impersonation, just redirect back to admin panel (admin is still logged in)
+      if (isImpersonation) {
+        req.session.customerId = null;
+        req.session.isImpersonation = false;
+        req.session.adminUser = null;
+        return res.redirect('/customers');
+      }
+
+      // Normal customer logout
       req.session.destroy((err) => {
         if (err) {
           console.error('Session destruction error:', err);
         }
-
-        // If impersonation, redirect back to admin
-        if (isImpersonation && adminUser) {
-          // Restore admin session
-          req.session = { userId: adminUser.id };
-          return res.redirect('/customers');
-        }
-
         res.redirect(`${basePath}/login`);
       });
     } catch (error) {
@@ -406,7 +407,9 @@ class CustomerPortalController {
         codeProtectionStats,
         recentLicenses,
         quotaInfo,
-        moment: require('moment-timezone')
+        moment: require('moment-timezone'),
+        isImpersonation: req.session.isImpersonation || false,
+        adminUser: req.session.adminUser || null
       });
     } catch (error) {
       console.error('Error showing customer dashboard:', error);
@@ -1429,7 +1432,7 @@ class CustomerPortalController {
       // Set session
       req.session.customerId = customer.id;
       req.session.isImpersonation = true;
-      req.session.impersonatedBy = admin;
+      req.session.adminUser = admin;
 
       // Redirect to dashboard
       res.redirect(`${basePath}/dashboard`);
