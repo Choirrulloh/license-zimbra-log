@@ -343,7 +343,10 @@
       try {
         const response = await fetch(`/customers/${customerId}/login-as`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
+          }
         });
 
         const data = await response.json();
@@ -430,7 +433,10 @@
       try {
         const response = await fetch(`/customers/${customerId}/change-password`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
+          },
           body: JSON.stringify({ newPassword })
         });
 
