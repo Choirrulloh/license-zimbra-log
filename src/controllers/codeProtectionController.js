@@ -275,6 +275,7 @@ class CodeProtectionController {
       const { fileId, level, options, bashInjection } = req.body;
       const userId = req.session.userId || req.session.user?.id;
 
+      console.log('Session data:', JSON.stringify(req.session));
       console.log('Obfuscate request:', {
         userId,
         fileId,
@@ -283,9 +284,10 @@ class CodeProtectionController {
       });
 
       if (!userId) {
+        console.log('ERROR: userId is null/undefined');
         return res.status(401).json({
           success: false,
-          message: 'User not authenticated'
+          message: 'User not authenticated. Session: ' + JSON.stringify(req.session)
         });
       }
 
