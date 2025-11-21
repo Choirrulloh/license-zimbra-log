@@ -274,14 +274,20 @@
     async function requestRenewal() {
       if (!currentLicense) return;
 
-      if (!confirm('Request license renewal? This will be pending admin approval.')) {
-        return;
-      }
+      const confirmed = await showConfirm(
+        'Request license renewal? This will be pending admin approval.',
+        'Request Renewal',
+        { type: 'info', confirmText: 'Request' }
+      );
+      if (!confirmed) return;
 
       try {
         const response = await fetch(`${basePath}/api/license/${currentLicense.id}/request-renewal`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
+          }
         });
 
         const data = await response.json();
@@ -312,5 +318,6 @@
       }
     });
   </script>
+  <%- include('../partials/confirm-modal') %>
 </body>
 </html>

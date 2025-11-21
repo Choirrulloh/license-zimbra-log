@@ -35,8 +35,12 @@ async function runMigrations() {
           await migration();
           successCount++;
           console.log(`✅ ${file} - SUCCESS`);
+        } else if (migration && typeof migration.up === 'function') {
+          await migration.up();
+          successCount++;
+          console.log(`✅ ${file} - SUCCESS`);
         } else {
-          console.log(`⚠️  ${file} - SKIPPED (not a function)`);
+          console.log(`⚠️  ${file} - SKIPPED (no up() or default function)`);
         }
       } catch (error) {
         errorCount++;

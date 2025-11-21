@@ -336,9 +336,12 @@
 
   <script>
     async function loginAsCustomer(customerId) {
-      if (!confirm('Login as this customer? You will be redirected to the customer portal.')) {
-        return;
-      }
+      const confirmed = await showConfirm(
+        'Login as this customer? You will be redirected to the customer portal.',
+        'Login as Customer',
+        { type: 'info', confirmText: 'Login' }
+      );
+      if (!confirmed) return;
 
       try {
         const response = await fetch(`/customers/${customerId}/login-as`, {
@@ -464,5 +467,6 @@
       }
     });
   </script>
+  <%- include('../partials/confirm-modal') %>
 </body>
 </html>

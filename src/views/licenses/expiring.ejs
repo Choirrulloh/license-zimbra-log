@@ -269,14 +269,20 @@
     }
 
     async function triggerCheck() {
-      if (!confirm('Run expiry check now? This will send reminder emails to customers with expiring licenses.')) {
-        return;
-      }
+      const confirmed = await showConfirm(
+        'Run expiry check now? This will send reminder emails to customers with expiring licenses.',
+        'Run Expiry Check',
+        { type: 'info', confirmText: 'Run Check' }
+      );
+      if (!confirmed) return;
 
       try {
         const response = await fetch('/licenses/expiring/check', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
+          }
         });
 
         const result = await response.json();
@@ -293,5 +299,6 @@
       }
     }
   </script>
+  <%- include('../partials/confirm-modal') %>
 </body>
 </html>
