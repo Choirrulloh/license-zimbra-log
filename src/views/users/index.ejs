@@ -164,11 +164,12 @@
         const data = await res.json();
         if (data.success) {
           showToast('User suspended successfully!', 'success');
-          setTimeout(() => location.reload(), 1000);
+          setTimeout(() => location.reload(), 1500);
         } else {
           showToast(data.message || 'Error suspending user', 'error');
         }
       } catch (e) {
+        console.error('Suspend error:', e);
         showToast('Error suspending user', 'error');
       }
     }
@@ -189,11 +190,12 @@
         const data = await res.json();
         if (data.success) {
           showToast('User unsuspended successfully!', 'success');
-          setTimeout(() => location.reload(), 1000);
+          setTimeout(() => location.reload(), 1500);
         } else {
           showToast(data.message || 'Error unsuspending user', 'error');
         }
       } catch (e) {
+        console.error('Unsuspend error:', e);
         showToast('Error unsuspending user', 'error');
       }
     }
