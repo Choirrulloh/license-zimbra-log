@@ -205,7 +205,7 @@
       try {
         const res = await fetch('/licenses/<%= license.id %>/renew', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' },
           body: JSON.stringify({ duration_days: days })
         });
         const data = await res.json();
@@ -221,7 +221,7 @@
     }
 
     async function suspendLicense() {
-      const reason = prompt('Enter reason for suspension:');
+      const reason = await showPrompt('Enter reason for suspension:', 'Suspend License', 'Enter reason');
       if (!reason) return;
 
       const confirmed = await showConfirm(
@@ -234,7 +234,7 @@
       try {
         const res = await fetch('/licenses/<%= license.id %>/suspend', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' },
           body: JSON.stringify({ reason })
         });
         const data = await res.json();
@@ -250,7 +250,7 @@
     }
 
     async function revokeLicense() {
-      const reason = prompt('Enter reason for revocation:');
+      const reason = await showPrompt('Enter reason for revocation:', 'Revoke License', 'Enter reason');
       if (!reason) return;
 
       const confirmed = await showConfirm(
@@ -263,7 +263,7 @@
       try {
         const res = await fetch('/licenses/<%= license.id %>/revoke', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' },
           body: JSON.stringify({ reason })
         });
         const data = await res.json();
@@ -289,7 +289,7 @@
       try {
         const res = await fetch('/licenses/<%= license.id %>/activate', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' }
         });
         const data = await res.json();
         if (data.success) {
@@ -320,7 +320,8 @@
 
       try {
         const res = await fetch('/licenses/<%= license.id %>', {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: { 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' }
         });
         const data = await res.json();
         if (data.success) {
@@ -335,5 +336,6 @@
     }
   </script>
   <%- include('../partials/confirm-modal') %>
+  <%- include('../partials/prompt-modal') %>
 </body>
 </html>

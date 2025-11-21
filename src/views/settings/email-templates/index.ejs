@@ -184,7 +184,7 @@
       try {
         const res = await fetch(`/settings/email-templates/${id}/set-default`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' }
         });
         const data = await res.json();
         if (data.success) {
@@ -207,7 +207,7 @@
       if (!confirmed) return;
 
       try {
-        const res = await fetch(`/settings/email-templates/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/settings/email-templates/${id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' } });
         const data = await res.json();
         if (data.success) {
           showToast('Email template deleted successfully!', 'success');

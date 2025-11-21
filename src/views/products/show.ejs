@@ -456,7 +456,7 @@
       try {
         const res = await fetch('/license-types', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' },
           body: JSON.stringify(data),
           credentials: 'include'
         });
@@ -491,7 +491,7 @@
       try {
         const res = await fetch(`/license-types/${id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' },
           body: JSON.stringify(data),
           credentials: 'include'
         });
@@ -517,7 +517,8 @@
 
       try {
         const res = await fetch(`/license-types/${id}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: { 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' }
         });
         const result = await res.json();
         if (result.success) {
@@ -674,7 +675,7 @@
       try {
         const res = await fetch('/products/<%= product.id %>/features/batch', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' },
           body: JSON.stringify({ features }),
           credentials: 'include'
         });
@@ -701,6 +702,7 @@
       try {
         const res = await fetch(`/features/${id}`, {
           method: 'DELETE',
+          headers: { 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' },
           credentials: 'include'
         });
         const result = await res.json();

@@ -89,7 +89,10 @@
             if (!confirmed) return;
 
             try {
-              const response = await fetch(`/products/${id}`, { method: 'DELETE' });
+              const response = await fetch(`/products/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' }
+              });
               const data = await response.json();
               if (data.success) {
                 showToast('Product deleted successfully!', 'success');

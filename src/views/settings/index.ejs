@@ -322,7 +322,8 @@
         const response = await fetch('/settings', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
           },
           body: JSON.stringify(data)
         });
@@ -395,7 +396,8 @@
         const res = await fetch('/settings/test-email', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
           },
           body: JSON.stringify({
             smtp_host,
