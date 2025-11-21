@@ -517,7 +517,8 @@
         const uploadRes = await fetch('/code-protection/upload', {
           method: 'POST',
           body: formData,
-          credentials: 'same-origin'
+          credentials: 'same-origin',
+          headers: { 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' }
         });
 
         const uploadData = await uploadRes.json();
@@ -748,7 +749,7 @@
         // Obfuscate
         const obfRes = await fetch('/code-protection/obfuscate', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>' },
           credentials: 'same-origin',
           body: JSON.stringify({
             fileId: uploadedFileData.id,
