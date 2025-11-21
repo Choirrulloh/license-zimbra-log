@@ -6,9 +6,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-100">
-  <%- include('partials/sidebar', { currentPage: 'generate' }) %>
+  <div class="flex h-screen overflow-hidden">
+    <%- include('partials/sidebar', { currentPage: 'generate' }) %>
 
-  <div class="flex-1 flex flex-col overflow-hidden">
+    <div class="flex-1 flex flex-col overflow-hidden">
     <%- include('partials/header', { title: 'Generate License', subtitle: 'Create a new license for your products' }) %>
 
     <main class="flex-1 overflow-y-auto p-6">
@@ -104,8 +105,9 @@
                 >
                   <i class="fas fa-magic mr-2"></i> Generate License
                 </button>
+                <% const basePath = typeof customerPortalBase !== 'undefined' ? customerPortalBase : '/customer'; %>
                 <a
-                  href="/customer/licenses"
+                  href="<%= basePath %>/licenses"
                   class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 rounded-lg text-center transition-colors"
                 >
                   <i class="fas fa-times mr-2"></i> Cancel
@@ -170,6 +172,7 @@
 
       <% } %>
     </main>
+    </div>
   </div>
 
   <%- include('partials/toast') %>
@@ -208,6 +211,7 @@
 
   <script>
     let licenseTypesData = [];
+    const basePath = '<%= typeof customerPortalBase !== "undefined" ? customerPortalBase : "/customer" %>';
 
     async function loadLicenseTypes() {
       const productId = document.getElementById('product_id').value;
@@ -220,7 +224,7 @@
       }
 
       try {
-        const response = await fetch(`/customer/api/license-types/${productId}`);
+        const response = await fetch(`${basePath}/api/license-types/${productId}`);
         const data = await response.json();
 
         if (data.success) {
@@ -284,7 +288,7 @@
           license_type_id: document.getElementById('license_type_id').value
         };
 
-        const response = await fetch('/customer/generate-license', {
+        const response = await fetch(`${basePath}/generate-license`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
@@ -315,7 +319,7 @@
     }
 
     function viewLicenses() {
-      window.location.href = '/customer/licenses';
+      window.location.href = `${basePath}/licenses`;
     }
 
     function generateAnother() {

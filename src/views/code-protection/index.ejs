@@ -92,8 +92,6 @@
             <p class="text-xs text-gray-400">Supported: .js, .sh, .zip | Max size: <%= quota.max_file_size_mb %>MB</p>
           </div>
 
-          <input type="file" id="fileInput" accept=".js,.sh,.zip" style="display: none !important;" multiple>
-
           <div id="uploadedFiles" class="hidden mb-4">
             <div class="bg-gray-50 rounded-lg p-4">
               <p class="text-sm font-medium text-gray-700 mb-2">
@@ -109,9 +107,7 @@
             </div>
           </div>
 
-          <button id="selectFilesBtn" type="button" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors cursor-pointer">
-            <i class="fas fa-plus mr-2"></i>Select Files
-          </button>
+          <input type="file" id="fileInput" accept=".js,.sh,.zip" style="position: absolute; left: -9999px;">
         </div>
 
         <!-- Step 2: Configure Options -->
@@ -121,9 +117,9 @@
             Step 2: Configure Options
           </h4>
 
-          <p class="text-sm text-gray-600 mb-4">Obfuscation Level:</p>
+          <p id="obfuscationLevelLabel" class="text-sm text-gray-600 mb-4 hidden">Obfuscation Level:</p>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div id="obfuscationLevelCards" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 hidden">
             <div class="level-card border-2 rounded-lg p-4 text-center" data-level="low" onclick="selectLevel('low')">
               <i class="fas fa-bolt text-3xl text-yellow-500 mb-2"></i>
               <h5 class="font-semibold text-gray-800">Low</h5>
@@ -143,7 +139,7 @@
             </div>
           </div>
 
-          <div class="border-t pt-4">
+          <div id="advancedOptionsSection" class="border-t pt-4 hidden">
             <label class="flex items-center cursor-pointer">
               <input type="checkbox" id="showAdvanced" class="mr-2" onchange="toggleAdvanced()">
               <span class="text-sm font-medium text-gray-700">Show Advanced Options</span>
@@ -220,15 +216,18 @@
 
           <!-- Bash Script Protection (only shown for .sh files) -->
           <div id="bashProtectionSection" class="hidden mt-4 border-t pt-4">
-            <label class="flex items-center cursor-pointer">
-              <input type="checkbox" id="bashInjectLicense" class="mr-2" onchange="toggleBashInjection()">
-              <span class="text-sm font-medium text-gray-700">
+            <div class="mb-3">
+              <p class="text-sm font-medium text-gray-700 mb-2">
                 <i class="fas fa-terminal text-green-600 mr-1"></i>
-                Inject License Validation (Bash Scripts Only)
-              </span>
-            </label>
+                License Protection
+              </p>
+              <p class="text-xs text-gray-600">
+                <i class="fas fa-shield-alt text-green-600 mr-1"></i>
+                License validation will be automatically injected into your bash script
+              </p>
+            </div>
 
-            <div id="bashInjectionOptions" class="hidden mt-4 bg-green-50 rounded-lg p-4 border border-green-200">
+            <div id="bashInjectionOptions" class="bg-green-50 rounded-lg p-4 border border-green-200">
               <p class="text-sm text-gray-700 mb-3">
                 <i class="fas fa-info-circle text-blue-500 mr-1"></i>
                 The script will require a valid license key when executed
@@ -257,36 +256,6 @@
                     <option value="<%= product.id %>"><%= product.name %></option>
                   <% }) %>
                 </select>
-              </div>
-
-              <div class="mb-3">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Welcome Message:</label>
-                <input type="text" id="bashWelcomeMsg" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="License Protected Script">
-              </div>
-
-              <div class="mb-3">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Support Contact:</label>
-                <input type="text" id="bashSupportContact" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="support@example.com">
-              </div>
-
-              <div class="space-y-2 mt-3">
-                <p class="text-sm font-medium text-gray-700">Validation Options:</p>
-                <label class="flex items-center">
-                  <input type="checkbox" id="bashCheckExpiry" class="mr-2" checked>
-                  <span class="text-sm text-gray-700">Check license expiry</span>
-                </label>
-                <label class="flex items-center">
-                  <input type="checkbox" id="bashCheckActivation" class="mr-2" checked>
-                  <span class="text-sm text-gray-700">Check activation status</span>
-                </label>
-                <label class="flex items-center">
-                  <input type="checkbox" id="bashCheckMachine" class="mr-2">
-                  <span class="text-sm text-gray-700">Validate machine binding</span>
-                </label>
-                <label class="flex items-center">
-                  <input type="checkbox" id="bashShowInfo" class="mr-2" checked>
-                  <span class="text-sm text-gray-700">Show license info after validation</span>
-                </label>
               </div>
 
               <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
@@ -458,61 +427,62 @@
     let uploadedFile = null;
     let uploadedFileData = null; // Store upload response data
     let currentObfuscationId = null;
+    let currentFileType = null; // 'bash' or 'javascript'
 
     // Wait for DOM to be fully loaded
     document.addEventListener('DOMContentLoaded', function() {
-      // Drag & Drop
+      console.log('[Code Protection] Initializing...');
+
       const uploadZone = document.getElementById('uploadZone');
       const fileInput = document.getElementById('fileInput');
-      const selectFilesBtn = document.getElementById('selectFilesBtn');
 
-      // Select Files button click handler
-      if (selectFilesBtn) {
-        selectFilesBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          console.log('Select Files button clicked');
-          if (fileInput) {
-            fileInput.click();
-          } else {
-            console.error('File input not found');
-          }
-        });
-      }
+      console.log('[Code Protection] Upload zone found:', !!uploadZone);
+      console.log('[Code Protection] File input found:', !!fileInput);
 
-      // Upload zone click handler
-      if (uploadZone) {
+      if (uploadZone && fileInput) {
+        // Click on upload zone to trigger file input
         uploadZone.addEventListener('click', function(e) {
-          console.log('Upload zone clicked');
-          if (fileInput) {
-            fileInput.click();
+          console.log('[Code Protection] Upload zone clicked');
+          e.preventDefault();
+          e.stopPropagation();
+          fileInput.click();
+        });
+
+        // File input change handler
+        fileInput.addEventListener('change', function(e) {
+          console.log('[Code Protection] File input changed');
+          console.log('[Code Protection] Files selected:', e.target.files.length);
+          if (e.target.files && e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
           }
         });
 
+        // Drag and drop handlers
         uploadZone.addEventListener('dragover', (e) => {
           e.preventDefault();
           uploadZone.classList.add('drag-over');
+          console.log('[Code Protection] Drag over');
         });
 
         uploadZone.addEventListener('dragleave', () => {
           uploadZone.classList.remove('drag-over');
+          console.log('[Code Protection] Drag leave');
         });
 
         uploadZone.addEventListener('drop', (e) => {
           e.preventDefault();
           uploadZone.classList.remove('drag-over');
+          console.log('[Code Protection] File dropped');
           if (e.dataTransfer.files.length > 0) {
             handleFileSelect(e.dataTransfer.files[0]);
           }
         });
-      }
 
-      // File input change handler
-      if (fileInput) {
-        fileInput.addEventListener('change', (e) => {
-          console.log('File selected:', e.target.files);
-          if (e.target.files.length > 0) {
-            handleFileSelect(e.target.files[0]);
-          }
+        console.log('[Code Protection] All event listeners attached successfully');
+      } else {
+        console.error('[Code Protection] Missing elements:', {
+          uploadZone: !!uploadZone,
+          fileInput: !!fileInput
         });
       }
     });
@@ -562,12 +532,23 @@
         // Check if bash script
         const isBashScript = fileName.endsWith('.sh');
         const isZip = fileName.endsWith('.zip');
+        const isJavaScript = fileName.endsWith('.js');
 
         // Check if ZIP contains shell scripts
         const hasShellScripts = uploadData.file.shellScripts && uploadData.file.shellScripts.length > 0;
 
-        // Show/hide bash protection section
+        // Determine file type
         if (isBashScript || (isZip && hasShellScripts)) {
+          currentFileType = 'bash';
+        } else {
+          currentFileType = 'javascript';
+        }
+
+        // Update UI based on file type
+        updateUIForFileType();
+
+        // Show/hide bash protection section
+        if (currentFileType === 'bash') {
           document.getElementById('bashProtectionSection').classList.remove('hidden');
 
           // Show main script selector for ZIP with multiple .sh files
@@ -594,8 +575,6 @@
           }
         } else {
           document.getElementById('bashProtectionSection').classList.add('hidden');
-          document.getElementById('bashInjectLicense').checked = false;
-          document.getElementById('bashInjectionOptions').classList.add('hidden');
           document.getElementById('mainScriptSection').classList.add('hidden');
         }
 
@@ -651,13 +630,33 @@
       }
     }
 
+    function updateUIForFileType() {
+      if (currentFileType === 'bash') {
+        // Hide level selection and advanced options for bash
+        document.getElementById('obfuscationLevelLabel').classList.add('hidden');
+        document.getElementById('obfuscationLevelCards').classList.add('hidden');
+        document.getElementById('advancedOptionsSection').classList.add('hidden');
+      } else {
+        // Show level selection and advanced options for javascript
+        document.getElementById('obfuscationLevelLabel').classList.remove('hidden');
+        document.getElementById('obfuscationLevelCards').classList.remove('hidden');
+        document.getElementById('advancedOptionsSection').classList.remove('hidden');
+      }
+    }
+
     function clearFiles() {
       uploadedFile = null;
       uploadedFileData = null;
+      currentFileType = null;
       document.getElementById('uploadedFiles').classList.add('hidden');
       document.getElementById('fileInput').value = '';
       document.getElementById('bashProtectionSection').classList.add('hidden');
       document.getElementById('mainScriptSection').classList.add('hidden');
+
+      // Reset UI to default (hide all options)
+      document.getElementById('obfuscationLevelLabel').classList.add('hidden');
+      document.getElementById('obfuscationLevelCards').classList.add('hidden');
+      document.getElementById('advancedOptionsSection').classList.add('hidden');
 
       const btn = document.getElementById('obfuscateBtn');
       btn.disabled = true;
@@ -691,15 +690,6 @@
       document.getElementById('optDisableConsole').checked = false;
     }
 
-    function toggleBashInjection() {
-      const options = document.getElementById('bashInjectionOptions');
-      if (document.getElementById('bashInjectLicense').checked) {
-        options.classList.remove('hidden');
-      } else {
-        options.classList.add('hidden');
-      }
-    }
-
     async function startObfuscation() {
       if (!uploadedFile || !uploadedFileData) {
         showToast('Please upload a file first', 'warning');
@@ -728,8 +718,8 @@
         const isSingleBashScript = fileName.endsWith('.sh');
         const isZipWithShellScripts = uploadedFileData.shellScripts && uploadedFileData.shellScripts.length > 0;
 
-        if ((isSingleBashScript || isZipWithShellScripts) &&
-            document.getElementById('bashInjectLicense').checked) {
+        // Auto-enable bash injection for bash files
+        if (isSingleBashScript || isZipWithShellScripts) {
 
           const productId = document.getElementById('bashProductId').value;
           if (!productId) {
@@ -751,13 +741,7 @@
           bashInjection = {
             injectLicense: true,
             productId: parseInt(productId),
-            mainScript: mainScript, // For multi-script ZIP
-            welcomeMessage: document.getElementById('bashWelcomeMsg').value,
-            supportContact: document.getElementById('bashSupportContact').value,
-            checkExpiry: document.getElementById('bashCheckExpiry').checked,
-            checkActivation: document.getElementById('bashCheckActivation').checked,
-            checkMachine: document.getElementById('bashCheckMachine').checked,
-            showInfo: document.getElementById('bashShowInfo').checked
+            mainScript: mainScript // For multi-script ZIP
           };
         }
 

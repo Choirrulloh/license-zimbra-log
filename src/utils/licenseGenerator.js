@@ -134,30 +134,6 @@ class LicenseGenerator {
     }
     return licenseHardwareId === currentHardwareId;
   }
-
-  /**
-   * Generate offline validation code
-   * This can be used for offline license validation
-   */
-  generateOfflineCode(licenseKey, expiryDate) {
-    const data = `${licenseKey}|${expiryDate}`;
-    const hash = crypto
-      .createHmac('sha256', this.encryptionKey)
-      .update(data)
-      .digest('hex');
-
-    // Take first 16 characters and format nicely
-    const code = hash.substring(0, 16).toUpperCase();
-    return `${code.substring(0, 4)}-${code.substring(4, 8)}-${code.substring(8, 12)}-${code.substring(12, 16)}`;
-  }
-
-  /**
-   * Verify offline validation code
-   */
-  verifyOfflineCode(licenseKey, expiryDate, code) {
-    const expectedCode = this.generateOfflineCode(licenseKey, expiryDate);
-    return code.replace(/-/g, '') === expectedCode.replace(/-/g, '');
-  }
 }
 
 module.exports = new LicenseGenerator();

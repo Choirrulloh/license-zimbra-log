@@ -404,12 +404,12 @@ class CodeProtectionController {
                 productId: product.id,
                 productName: product.name,
                 apiUrl: apiUrl,
-                welcomeMessage: bashInjection.welcomeMessage || `License Protected Script - ${product.name}`,
-                supportContact: bashInjection.supportContact || settingsObj.email_from_address || 'support@example.com',
-                checkExpiry: bashInjection.checkExpiry !== false,
-                checkActivation: bashInjection.checkActivation !== false,
-                checkMachine: bashInjection.checkMachine === true,
-                showInfo: bashInjection.showInfo !== false
+                welcomeMessage: `License Protected Script - ${product.name}`,
+                supportContact: 'support@excelent.co.id',
+                checkExpiry: true,
+                checkActivation: true,
+                checkMachine: true,
+                showInfo: true
               };
 
               licenseInjected = true;
@@ -465,12 +465,12 @@ class CodeProtectionController {
               productId: product.id,
               productName: product.name,
               apiUrl: apiUrl,
-              welcomeMessage: bashInjection.welcomeMessage || `License Protected Script - ${product.name}`,
-              supportContact: bashInjection.supportContact || settingsObj.email_from_address || 'support@example.com',
-              checkExpiry: bashInjection.checkExpiry !== false,
-              checkActivation: bashInjection.checkActivation !== false,
-              checkMachine: bashInjection.checkMachine === true,
-              showInfo: bashInjection.showInfo !== false
+              welcomeMessage: `License Protected Script - ${product.name}`,
+              supportContact: 'support@excelent.co.id',
+              checkExpiry: true,
+              checkActivation: true,
+              checkMachine: true,
+              showInfo: true
             };
 
             licenseInjected = true;

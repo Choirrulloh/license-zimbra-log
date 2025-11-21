@@ -6,9 +6,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-100">
-  <%- include('partials/sidebar', { currentPage: 'products' }) %>
+  <% const basePath = typeof customerPortalBase !== 'undefined' ? customerPortalBase : '/customer'; %>
+  <div class="flex h-screen overflow-hidden">
+    <%- include('partials/sidebar', { currentPage: 'products' }) %>
 
-  <div class="flex-1 flex flex-col overflow-hidden">
+    <div class="flex-1 flex flex-col overflow-hidden">
     <%- include('partials/header', { title: 'Products', subtitle: 'Browse available products' }) %>
 
     <main class="flex-1 overflow-y-auto p-6">
@@ -89,6 +91,7 @@
         </div>
       <% } %>
     </main>
+    </div>
   </div>
 
   <%- include('partials/toast') %>
@@ -109,7 +112,7 @@
         </div>
 
         <div class="mt-6 pt-6 border-t flex space-x-3">
-          <a href="/customer/generate-license" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-center">
+          <a href="<%= basePath %>/generate-license" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-center">
             <i class="fas fa-key mr-2"></i> Generate License
           </a>
           <button onclick="closeModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-lg">

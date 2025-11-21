@@ -13,11 +13,13 @@ class LicenseController {
     this.activate = this.activate.bind(this);
     this.delete = this.delete.bind(this);
     this.getLicenseTypes = this.getLicenseTypes.bind(this);
+    this.approveRenewal = this.approveRenewal.bind(this);
+    this.rejectRenewal = this.rejectRenewal.bind(this);
   }
 
   async index(req, res) {
     try {
-      const { status, product_id, customer_id } = req.query;
+      const { status, product_id, customer_id, tab, renewal_status } = req.query;
 
       let query = `
         SELECT l.*, p.name as product_name, c.name as customer_name, c.email as customer_email,
@@ -53,12 +55,45 @@ class LicenseController {
       const products = await db.all('SELECT * FROM products WHERE is_active = 1 ORDER BY name');
       const customers = await db.all('SELECT * FROM customers WHERE is_active = 1 ORDER BY name');
 
+      // Fetch renewal requests for the renewals tab
+      let renewals = [];
+      if (tab === 'renewals') {
+        let renewalQuery = `
+          SELECT lr.*, l.license_key, c.name as customer_name, c.email as customer_email,
+                 p.name as product_name
+          FROM license_renewals lr
+          JOIN licenses l ON lr.license_id = l.id
+          JOIN customers c ON lr.customer_id = c.id
+          JOIN products p ON l.product_id = p.id
+          WHERE 1=1
+        `;
+
+        const renewalParams = [];
+
+        // Filter by renewal status (default to pending)
+        const filterStatus = renewal_status || 'pending';
+        renewalQuery += ' AND lr.status = ?';
+        renewalParams.push(filterStatus);
+
+        renewalQuery += ' ORDER BY lr.requested_at DESC';
+
+        renewals = await db.all(renewalQuery, renewalParams);
+      }
+
+      // Get count of pending renewals for badge
+      const renewalCount = await db.get(
+        'SELECT COUNT(*) as count FROM license_renewals WHERE status = ?',
+        ['pending']
+      );
+
       res.render('licenses/index', {
         user: req.session,
         licenses,
         products,
         customers,
-        filters: { status, product_id, customer_id },
+        renewals,
+        renewalCount: renewalCount.count,
+        filters: { status, product_id, customer_id, tab, renewal_status },
         moment
       });
     } catch (error) {
@@ -111,19 +146,12 @@ class LicenseController {
         [license.license_type_id]
       );
 
-      // Generate offline validation code
-      const offlineCode = licenseGenerator.generateOfflineCode(
-        license.license_key,
-        license.expiry_date
-      );
-
       res.render('licenses/show', {
         user: req.session,
         license,
         activations,
         history,
         features,
-        offlineCode,
         moment
       });
     } catch (error) {
@@ -370,7 +398,24 @@ class LicenseController {
     try {
       const { id } = req.params;
 
+      // Get license info before deleting (to return quota)
+      const license = await db.get('SELECT customer_id FROM licenses WHERE id = ?', [id]);
+
+      if (!license) {
+        return res.status(404).json({
+          success: false,
+          message: 'License not found'
+        });
+      }
+
+      // Delete license
       await db.run('DELETE FROM licenses WHERE id = ?', [id]);
+
+      // Return quota to customer (decrement license_used)
+      await db.run(
+        'UPDATE customers SET license_used = license_used - 1 WHERE id = ? AND license_used > 0',
+        [license.customer_id]
+      );
 
       res.json({ success: true });
     } catch (error) {
@@ -396,6 +441,143 @@ class LicenseController {
     } catch (error) {
       console.error('Error fetching license types:', error);
       res.status(500).json({ error: 'Error fetching license types' });
+    }
+  }
+
+  // Approve renewal request
+  async approveRenewal(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Get renewal request details
+      const renewal = await db.get(
+        `SELECT lr.*, l.expiry_date, l.license_key, lt.duration_days
+         FROM license_renewals lr
+         JOIN licenses l ON lr.license_id = l.id
+         JOIN license_types lt ON l.license_type_id = lt.id
+         WHERE lr.id = ? AND lr.status = 'pending'`,
+        [id]
+      );
+
+      if (!renewal) {
+        return res.status(404).json({
+          success: false,
+          error: 'Renewal request not found or already processed'
+        });
+      }
+
+      // Calculate new expiry date
+      // If current license is expired, extend from now. Otherwise extend from current expiry
+      const currentExpiry = renewal.expiry_date ? moment(renewal.expiry_date) : null;
+      const now = moment();
+      const baseDate = currentExpiry && currentExpiry.isAfter(now) ? currentExpiry : now;
+      const newExpiry = baseDate.add(renewal.duration_days, 'days').format('YYYY-MM-DD HH:mm:ss');
+
+      // Update license expiry date and status
+      await db.run(
+        `UPDATE licenses
+         SET expiry_date = ?,
+             status = 'active',
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [newExpiry, renewal.license_id]
+      );
+
+      // Update renewal request
+      await db.run(
+        `UPDATE license_renewals
+         SET status = 'approved',
+             approved_by = ?,
+             approved_at = CURRENT_TIMESTAMP,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [req.session.userId, id]
+      );
+
+      // Add to license history
+      await db.run(
+        `INSERT INTO license_history (license_id, action, old_status, new_status, description, created_by)
+         VALUES (?, 'renewed', 'renewal_approved', 'active', ?, ?)`,
+        [
+          renewal.license_id,
+          `License renewed until ${moment(newExpiry).format('YYYY-MM-DD')} via customer renewal request`,
+          req.session.userId
+        ]
+      );
+
+      res.json({
+        success: true,
+        message: 'Renewal request approved successfully',
+        newExpiry: newExpiry
+      });
+    } catch (error) {
+      console.error('Error approving renewal:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error approving renewal request'
+      });
+    }
+  }
+
+  // Reject renewal request
+  async rejectRenewal(req, res) {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+
+      if (!reason || reason.trim() === '') {
+        return res.status(400).json({
+          success: false,
+          error: 'Rejection reason is required'
+        });
+      }
+
+      // Check if renewal request exists and is pending
+      const renewal = await db.get(
+        'SELECT * FROM license_renewals WHERE id = ? AND status = ?',
+        [id, 'pending']
+      );
+
+      if (!renewal) {
+        return res.status(404).json({
+          success: false,
+          error: 'Renewal request not found or already processed'
+        });
+      }
+
+      // Update renewal request
+      await db.run(
+        `UPDATE license_renewals
+         SET status = 'rejected',
+             rejected_reason = ?,
+             approved_by = ?,
+             approved_at = CURRENT_TIMESTAMP,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [reason.trim(), req.session.userId, id]
+      );
+
+      // Add to license history
+      await db.run(
+        `INSERT INTO license_history (license_id, action, old_status, new_status, description, created_by)
+         VALUES (?, 'renewal_rejected', 'pending_renewal', 'rejected', ?, ?)`,
+        [
+          renewal.license_id,
+          `Renewal request rejected: ${reason.trim()}`,
+          req.session.userId
+        ]
+      );
+
+      res.json({
+        success: true,
+        message: 'Renewal request rejected'
+      });
+    } catch (error) {
+      console.error('Error rejecting renewal:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error rejecting renewal request'
+      });
     }
   }
 }
