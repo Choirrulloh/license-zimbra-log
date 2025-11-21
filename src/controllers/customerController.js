@@ -13,6 +13,8 @@ class CustomerController {
     this.edit = this.edit.bind(this);
     this.update = this.update.bind(this);
     this.delete = this.delete.bind(this);
+    this.suspend = this.suspend.bind(this);
+    this.unsuspend = this.unsuspend.bind(this);
   }
 
   async index(req, res) {
@@ -494,6 +496,71 @@ class CustomerController {
         success: false,
         error: 'Error logging in as customer'
       });
+    }
+  }
+
+  // Suspend customer
+  async suspend(req, res) {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+
+      const customer = await db.get('SELECT * FROM customers WHERE id = ?', [id]);
+      if (!customer) {
+        return res.status(404).json({ success: false, message: 'Customer not found' });
+      }
+
+      await db.run(
+        `UPDATE customers SET suspended = 1, suspended_at = CURRENT_TIMESTAMP, suspended_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [reason || null, id]
+      );
+
+      await ActivityLogger.log({
+        userId: req.session.userId,
+        action: 'suspend',
+        entityType: 'customer',
+        entityId: id,
+        description: `Suspended customer: ${customer.name}${reason ? ` - Reason: ${reason}` : ''}`,
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.headers?.['user-agent']
+      });
+
+      res.json({ success: true, message: 'Customer suspended successfully' });
+    } catch (error) {
+      console.error('Error suspending customer:', error);
+      res.status(500).json({ success: false, message: 'Error suspending customer' });
+    }
+  }
+
+  // Unsuspend customer
+  async unsuspend(req, res) {
+    try {
+      const { id } = req.params;
+
+      const customer = await db.get('SELECT * FROM customers WHERE id = ?', [id]);
+      if (!customer) {
+        return res.status(404).json({ success: false, message: 'Customer not found' });
+      }
+
+      await db.run(
+        `UPDATE customers SET suspended = 0, suspended_at = NULL, suspended_reason = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [id]
+      );
+
+      await ActivityLogger.log({
+        userId: req.session.userId,
+        action: 'unsuspend',
+        entityType: 'customer',
+        entityId: id,
+        description: `Unsuspended customer: ${customer.name}`,
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.headers?.['user-agent']
+      });
+
+      res.json({ success: true, message: 'Customer unsuspended successfully' });
+    } catch (error) {
+      console.error('Error unsuspending customer:', error);
+      res.status(500).json({ success: false, message: 'Error unsuspending customer' });
     }
   }
 }

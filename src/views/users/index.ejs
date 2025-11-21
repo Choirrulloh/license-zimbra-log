@@ -60,18 +60,29 @@
                       <% } %>
                     </td>
                     <td class="px-6 py-4">
-                      <span class="px-2 py-1 rounded-full text-xs font-semibold <%= u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
-                        <%= u.is_active ? 'Active' : 'Inactive' %>
-                      </span>
+                      <% if (u.suspended) { %>
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
+                          Suspended
+                        </span>
+                      <% } else { %>
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold <%= u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                          <%= u.is_active ? 'Active' : 'Inactive' %>
+                        </span>
+                      <% } %>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-500">
                       <%= u.last_login ? moment(u.last_login).tz(timezone).format('MMM D, YYYY HH:mm') : 'Never' %>
                     </td>
                     <td class="px-6 py-4 text-sm space-x-2">
-                      <a href="/users/<%= u.id %>" class="text-blue-500 hover:text-blue-600"><i class="fas fa-eye"></i></a>
-                      <a href="/users/<%= u.id %>/edit" class="text-yellow-500 hover:text-yellow-600"><i class="fas fa-edit"></i></a>
+                      <a href="/users/<%= u.id %>" class="text-blue-500 hover:text-blue-600" title="View"><i class="fas fa-eye"></i></a>
+                      <a href="/users/<%= u.id %>/edit" class="text-yellow-500 hover:text-yellow-600" title="Edit"><i class="fas fa-edit"></i></a>
                       <% if (u.role_name !== 'admin') { %>
-                        <button onclick="deleteUser(<%= u.id %>)" class="text-red-500 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                        <% if (u.suspended) { %>
+                          <button onclick="unsuspendUser(<%= u.id %>)" class="text-green-500 hover:text-green-600" title="Unsuspend"><i class="fas fa-user-check"></i></button>
+                        <% } else { %>
+                          <button onclick="suspendUser(<%= u.id %>)" class="text-orange-500 hover:text-orange-600" title="Suspend"><i class="fas fa-user-slash"></i></button>
+                        <% } %>
+                        <button onclick="deleteUser(<%= u.id %>)" class="text-red-500 hover:text-red-600" title="Delete"><i class="fas fa-trash"></i></button>
                       <% } %>
                     </td>
                   </tr>
@@ -122,6 +133,55 @@
         }
       } catch (e) {
         showToast('Error deleting user', 'error');
+      }
+    }
+
+    async function suspendUser(id) {
+      const reason = prompt('Enter reason for suspension (optional):');
+      const confirmed = await showConfirm(
+        'Are you sure you want to suspend this user? They will not be able to login.',
+        'Confirm Suspension',
+        { type: 'warning', confirmText: 'Suspend' }
+      );
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(`/users/${id}/suspend`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('User suspended successfully!', 'success');
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast(data.message || 'Error suspending user', 'error');
+        }
+      } catch (e) {
+        showToast('Error suspending user', 'error');
+      }
+    }
+
+    async function unsuspendUser(id) {
+      const confirmed = await showConfirm(
+        'Are you sure you want to unsuspend this user? They will be able to login again.',
+        'Confirm Unsuspension',
+        { type: 'info', confirmText: 'Unsuspend' }
+      );
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(`/users/${id}/unsuspend`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('User unsuspended successfully!', 'success');
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast(data.message || 'Error unsuspending user', 'error');
+        }
+      } catch (e) {
+        showToast('Error unsuspending user', 'error');
       }
     }
   </script>

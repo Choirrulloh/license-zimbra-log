@@ -34,6 +34,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Licenses</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Revenue</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
@@ -57,16 +58,30 @@
                       </span>
                     </td>
                     <td class="px-6 py-4 text-sm font-medium">Rp <%= new Intl.NumberFormat('id-ID').format(c.total_revenue || 0) %></td>
+                    <td class="px-6 py-4">
+                      <% if (c.suspended) { %>
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">Suspended</span>
+                      <% } else if (c.is_active) { %>
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Active</span>
+                      <% } else { %>
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Inactive</span>
+                      <% } %>
+                    </td>
                     <td class="px-6 py-4 text-sm font-medium space-x-2">
-                      <a href="/customers/<%= c.id %>" class="text-blue-600 hover:text-blue-900"><i class="fas fa-eye"></i></a>
-                      <a href="/customers/<%= c.id %>/edit" class="text-yellow-600 hover:text-yellow-900"><i class="fas fa-edit"></i></a>
-                      <a href="#" onclick="deleteCustomer(<%= c.id %>); return false;" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></a>
+                      <a href="/customers/<%= c.id %>" class="text-blue-600 hover:text-blue-900" title="View"><i class="fas fa-eye"></i></a>
+                      <a href="/customers/<%= c.id %>/edit" class="text-yellow-600 hover:text-yellow-900" title="Edit"><i class="fas fa-edit"></i></a>
+                      <% if (c.suspended) { %>
+                        <button onclick="unsuspendCustomer(<%= c.id %>)" class="text-green-500 hover:text-green-600" title="Unsuspend"><i class="fas fa-user-check"></i></button>
+                      <% } else { %>
+                        <button onclick="suspendCustomer(<%= c.id %>)" class="text-orange-500 hover:text-orange-600" title="Suspend"><i class="fas fa-user-slash"></i></button>
+                      <% } %>
+                      <a href="#" onclick="deleteCustomer(<%= c.id %>); return false;" class="text-red-600 hover:text-red-900" title="Delete"><i class="fas fa-trash"></i></a>
                     </td>
                   </tr>
                 <% }); %>
               <% } else { %>
                 <tr>
-                  <td colspan="6" class="px-6 py-10 text-center text-gray-500">No customers found</td>
+                  <td colspan="7" class="px-6 py-10 text-center text-gray-500">No customers found</td>
                 </tr>
               <% } %>
             </tbody>
@@ -95,6 +110,55 @@
               }
             } catch (e) {
               showToast('Error deleting customer', 'error');
+            }
+          }
+
+          async function suspendCustomer(id) {
+            const reason = prompt('Enter reason for suspension (optional):');
+            const confirmed = await showConfirm(
+              'Are you sure you want to suspend this customer? They will not be able to login.',
+              'Confirm Suspension',
+              { type: 'warning', confirmText: 'Suspend' }
+            );
+            if (!confirmed) return;
+
+            try {
+              const res = await fetch(`/customers/${id}/suspend`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason })
+              });
+              const data = await res.json();
+              if (data.success) {
+                showToast('Customer suspended successfully!', 'success');
+                setTimeout(() => location.reload(), 1000);
+              } else {
+                showToast(data.message || 'Error suspending customer', 'error');
+              }
+            } catch (e) {
+              showToast('Error suspending customer', 'error');
+            }
+          }
+
+          async function unsuspendCustomer(id) {
+            const confirmed = await showConfirm(
+              'Are you sure you want to unsuspend this customer?',
+              'Confirm Unsuspension',
+              { type: 'info', confirmText: 'Unsuspend' }
+            );
+            if (!confirmed) return;
+
+            try {
+              const res = await fetch(`/customers/${id}/unsuspend`, { method: 'POST' });
+              const data = await res.json();
+              if (data.success) {
+                showToast('Customer unsuspended successfully!', 'success');
+                setTimeout(() => location.reload(), 1000);
+              } else {
+                showToast(data.message || 'Error unsuspending customer', 'error');
+              }
+            } catch (e) {
+              showToast('Error unsuspending customer', 'error');
             }
           }
         </script>

@@ -42,6 +42,13 @@ class AuthController {
         });
       }
 
+      // Check if user is suspended
+      if (user.suspended) {
+        return res.render('login', {
+          error: 'Your account has been suspended. Please contact administrator.'
+        });
+      }
+
       // Update last_login
       await db.run(
         'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?',

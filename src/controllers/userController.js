@@ -12,6 +12,8 @@ class UserController {
     this.update = this.update.bind(this);
     this.delete = this.delete.bind(this);
     this.changePassword = this.changePassword.bind(this);
+    this.suspend = this.suspend.bind(this);
+    this.unsuspend = this.unsuspend.bind(this);
   }
 
   // List all users
@@ -19,6 +21,7 @@ class UserController {
     try {
       const users = await db.all(
         `SELECT u.id, u.name, u.email, u.role_id, u.phone, u.is_active, u.last_login, u.created_at,
+                u.suspended, u.suspended_at, u.suspended_reason,
                 r.name as role_name, r.display_name as role_display_name
          FROM users u
          LEFT JOIN roles r ON u.role_id = r.id
@@ -499,6 +502,87 @@ class UserController {
         success: false,
         message: 'Error changing password'
       });
+    }
+  }
+
+  // Suspend user
+  async suspend(req, res) {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+
+      const user = await db.get(
+        `SELECT u.*, r.name as role_name FROM users u
+         LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?`,
+        [id]
+      );
+
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
+      // Prevent suspending admin
+      if (user.role_name === 'admin') {
+        return res.status(403).json({ success: false, message: 'Cannot suspend admin user' });
+      }
+
+      // Prevent self-suspension
+      if (parseInt(id) === parseInt(req.session.userId)) {
+        return res.status(403).json({ success: false, message: 'Cannot suspend yourself' });
+      }
+
+      await db.run(
+        `UPDATE users SET suspended = 1, suspended_at = CURRENT_TIMESTAMP, suspended_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [reason || null, id]
+      );
+
+      await ActivityLogger.log({
+        userId: req.session.userId,
+        action: 'suspend',
+        entityType: 'user',
+        entityId: id,
+        description: `Suspended user: ${user.name}${reason ? ` - Reason: ${reason}` : ''}`,
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.headers?.['user-agent']
+      });
+
+      res.json({ success: true, message: 'User suspended successfully' });
+    } catch (error) {
+      console.error('Error suspending user:', error);
+      res.status(500).json({ success: false, message: 'Error suspending user' });
+    }
+  }
+
+  // Unsuspend user
+  async unsuspend(req, res) {
+    try {
+      const { id } = req.params;
+
+      const user = await db.get('SELECT * FROM users WHERE id = ?', [id]);
+
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
+      await db.run(
+        `UPDATE users SET suspended = 0, suspended_at = NULL, suspended_reason = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [id]
+      );
+
+      await ActivityLogger.log({
+        userId: req.session.userId,
+        action: 'unsuspend',
+        entityType: 'user',
+        entityId: id,
+        description: `Unsuspended user: ${user.name}`,
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.headers?.['user-agent']
+      });
+
+      res.json({ success: true, message: 'User unsuspended successfully' });
+    } catch (error) {
+      console.error('Error unsuspending user:', error);
+      res.status(500).json({ success: false, message: 'Error unsuspending user' });
     }
   }
 }

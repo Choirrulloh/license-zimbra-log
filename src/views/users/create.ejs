@@ -6,6 +6,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-100">
+  <%- include('../partials/toast-notification') %>
   <div class="flex h-screen overflow-hidden">
     <%- include('../partials/sidebar', { currentPage: 'users', user: user }) %>
 
@@ -105,9 +106,9 @@
       field.value = password;
 
       navigator.clipboard.writeText(password).then(() => {
-        alert('Password generated and copied to clipboard!');
+        showToast('Password generated and copied to clipboard!', 'success');
       }).catch(() => {
-        alert('Password generated! Please copy it manually.');
+        showToast('Password generated! Please copy it manually.', 'warning');
       });
 
       setTimeout(() => { field.type = 'password'; }, 10000);

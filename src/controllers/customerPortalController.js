@@ -39,6 +39,12 @@ class CustomerPortalController {
         return res.redirect(`${basePath}/login?error=Invalid email or password`);
       }
 
+      // Check if customer is suspended
+      if (customer.suspended) {
+        console.log(`Login attempt failed for email: ${email} - Customer suspended`);
+        return res.redirect(`${basePath}/login?error=Your account has been suspended. Please contact support.`);
+      }
+
       // Verify password
       console.log(`Verifying password for customer: ${email}`);
       const passwordMatch = await bcrypt.compare(password, customer.password);

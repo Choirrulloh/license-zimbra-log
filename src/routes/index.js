@@ -88,6 +88,8 @@ router.post('/customers/:id/edit', requireAdmin, customerController.update);
 router.delete('/customers/:id', requireAdmin, customerController.delete);
 router.post('/customers/:id/login-as', requireAdmin, customerController.loginAsCustomer);
 router.post('/customers/:id/change-password', requireAdmin, customerController.changeCustomerPassword);
+router.post('/customers/:id/suspend', requireAdmin, customerController.suspend);
+router.post('/customers/:id/unsuspend', requireAdmin, customerController.unsuspend);
 
 // Users (Admin only for management, users can edit their own profile)
 router.get('/users', requireAdmin, userController.index);
@@ -98,6 +100,8 @@ router.get('/users/:id/edit', requireSelfOrAdmin('id'), userController.edit);
 router.post('/users/:id/edit', requireSelfOrAdmin('id'), userController.update);
 router.delete('/users/:id', requireAdmin, userController.delete);
 router.post('/users/:id/change-password', requireSelfOrAdmin('id'), userController.changePassword);
+router.post('/users/:id/suspend', requireAdmin, userController.suspend);
+router.post('/users/:id/unsuspend', requireAdmin, userController.unsuspend);
 
 // Features - Inline management (Admin only)
 router.post('/products/:productId/features/batch', requireAdmin, featuresController.createFeaturesBatch);
